@@ -1,127 +1,51 @@
-# Havn — Tempo Tutorial Workspace
+# Bake Mart Bazaar
 
-A fully built travel booking app (Airbnb-style, guest side) designed to show you what a mature Tempo workspace looks like.
+Database-driven bakery commerce for Bake Mart Bazaar / Pickled Bean. The app uses Next.js App Router, TypeScript, Tailwind CSS, Supabase Auth, PostgreSQL/RLS and Supabase Storage.
 
-## Where the demo PRDs & issues live (`demo-assets` branch)
-
-> **`main` intentionally has no `demo-assets/` folder.** The seed PRDs and
-> issues live on the dedicated permanent **[`demo-assets`](../../tree/demo-assets/demo-assets)**
-> branch instead.
->
-> During onboarding, Tempo fetches that branch and seeds its
-> `demo-assets/{prds,issues}` into the cloud (the Docs and Issues tabs) — so
-> the agent working in your cloned workspace sees them as real cloud
-> docs/issues, **not** as duplicate markdown files sitting in the repo (which
-> previously confused the agent). Nothing needs to be auto-deleted from your
-> clone because `main` never carried them.
->
-> To browse the raw seed markdown, check out the `demo-assets` branch.
-
-## Start here
-
-After onboarding, open the **[Start here] Welcome** doc in the Docs tab (seeded
-from `demo-assets/prds/tutorial/01-welcome.md`), or pin the **[Start here]
-Welcome** ticket on the kanban board.
-
-## What's in this workspace
-
-| Surface | Count | Location |
-|---|---|---|
-| PRDs | 15 | `demo-assets/prds/` (on the `demo-assets` branch) |
-| Issues | 8 | `demo-assets/issues/` (on the `demo-assets` branch) |
-| Canvases | 14+ | `tempo/designs/canvases/` |
-| Pages | 7 | `src/pages/` |
-| Design system | 14 components | `src/design-system/` |
-
-## Running the app
+## Local setup
 
 ```bash
 pnpm install
 pnpm dev
-# → http://localhost:5173
 ```
 
-## Routes
+Copy `.env.example` to `.env.local` and fill in the Supabase project values. Never expose `SUPABASE_SERVICE_ROLE_KEY` to the browser or commit it.
 
-| Route | Page |
-|---|---|
-| `/` | Homepage — hero + featured listings |
-| `/search` | Search results with filter chips |
-| `/listing/:id` | Listing detail + booking widget |
-| `/trips` | Your trips (upcoming + past) |
-| `/trips/:id` | Trip itinerary + cancellation flow |
-| `/messages` | Messaging inbox + thread view |
-| `/wishlists` | Saved listings |
+Apply the SQL in order through the Supabase SQL editor or Supabase CLI:
 
-## Design system
+1. `supabase/migrations/0001_bake_mart_foundation.sql`
+2. `supabase/migrations/0002_profile_trigger_and_admin.sql`
+3. `supabase/migrations/0003_ecommerce_security_and_operations.sql`
+4. `supabase/seed.sql` for replaceable demo catalogue data
 
-All components are in `src/design-system/`. The canvases in `designs/pages/` import from the same files — so editing a component in code updates the canvas storyboards immediately.
+The seed is intentionally database-only. React components never contain product/category/order/customer fixtures; replacing the demo catalogue means replacing the seed or importing the client's catalogue into the same tables.
 
-### Tokens (`src/design-system/`)
+## Supabase responsibilities
 
-| Token | Value | Usage |
-|---|---|---|
-| `--ink` | `#1a1815` | Primary text, dark backgrounds |
-| `--paper` | `#f7f3ee` | Background, light surfaces |
-| `--terracotta` | `#c75d3f` | Accent, primary buttons, hearts |
-| `--moss` | `#5c6f4a` | Success, positive refund amounts |
-| `--stone` | `#b8afa3` | Secondary text, muted UI |
+- Public storefront reads only active categories/banners/FAQs and published products.
+- Customer rows, addresses, orders, payments, wishlists, recently viewed products and custom-cake records are protected by RLS.
+- Admin/manager/fulfilment authorization comes from `public.profiles.role`, never editable user metadata.
+- Product images, category images and banners belong in public Storage buckets; custom-cake references and payment receipts belong in private buckets.
+- Guest checkout uses a database RPC that locks products, validates current stock/prices, creates the order/items/payment/status history, and decrements stock atomically.
+- Public tracking is handled by constrained `track_order` and `track_custom_cake` RPCs requiring the matching phone number.
 
-### Fonts
+## Production deployment
 
-- **Display:** Fraunces (variable serif, italic, warm) — headlines, hero text
-- **Body:** Geist (clean modernist sans) — all UI copy
-- **Mono:** Geist Mono — confirmation codes, inline code
+The included `Dockerfile` builds Next.js standalone output for Hostinger VPS, Coolify or any Docker host. Configure these environment variables in the deployment platform:
 
-## PRD structure
+- `NEXT_PUBLIC_SITE_URL`
+- `NEXT_PUBLIC_SUPABASE_URL`
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY` (or publishable key)
+- `SUPABASE_SERVICE_ROLE_KEY` (server-side only)
+- Optional SMTP variables for the email outbox worker: `HOSTINGER_SMTP_HOST`, `HOSTINGER_SMTP_PORT`, `HOSTINGER_SMTP_USER`, `HOSTINGER_SMTP_PASSWORD`
 
-```
-demo-assets/prds/
-├── tutorial/       # 3 tutorial PRDs (start here)
-├── discover/       # Parent + 3 children (search, map, wishlists)
-├── book/           # Parent + 3 children (listing, booking, reviews)
-└── trips/          # Parent + 3 children (itinerary, messaging, cancellation)
+Set the Supabase Auth site URL and redirect URLs to the production domain, create the Storage buckets through migration `0003`, and promote the first administrator by updating the `profiles.role` value after that user registers. Do not use local Docker volumes for permanent media.
+
+## Verification
+
+```bash
+pnpm typecheck
+pnpm build
 ```
 
-## Issue states
-
-| # | Title | Status | Linked PRD | Linked Canvas |
-|---|---|---|---|---|
-| 1 | [Tutorial] Welcome | Pinned | Tutorial PRDs | Start here |
-| 2 | [Tutorial] Edit a component | Pinned | How everything links | Design system |
-| 3 | Add price range filter | In Progress | Search & filters | Search experience |
-| 4 | Booking confirmation modal | In Review | Booking widget | Listing detail |
-| 5 | Add map view | Todo | Map view | *(design pending)* |
-| 6 | Refresh messaging inbox | In Design | *(spec WIP)* | Messaging |
-| 7 | Wishlist heart animation | Done | Wishlists | Wishlists |
-| 8 | Bug: itinerary mobile overflow | Todo (Bug) | Trip itinerary + Cancellation | Trip itinerary |
-
-## Canvases
-
-Open any canvas in Tempo to see storyboards rendered live from the source code.
-
-| Canvas | What's in it |
-|---|---|
-| Start here | Tour of the workspace — sample storyboards from each area |
-| Design system | All primitives and components; great for the "edit a component" tutorial |
-| Search experience | List view, filter chip states, search bar variants |
-| Listing detail | Full listing, booking modal, mobile bottom bar |
-| Trip itinerary | Trips list, booking cards, itinerary, cancellation flow |
-| Messaging | Inbox (unread/read), thread view, mobile |
-| Wishlists | Grid, empty state, heart button states |
-
-## Tech stack
-
-- **React 18** + **TypeScript** + **Vite**
-- **Tailwind CSS** with custom design tokens
-- **Radix UI** (Dialog, Popover, Tabs — accessible primitives)
-- **Motion** (Framer Motion v11) — animations, spring physics
-- **Lucide** — icons
-- **React Router v6** — routing
-- **Recharts** — price histogram (filter chip)
-
-## Sample data
-
-- 8 listings across 7 countries (`src/data/listings.ts`)
-- 4 trips in mixed states (`src/data/trips.ts`)
-- 3 conversations with sample messages (`src/data/messages.ts`)
+The admin dashboard, orders, products, customers, reviews, custom cakes and settings pages are protected by both Next.js route checks and database RLS policies.

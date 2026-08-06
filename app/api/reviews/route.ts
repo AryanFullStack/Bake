@@ -1,0 +1,4 @@
+import { NextResponse } from "next/server";
+import { z } from "zod";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
+export async function POST(request: Request) { const parsed = z.object({ product_id: z.string().uuid(), order_id: z.string().uuid(), rating: z.number().int().min(1).max(5), body: z.string().trim().min(10).max(2000) }).safeParse(await request.json()); if (!parsed.success) return NextResponse.json({ error: "Add a rating and a review" }, { status: 400 }); const supabase = await createSupabaseServerClient(); const { data: { user } } = await supabase.auth.getUser(); if (!user) return NextResponse.json({ error: "Sign in to review" }, { status: 401 }); const { error } = await supabase.from("reviews").insert({ ...parsed.data, user_id: user.id }); return error ? NextResponse.json({ error: error.message }, { status: 400 }) : NextResponse.json({ ok: true }); }

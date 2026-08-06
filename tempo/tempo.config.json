@@ -1,11 +1,11 @@
 {
   "scripts": {
-    "install": "npm install && npm install --prefix ..",
+    "install": "cd .. && pnpm install --no-frozen-lockfile && cd tempo && pnpm install --no-frozen-lockfile",
     "start": "npm run dev"
   },
   "apps": [
     {
-      "appStart": "npx vite --port=${PORT} --strictPort"
+      "appStart": "pnpm exec next dev --port=${PORT}"
     }
   ]
 }
