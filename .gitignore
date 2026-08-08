@@ -51,8 +51,8 @@ tempo/dist/
 .agents/
 skills-lock.json
 
-# Lock files (keep pnpm-lock.yaml only)
-package-lock.json
+# Lock files — keep both for compatibility
+# pnpm-lock.yaml for local dev, package-lock.json for npm-based deployments
 
 # Docker
 .dockerignore

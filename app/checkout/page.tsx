@@ -39,7 +39,7 @@ export default function CheckoutPage() {
         body: JSON.stringify({
           customer: Object.fromEntries(form.entries()),
           payment_method: payment,
-          items: items.map(({ id, quantity }) => ({ product_id: id, quantity })),
+          items: items.map(({ id, quantity, variationId }) => ({ product_id: id, variation_id: variationId, quantity })),
         }),
       });
 

@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="600" height="600" viewBox="0 0 600 600" fill="none">
+  <rect width="600" height="600" fill="#F8F6F0"/>
+  <rect x="2" y="2" width="596" height="596" rx="28" stroke="#E5DDCB" stroke-width="4" stroke-dasharray="8 8"/>
+  <g transform="translate(200, 180)">
+    <!-- Package Icon -->
+    <path d="M100 20L180 60V140L100 180L20 140V60L100 20Z" stroke="#0B2545" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M20 60L100 100L180 60" stroke="#0B2545" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M100 100V180" stroke="#0B2545" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+    <!-- Sparkle Accent -->
+    <path d="M150 15L155 30L170 35L155 40L150 55L145 40L130 35L145 30L150 15Z" fill="#FD7600"/>
+  </g>
+  <text x="300" y="420" text-anchor="middle" fill="#0B2545" font-family="system-ui, -apple-system, sans-serif" font-size="22" font-weight="700" letter-spacing="1">NO IMAGE AVAILABLE</text>
+  <text x="300" y="450" text-anchor="middle" fill="#718096" font-family="system-ui, -apple-system, sans-serif" font-size="14" font-weight="500">Upload product image in Admin</text>
+</svg>

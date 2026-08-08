@@ -23,7 +23,12 @@ export async function getProducts(options: { featured?: boolean; bestseller?: bo
     if (!cat) return []; // no matching category → return empty
     categoryId = cat.id;
   }
-  let query = supabase.from("products").select("id,slug,sku,name,description,price,sale_price,stock_quantity,low_stock_threshold,is_published,is_featured,is_bestseller,seo_title,seo_description,tags,category_id,brand_id,categories(name,slug),brands(name,slug),product_images(storage_path,alt_text,sort_order)").eq("is_published", true).order("created_at", { ascending: false }).limit(options.limit ?? 48);
+  let query = supabase
+    .from("products")
+    .select("id,slug,sku,name,description,price,sale_price,stock_quantity,low_stock_threshold,is_published,is_featured,is_bestseller,seo_title,seo_description,tags,category_id,brand_id,featured_image,product_type,categories:category_id(name,slug),brands(name,slug),product_images(storage_path,alt_text,sort_order)")
+    .eq("is_published", true)
+    .order("created_at", { ascending: false })
+    .limit(options.limit ?? 48);
   if (options.featured) query = query.eq("is_featured", true);
   if (options.bestseller) query = query.eq("is_bestseller", true);
   if (options.saleOnly) query = query.not("sale_price", "is", null);
@@ -46,12 +51,20 @@ export async function getProducts(options: { featured?: boolean; bestseller?: bo
 export async function getProductBySlug(slug: string) {
   if (!configured()) return null;
   const supabase = await createSupabaseServerClient();
-  const { data: row, error } = await supabase.from("products").select("id,slug,sku,name,description,price,sale_price,stock_quantity,low_stock_threshold,is_published,is_featured,is_bestseller,seo_title,seo_description,tags,category_id,brand_id,categories(name,slug),brands(name,slug),product_images(storage_path,alt_text,sort_order)").eq("slug", slug).eq("is_published", true).maybeSingle();
+  const { data: row, error } = await supabase
+    .from("products")
+    .select("id,slug,sku,name,description,short_description,specifications,ingredients,care_instructions,delivery_information,return_policy,price,sale_price,stock_quantity,low_stock_threshold,is_published,is_featured,is_bestseller,seo_title,seo_description,tags,category_id,brand_id,featured_image,product_type,categories:category_id(name,slug),brands(name,slug),product_images(storage_path,alt_text,sort_order),product_attributes(id,name,slug,display_type,sort_order,is_required,controls_images,product_attribute_values(id,label,slug,sort_order,swatch_color,swatch_image,is_active,product_attribute_images(id,storage_path,sort_order,product_image_id))),product_variations(id,combination_key,name,title,description,sku,barcode,regular_price,sale_price,stock_quantity,low_stock_threshold,attributes,status,weight,dimensions,specifications,product_variation_images(storage_path,alt_text,sort_order,is_featured))")
+    .eq("slug", slug)
+    .eq("is_published", true)
+    .maybeSingle();
   if (error || !row) return null;
-  const { data: reviews } = await supabase.from("reviews").select("id,rating,body,created_at,user_id,profiles(full_name)").eq("product_id", row.id).eq("is_approved", true).order("created_at", { ascending: false }).limit(30);
+  const [{ data: reviews }, { data: faqs }] = await Promise.all([
+    supabase.from("reviews").select("id,rating,body,created_at,user_id,profiles(full_name)").eq("product_id", row.id).eq("is_approved", true).order("created_at", { ascending: false }).limit(30),
+    supabase.from("product_faqs").select("id,question,answer,sort_order").eq("product_id", row.id).eq("is_published", true).order("sort_order"),
+  ]);
   const ratings = reviews ?? [];
   const rating = ratings.length ? ratings.reduce((sum: number, review: any) => sum + review.rating, 0) / ratings.length : 0;
-  return { product: mapProduct({ ...row, average_rating: rating, review_count: ratings.length }), reviews: ratings };
+  return { product: mapProduct({ ...row, average_rating: rating, review_count: ratings.length }), reviews: ratings, faqs: faqs ?? [] };
 }
 
 export async function getHomeContent() {

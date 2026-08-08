@@ -72,7 +72,7 @@ export default function CartPage() {
             <div className="flex flex-col gap-3">
               {items.map((item) => (
                 <div
-                  key={item.id}
+                  key={`${item.id}:${item.variationId ?? "base"}`}
                   className="flex gap-4 rounded-2xl bg-white p-4 border border-line/80 shadow-xs items-center"
                 >
                   <div className="relative h-24 w-24 sm:h-28 sm:w-28 shrink-0 overflow-hidden rounded-xl bg-cream-deep border border-line">
@@ -95,9 +95,14 @@ export default function CartPage() {
                             {item.name}
                           </Link>
                         </h2>
+                        {item.variationAttributes && (
+                          <p className="mt-1 text-xs font-semibold text-muted">
+                            {Object.entries(item.variationAttributes).map(([key, value]) => `${key}: ${value}`).join(" · ")}
+                          </p>
+                        )}
                       </div>
                       <button
-                        onClick={() => remove(item.id)}
+                        onClick={() => remove(item.id, item.variationId)}
                         className="text-muted hover:text-red-500 p-1 transition-colors"
                         aria-label={`Remove ${item.name} from cart`}
                       >
@@ -109,7 +114,7 @@ export default function CartPage() {
                       {/* Quantity Modifier */}
                       <div className="flex items-center rounded-xl border border-line bg-cream/50">
                         <button
-                          onClick={() => update(item.id, item.quantity - 1)}
+                          onClick={() => update(item.id, item.quantity - 1, item.variationId)}
                           className="p-2 text-navy hover:text-orange"
                           aria-label="Decrease quantity"
                         >
@@ -119,7 +124,7 @@ export default function CartPage() {
                           {item.quantity}
                         </span>
                         <button
-                          onClick={() => update(item.id, item.quantity + 1)}
+                          onClick={() => update(item.id, item.quantity + 1, item.variationId)}
                           className="p-2 text-navy hover:text-orange"
                           aria-label="Increase quantity"
                         >
