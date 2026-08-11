@@ -1,0 +1,59 @@
+# Dependencies
+node_modules
+.pnpm-store
+
+# Build output
+dist
+dist-ssr
+.next/
+out/
+
+# Environment variables — NEVER commit these
+.env
+.env.local
+.env.*.local
+.env.development
+.env.production
+.env.test
+
+# Editor / OS
+.DS_Store
+.vscode/*
+!.vscode/extensions.json
+.idea
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+Thumbs.db
+
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# TS build artifacts
+*.tsbuildinfo
+tsconfig.tsbuildinfo
+
+# Next.js
+next-env.d.ts
+
+# Tempo / agents
+tempo/.tempo/
+tempo/node_modules/
+tempo/dist/
+.tempo/
+.agents/
+skills-lock.json
+
+# Lock files — keep both for compatibility
+# pnpm-lock.yaml for local dev, package-lock.json for npm-based deployments
+
+# Docker
+.dockerignore
+Dockerfile
