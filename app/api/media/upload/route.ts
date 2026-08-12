@@ -23,8 +23,10 @@ export async function POST(req: NextRequest) {
 
     const formData = await req.formData();
     const folder = (formData.get("folder") as string) || "products";
-    
-    // Get file or files array
+    const altText = (formData.get("altText") as string) || undefined;
+    const title = (formData.get("title") as string) || undefined;
+    const mediaType = (formData.get("mediaType") as string) || undefined;
+
     const files = formData.getAll("file").concat(formData.getAll("files")) as File[];
 
     if (!files || files.length === 0 || !(files[0] instanceof File)) {
@@ -38,13 +40,17 @@ export async function POST(req: NextRequest) {
 
     for (const file of files) {
       if (!(file instanceof File)) continue;
-      
+
       const arrayBuffer = await file.arrayBuffer();
       const buffer = Buffer.from(arrayBuffer);
 
       const result = await mediaService.uploadImage(buffer, {
         folder,
         originalName: file.name,
+        uploadedBy: admin.user.id,
+        altText,
+        title,
+        mediaType,
       });
 
       uploadedResults.push(result);

@@ -123,7 +123,7 @@ export async function findUnifiedTrackOrder(
     for (const oRef of orderRefVariants) {
       const { data: orderRows } = await admin
         .from("orders")
-        .select("*, order_status_history(*)")
+        .select("*, order_status_history(*), order_items(product_id, product_name, sku, unit_price, quantity), couriers(*)")
         .ilike("order_number", oRef);
 
       if (orderRows && orderRows.length > 0) {

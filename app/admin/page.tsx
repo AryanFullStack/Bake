@@ -7,7 +7,7 @@ import { requireAdmin } from "@/lib/auth";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { formatPKR } from "@/lib/catalog";
 
-const liveStatuses = ["confirmed", "processing", "baking", "ready", "out_for_delivery", "delivered"];
+const liveStatuses = ["placed", "confirmed", "processing", "baking", "ready", "out_for_delivery", "delivered"];
 const statusLabel = (value: string) => value.replaceAll("_", " ").replace(/\b\w/g, (letter) => letter.toUpperCase());
 
 export default async function AdminPage() {

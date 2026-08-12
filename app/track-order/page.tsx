@@ -2,9 +2,10 @@
 
 import { FormEvent, useState, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
-import { Check, Clock, Search, ShieldCheck, Truck, Cake, Sparkles } from "lucide-react";
+import { Check, Clock, Search, ShieldCheck, Truck, Cake, Sparkles, Star } from "lucide-react";
 import { formatPKR } from "@/lib/catalog";
 import { getCustomCakeStepIndex, getStandardOrderStepIndex } from "@/lib/tracking-status";
+import { ReviewSubmissionModal } from "@/components/storefront/review-submission-modal";
 
 const standardSteps = [
   { key: "placed", label: "Order Placed" },
@@ -35,6 +36,7 @@ function TrackOrderContent() {
   const [result, setResult] = useState<{ type?: string; order?: any; request?: any } | null>(null);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [reviewItem, setReviewItem] = useState<{ id: string; name: string } | null>(null);
 
   useEffect(() => {
     if (initialOrder && initialPhone) {
@@ -168,8 +170,48 @@ function TrackOrderContent() {
           </div>
 
           {currentOrder.total > 0 && (
-            <div className="mt-4 text-xs font-semibold text-muted">
-              Total Amount: <span className="font-bold text-navy text-sm">{formatPKR(currentOrder.total)}</span>
+            <div className="mt-4 flex flex-wrap items-center justify-between gap-3 text-xs font-semibold text-muted">
+              <div>
+                Total Amount: <span className="font-bold text-navy text-sm">{formatPKR(currentOrder.total)}</span>
+              </div>
+              {currentOrder.payment_method && (
+                <div className="capitalize">
+                  Payment Method: <span className="font-bold text-navy">{currentOrder.payment_method.replace(/_/g, " ")}</span>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Courier Dispatch Card */}
+          {(currentOrder.courier_name || currentOrder.tracking_number || currentOrder.courier) && (
+            <div className="mt-5 p-4 rounded-2xl bg-orange/5 border border-orange/20 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-orange text-white shadow-xs">
+                  <Truck size={18} />
+                </div>
+                <div>
+                  <p className="text-xs font-bold uppercase tracking-wider text-orange">Courier Dispatched</p>
+                  <p className="font-bold text-navy text-sm">{currentOrder.courier_name || currentOrder.courier?.name || "Assigned Courier"}</p>
+                  {currentOrder.tracking_number && (
+                    <p className="text-xs text-muted font-mono">Consignment #: <strong className="text-navy">{currentOrder.tracking_number}</strong></p>
+                  )}
+                </div>
+              </div>
+
+              {(currentOrder.tracking_url || currentOrder.courier?.tracking_url_template) && (
+                <a
+                  href={
+                    currentOrder.tracking_url ||
+                    currentOrder.courier?.tracking_url_template?.replace("{tracking_number}", currentOrder.tracking_number || "") ||
+                    "#"
+                  }
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 rounded-xl bg-navy px-4 py-2 text-xs font-bold text-white shadow-xs hover:bg-orange transition-all"
+                >
+                  Live Courier Tracking →
+                </a>
+              )}
             </div>
           )}
 
@@ -221,6 +263,32 @@ function TrackOrderContent() {
               })}
             </div>
           </div>
+
+          {currentOrder.status === "delivered" && currentOrder.order_items?.length > 0 && (
+            <div className="mt-8 border-t border-line/60 pt-6 animate-in fade-in">
+              <div className="flex items-center gap-2 text-xs font-extrabold uppercase tracking-wider text-orange mb-3">
+                <Star size={14} className="fill-orange text-orange" /> Review Purchased Products
+              </div>
+              <div className="grid gap-3 sm:grid-cols-2">
+                {currentOrder.order_items.map((item: any) => (
+                  <div key={item.product_id || item.product_name} className="flex items-center justify-between gap-3 rounded-2xl bg-cream-deep/50 p-4 border border-line/60">
+                    <div className="min-w-0">
+                      <p className="font-bold text-navy text-xs truncate">{item.product_name}</p>
+                      <p className="text-[10px] text-muted">{item.quantity} × {formatPKR(item.unit_price)}</p>
+                    </div>
+                    {item.product_id ? (
+                      <button
+                        onClick={() => setReviewItem({ id: item.product_id, name: item.product_name })}
+                        className="flex items-center gap-1 rounded-xl bg-orange px-3.5 py-2 text-[11px] font-bold text-white shadow-xs hover:bg-orange-dark transition-all shrink-0"
+                      >
+                        <Star size={12} className="fill-white" /> Review
+                      </button>
+                    ) : null}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </section>
       )}
 
@@ -314,6 +382,17 @@ function TrackOrderContent() {
             </div>
           </div>
         </section>
+      )}
+
+      {reviewItem && (
+        <ReviewSubmissionModal
+          isOpen={Boolean(reviewItem)}
+          onClose={() => setReviewItem(null)}
+          productId={reviewItem.id}
+          productName={reviewItem.name}
+          initialOrderId={currentOrder?.id}
+          initialOrderNumber={currentOrder?.order_number}
+        />
       )}
     </div>
   );

@@ -84,7 +84,7 @@ export function HeroCarousel({ banners }: { banners: any[] }) {
 
               {/* Heading */}
               <h1 className="font-display text-[clamp(2.8rem,5.5vw,5rem)] font-bold leading-[1.02] text-white">
-                {title.split("\n").map((line, i) => (
+                {title.split("\n").map((line: string, i: number) => (
                   <span key={i}>
                     {i === 1 ? <span className="text-orange">{line}</span> : line}
                     {i === 0 && <br />}
@@ -141,7 +141,7 @@ export function HeroCarousel({ banners }: { banners: any[] }) {
               {banners.length > 1 && (
                 <div className="mt-7 flex items-center gap-3">
                   <div className="flex gap-1.5">
-                    {banners.map((b, index) => (
+                    {banners.map((b: any, index: number) => (
                       <button
                         key={b.id ?? index}
                         onClick={() => setCurrentIndex(index)}

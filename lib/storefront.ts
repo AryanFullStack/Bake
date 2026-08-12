@@ -120,13 +120,37 @@ export async function getProductBySlug(slug: string) {
     .eq("is_published", true)
     .maybeSingle();
   if (error || !row) return null;
-  const [{ data: reviews }, { data: faqs }] = await Promise.all([
-    supabase.from("reviews").select("id,rating,body,created_at,user_id,profiles(full_name)").eq("product_id", row.id).eq("is_approved", true).order("created_at", { ascending: false }).limit(30),
-    supabase.from("product_faqs").select("id,question,answer,sort_order").eq("product_id", row.id).eq("is_published", true).order("sort_order"),
-  ]);
-  const ratings = reviews ?? [];
-  const rating = ratings.length ? ratings.reduce((sum: number, review: any) => sum + review.rating, 0) / ratings.length : 0;
-  return { product: mapProduct({ ...row, average_rating: rating, review_count: ratings.length }), reviews: ratings, faqs: faqs ?? [] };
+  const { data: faqs } = await supabase
+    .from("product_faqs")
+    .select("id,question,answer,sort_order")
+    .eq("product_id", row.id)
+    .eq("is_published", true)
+    .order("sort_order");
+
+  let reviews: any[] = [];
+  const { data: rawReviews, error: reviewsErr } = await supabase
+    .from("reviews")
+    .select("id,product_id,order_id,user_id,rating,body,status,is_approved,is_verified_purchase,reviewer_name,guest_name,guest_email,created_at")
+    .eq("product_id", row.id)
+    .or("status.eq.approved,is_approved.eq.true")
+    .order("created_at", { ascending: false })
+    .limit(200);
+
+  if (reviewsErr) {
+    const { data: fallbackReviews } = await supabase
+      .from("reviews")
+      .select("id,product_id,order_id,user_id,rating,body,is_approved,created_at")
+      .eq("product_id", row.id)
+      .eq("is_approved", true)
+      .order("created_at", { ascending: false })
+      .limit(200);
+    reviews = fallbackReviews ?? [];
+  } else {
+    reviews = rawReviews ?? [];
+  }
+
+  const rating = reviews.length ? reviews.reduce((sum: number, review: any) => sum + review.rating, 0) / reviews.length : 0;
+  return { product: mapProduct({ ...row, average_rating: rating, review_count: reviews.length }), reviews, faqs: faqs ?? [] };
 }
 
 export async function getHomeContent() {
@@ -137,7 +161,7 @@ export async function getHomeContent() {
 export async function getFeaturedReviews() {
   if (!configured()) return [];
   const supabase = await createSupabaseServerClient();
-  const { data } = await supabase.from("reviews").select("id,rating,body,created_at,profiles(full_name),products(name)").eq("is_approved", true).order("created_at", { ascending: false }).limit(3);
+  const { data } = await supabase.from("reviews").select("id,rating,body,created_at,reviewer_name,guest_name,products(name)").or("status.eq.approved,is_approved.eq.true").order("created_at", { ascending: false }).limit(3);
   return data ?? [];
 }
 

@@ -20,6 +20,8 @@ import {
   PackagePlus,
   ShoppingBag,
 } from "lucide-react";
+import { MediaPickerModal } from "@/components/admin/media-picker-modal";
+
 
 interface Category {
   id: string;
@@ -41,11 +43,22 @@ export function AdminCategoriesManager() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingCategory, setEditingCategory] = useState<Partial<Category> | null>(null);
   
-  // Image uploads for modal
-  const iconInputRef = useRef<HTMLInputElement>(null);
-  const bannerInputRef = useRef<HTMLInputElement>(null);
+  // Media Picker state for modal
+  const [pickerTarget, setPickerTarget] = useState<"icon" | "banner" | null>(null);
   const [uploadingIcon, setUploadingIcon] = useState(false);
   const [uploadingBanner, setUploadingBanner] = useState(false);
+  const iconInputRef = useRef<HTMLInputElement>(null);
+  const bannerInputRef = useRef<HTMLInputElement>(null);
+
+  const handleMediaPickerSelect = (urls: string[]) => {
+    if (!urls[0] || !pickerTarget) return;
+    setEditingCategory((prev) => ({
+      ...prev,
+      [pickerTarget === "icon" ? "icon_path" : "banner_path"]: urls[0],
+    }));
+    setPickerTarget(null);
+  };
+
 
   const fetchCategories = async () => {
     setLoading(true);
@@ -465,9 +478,7 @@ export function AdminCategoriesManager() {
               {/* Icon & Banner Uploads */}
               <div className="grid grid-cols-2 gap-4 pt-2">
                 <div>
-                  <label className="block font-bold text-navy mb-1">
-                    Category Icon
-                  </label>
+                  <label className="block font-bold text-navy mb-1">Category Icon</label>
                   {editingCategory.icon_path ? (
                     <div className="relative h-16 w-full rounded-xl overflow-hidden border border-line bg-cream/30">
                       <img src={editingCategory.icon_path} alt="" className="h-full w-full object-contain p-1" />
@@ -480,15 +491,24 @@ export function AdminCategoriesManager() {
                       </button>
                     </div>
                   ) : (
-                    <button
-                      type="button"
-                      disabled={uploadingIcon}
-                      onClick={() => iconInputRef.current?.click()}
-                      className="flex h-16 w-full flex-col items-center justify-center rounded-xl border border-dashed border-line bg-cream/40 text-navy hover:border-orange hover:bg-orange-light/20 transition-all"
-                    >
-                      {uploadingIcon ? <RefreshCw className="h-4 w-4 animate-spin text-orange" /> : <Upload className="h-4 w-4 mb-1 text-orange" />}
-                      <span className="text-[10px] font-bold">Upload Icon</span>
-                    </button>
+                    <div className="flex gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setPickerTarget("icon")}
+                        className="flex-1 flex flex-col items-center justify-center h-16 rounded-xl border border-dashed border-orange bg-orange-light/30 text-orange hover:bg-orange hover:text-white transition-all p-1"
+                      >
+                        <ImageIcon className="h-4 w-4 mb-0.5" />
+                        <span className="text-[10px] font-bold">Choose Media</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => iconInputRef.current?.click()}
+                        className="flex-1 flex flex-col items-center justify-center h-16 rounded-xl border border-dashed border-line bg-cream/40 text-navy hover:border-orange hover:bg-orange-light/20 transition-all p-1"
+                      >
+                        <Upload className="h-4 w-4 mb-0.5 text-orange" />
+                        <span className="text-[10px] font-bold">Upload New</span>
+                      </button>
+                    </div>
                   )}
                   <input
                     ref={iconInputRef}
@@ -500,9 +520,7 @@ export function AdminCategoriesManager() {
                 </div>
 
                 <div>
-                  <label className="block font-bold text-navy mb-1">
-                    Category Banner
-                  </label>
+                  <label className="block font-bold text-navy mb-1">Category Banner</label>
                   {editingCategory.banner_path ? (
                     <div className="relative h-16 w-full rounded-xl overflow-hidden border border-line">
                       <img src={editingCategory.banner_path} alt="" className="h-full w-full object-cover" />
@@ -515,15 +533,24 @@ export function AdminCategoriesManager() {
                       </button>
                     </div>
                   ) : (
-                    <button
-                      type="button"
-                      disabled={uploadingBanner}
-                      onClick={() => bannerInputRef.current?.click()}
-                      className="flex h-16 w-full flex-col items-center justify-center rounded-xl border border-dashed border-line bg-cream/40 text-navy hover:border-orange hover:bg-orange-light/20 transition-all"
-                    >
-                      {uploadingBanner ? <RefreshCw className="h-4 w-4 animate-spin text-orange" /> : <ImageIcon className="h-4 w-4 mb-1 text-orange" />}
-                      <span className="text-[10px] font-bold">Upload Banner</span>
-                    </button>
+                    <div className="flex gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setPickerTarget("banner")}
+                        className="flex-1 flex flex-col items-center justify-center h-16 rounded-xl border border-dashed border-orange bg-orange-light/30 text-orange hover:bg-orange hover:text-white transition-all p-1"
+                      >
+                        <ImageIcon className="h-4 w-4 mb-0.5" />
+                        <span className="text-[10px] font-bold">Choose Media</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => bannerInputRef.current?.click()}
+                        className="flex-1 flex flex-col items-center justify-center h-16 rounded-xl border border-dashed border-line bg-cream/40 text-navy hover:border-orange hover:bg-orange-light/20 transition-all p-1"
+                      >
+                        <Upload className="h-4 w-4 mb-0.5 text-orange" />
+                        <span className="text-[10px] font-bold">Upload New</span>
+                      </button>
+                    </div>
                   )}
                   <input
                     ref={bannerInputRef}
@@ -534,6 +561,7 @@ export function AdminCategoriesManager() {
                   />
                 </div>
               </div>
+
             </div>
 
             <div className="mt-6 flex justify-end gap-3 border-t border-line pt-4">
@@ -554,6 +582,17 @@ export function AdminCategoriesManager() {
           </form>
         </div>
       )}
+
+      {/* Media Picker Modal */}
+      <MediaPickerModal
+        isOpen={Boolean(pickerTarget)}
+        onClose={() => setPickerTarget(null)}
+        onSelect={handleMediaPickerSelect}
+        multiSelect={false}
+        initialFolder="categories"
+        title="Choose Category Image"
+      />
     </div>
   );
 }
+

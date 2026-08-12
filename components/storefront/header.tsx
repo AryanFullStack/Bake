@@ -147,7 +147,7 @@ export function Header() {
           scrolled ? "bg-cream/95 shadow-[0_8px_24px_rgba(6,33,54,.06)] backdrop-blur-md" : "bg-cream"
         }`}
       >
-        <div className={`container-shell flex items-center gap-4 transition-all duration-300 ${scrolled ? "h-[64px]" : "h-[76px]"}`}>
+        <div className={`container-shell relative flex items-center gap-4 transition-all duration-300 ${scrolled ? "h-[64px]" : "h-[76px]"}`}>
           {/* Hamburger (mobile) */}
           <button
             onClick={() => setMenuOpen(true)}
@@ -158,13 +158,16 @@ export function Header() {
           </button>
 
           {/* Logo */}
-          <Link href="/" className="group flex shrink-0 items-center gap-2.5 transition-transform hover:scale-[1.01]">
+          <Link
+            href="/"
+            className="group flex shrink-0 items-center gap-2.5 transition-transform hover:scale-[1.01] max-md:absolute max-md:left-1/2 max-md:-translate-x-1/2"
+          >
             <Image
               src="/logobake-01.png"
               alt="Bake Mart Bazaar"
               width={220}
               height={60}
-              className="h-11 md:h-13 w-auto object-contain drop-shadow-xs"
+              className="h-10 md:h-13 w-auto object-contain drop-shadow-xs"
               priority
             />
           </Link>

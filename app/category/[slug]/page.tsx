@@ -1,7 +1,7 @@
 import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
-import { getProducts, getCategories } from "@/lib/catalog";
+import { getProducts, getCategories } from "@/lib/storefront";
 import { ProductCard } from "@/components/storefront/product-card";
 
 interface CategoryPageProps {
@@ -51,7 +51,7 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
     banner: matchedCat?.image || "https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=1400&q=90",
   };
 
-  const { products } = await getProducts({ category: slug });
+  const products = await getProducts({ category: slug });
 
   return (
     <div className="min-h-screen pb-20">

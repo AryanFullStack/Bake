@@ -13,14 +13,17 @@ export async function DELETE(req: NextRequest) {
     }
 
     let urlOrPath = "";
+    let forceRemoveReferences = false;
 
     const contentType = req.headers.get("content-type") || "";
     if (contentType.includes("application/json")) {
       const body = await req.json();
       urlOrPath = body.url || body.relativePath || body.path || "";
+      forceRemoveReferences = Boolean(body.forceRemoveReferences);
     } else {
       const { searchParams } = new URL(req.url);
       urlOrPath = searchParams.get("url") || searchParams.get("path") || "";
+      forceRemoveReferences = searchParams.get("force") === "true";
     }
 
     if (!urlOrPath) {
@@ -30,12 +33,17 @@ export async function DELETE(req: NextRequest) {
       );
     }
 
-    const deleted = await mediaService.deleteImage(urlOrPath);
+    const result = await mediaService.deleteMediaWithSafety(urlOrPath, forceRemoveReferences);
 
-    if (!deleted) {
+    if (!result.success) {
       return NextResponse.json(
-        { success: false, error: "File not found or could not be deleted." },
-        { status: 404 }
+        {
+          success: false,
+          error: result.error,
+          inUse: Boolean(result.usages && result.usages.count > 0),
+          usages: result.usages,
+        },
+        { status: result.usages && result.usages.count > 0 ? 409 : 400 }
       );
     }
 

@@ -33,6 +33,8 @@ import {
 } from "lucide-react";
 import { formatPKR, generateSKU, publicStorageUrl, slugify } from "@/lib/catalog";
 import { resolveProductGallery } from "@/lib/gallery-resolver";
+import { MediaPickerModal } from "@/components/admin/media-picker-modal";
+
 
 type Category = { id: string; name: string; slug: string; parent_id?: string | null };
 type Brand = { id: string; name: string; slug: string };
@@ -177,8 +179,9 @@ export function ProductWizard({ initialProduct, product, categories, brands, onC
   // Media
   const [featuredImage, setFeaturedImage] = useState<string>(current?.featured_image || "");
   const [galleryImages, setGalleryImages] = useState<string[]>(
-    (current?.product_images || []).map((img: any) => img.storage_path)
+    current?.product_images?.map((i: any) => i.storage_path) || current?.gallery_images || []
   );
+  const [isMediaPickerOpen, setIsMediaPickerOpen] = useState(false);
 
   // Attributes & Variations
   const [attributes, setAttributes] = useState<Attribute[]>(
@@ -923,20 +926,35 @@ export function ProductWizard({ initialProduct, product, categories, brands, onC
                 })}
               />
 
-              <div
-                onClick={() => fileInputRef.current?.click()}
-                className="flex cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed border-admin-border bg-admin-bg/40 p-8 text-center transition hover:border-orange hover:bg-orange/5"
-              >
-                <div className="grid h-12 w-12 place-items-center rounded-full bg-orange/10 text-orange">
-                  <Upload size={22} />
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <button
+                  type="button"
+                  onClick={() => setIsMediaPickerOpen(true)}
+                  className="flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-orange bg-orange-light/30 p-6 text-center cursor-pointer transition hover:bg-orange hover:text-white group"
+                >
+                  <div className="grid h-12 w-12 place-items-center rounded-full bg-orange text-white group-hover:bg-white group-hover:text-orange shadow-md mb-2 transition-colors">
+                    <ImageIcon size={22} />
+                  </div>
+                  <p className="font-bold text-sm">Choose From Media Library</p>
+                  <p className="mt-1 text-xs opacity-80">Select existing VPS images without uploading duplicates.</p>
+                </button>
+
+                <div
+                  onClick={() => fileInputRef.current?.click()}
+                  className="flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-admin-border bg-admin-bg/40 p-6 text-center cursor-pointer transition hover:border-orange hover:bg-orange/5"
+                >
+                  <div className="grid h-12 w-12 place-items-center rounded-full bg-navy/10 text-navy mb-2">
+                    <Upload size={22} />
+                  </div>
+                  <p className="font-bold text-navy text-sm">
+                    {uploading ? "Uploading to VPS…" : "Upload New Images"}
+                  </p>
+                  <p className="mt-1 text-xs text-admin-muted">
+                    Supports PNG, JPG, WebP up to 5 MB. WebP optimized.
+                  </p>
                 </div>
-                <p className="mt-3 font-bold text-navy text-sm">
-                  {uploading ? "Compressing & Uploading to VPS…" : "Click or drag images to upload"}
-                </p>
-                <p className="mt-1 text-xs text-admin-muted">
-                  Supports PNG, JPG, WebP up to 5 MB each. Compressed automatically with Sharp.
-                </p>
               </div>
+
 
               {galleryImages.length > 0 && (
                 <div className="grid grid-cols-2 gap-4 sm:grid-cols-4 md:grid-cols-5">
@@ -2110,6 +2128,22 @@ export function ProductWizard({ initialProduct, product, categories, brands, onC
           {toast.msg}
         </div>
       )}
+
+      {/* Media Picker Modal */}
+      <MediaPickerModal
+        isOpen={isMediaPickerOpen}
+        onClose={() => setIsMediaPickerOpen(false)}
+        onSelect={(urls) => {
+          if (urls.length > 0) {
+            setGalleryImages((prev) => [...prev, ...urls]);
+            if (!featuredImage) setFeaturedImage(urls[0]);
+          }
+        }}
+        multiSelect={true}
+        initialFolder="products"
+        title="Choose Product Gallery Images"
+      />
     </div>
   );
 }
+

@@ -358,7 +358,7 @@ export default async function HomePage() {
   }
 
   return (
-    <div className="overflow-x-hidden">
+    <div className="overflow-x-clip">
 
       {/* ── 3. Hero Section — Most Important ────────────────────── */}
       <MultiCategoryHero />
