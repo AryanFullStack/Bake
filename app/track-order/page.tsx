@@ -2,7 +2,7 @@
 
 import { FormEvent, useState, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
-import { Check, Clock, Search, ShieldCheck, Truck, Cake, Sparkles, Star } from "lucide-react";
+import { Check, Clock, Search, ShieldCheck, Truck, Cake, Sparkles, Star, ExternalLink } from "lucide-react";
 import { formatPKR } from "@/lib/catalog";
 import { getCustomCakeStepIndex, getStandardOrderStepIndex } from "@/lib/tracking-status";
 import { ReviewSubmissionModal } from "@/components/storefront/review-submission-modal";
@@ -44,9 +44,18 @@ function TrackOrderContent() {
     }
   }, [initialOrder, initialPhone]);
 
-  async function performLookup(ref: string, phone: string) {
+  // Real-time auto refresh polling every 8 seconds if order or request is active
+  useEffect(() => {
+    if (!refInput || !phoneInput || !result) return;
+    const interval = setInterval(() => {
+      performLookup(refInput, phoneInput, true);
+    }, 8000);
+    return () => clearInterval(interval);
+  }, [refInput, phoneInput, result]);
+
+  async function performLookup(ref: string, phone: string, silent = false) {
     if (!ref.trim() || !phone.trim()) return;
-    setLoading(true);
+    if (!silent) setLoading(true);
     setError("");
 
     try {
@@ -57,17 +66,21 @@ function TrackOrderContent() {
       });
 
       const data = await response.json();
-      setLoading(false);
+      if (!silent) setLoading(false);
 
       if (!response.ok) {
-        setResult(null);
-        setError(data.error ?? "Order or request not found. Check both details and try again.");
+        if (!silent) {
+          setResult(null);
+          setError(data.error ?? "Order or request not found. Check both details and try again.");
+        }
       } else {
         setResult(data);
       }
     } catch {
-      setLoading(false);
-      setError("Network error. Please try again.");
+      if (!silent) {
+        setLoading(false);
+        setError("Network error. Please try again.");
+      }
     }
   }
 
@@ -207,9 +220,10 @@ function TrackOrderContent() {
                   }
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1.5 rounded-xl bg-navy px-4 py-2 text-xs font-bold text-white shadow-xs hover:bg-orange transition-all"
+                  className="inline-flex items-center gap-2 rounded-2xl bg-orange px-5 py-2.5 text-xs sm:text-sm font-extrabold text-white !text-white hover:!text-white shadow-md hover:bg-orange-dark hover:shadow-lg active:scale-95 transition-all !no-underline"
                 >
-                  Live Courier Tracking →
+                  <span>Live Courier Tracking</span>
+                  <ExternalLink size={15} className="shrink-0 text-white" />
                 </a>
               )}
             </div>

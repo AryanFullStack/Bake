@@ -67,6 +67,33 @@ export async function POST(req: NextRequest) {
         }
       }
 
+      try {
+        await supabase.from("product_images").delete().in("product_id", ids);
+        await supabase.from("product_faqs").delete().in("product_id", ids);
+        await supabase.from("reviews").delete().in("product_id", ids);
+
+        const { data: vars } = await supabase.from("product_variations").select("id").in("product_id", ids);
+        if (vars && vars.length > 0) {
+          const vIds = vars.map((v: any) => v.id);
+          await supabase.from("product_variation_images").delete().in("variation_id", vIds);
+          await supabase.from("product_variations").delete().in("product_id", ids);
+        }
+
+        const { data: attrs } = await supabase.from("product_attributes").select("id").in("product_id", ids);
+        if (attrs && attrs.length > 0) {
+          const aIds = attrs.map((a: any) => a.id);
+          const { data: vals } = await supabase.from("product_attribute_values").select("id").in("attribute_id", aIds);
+          if (vals && vals.length > 0) {
+            const valIds = vals.map((v: any) => v.id);
+            await supabase.from("product_attribute_images").delete().in("attribute_value_id", valIds);
+            await supabase.from("product_attribute_values").delete().in("attribute_id", aIds);
+          }
+          await supabase.from("product_attributes").delete().in("product_id", ids);
+        }
+      } catch (err) {
+        console.warn("[API bulk DELETE] Child cleanup warning:", err);
+      }
+
       const { error } = await supabase.from("products").delete().in("id", ids);
       if (error) return NextResponse.json({ error: error.message }, { status: 400 });
       return NextResponse.json({ success: true, message: `${ids.length} products deleted.` });

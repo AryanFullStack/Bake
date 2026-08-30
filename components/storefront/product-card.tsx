@@ -73,6 +73,10 @@ export function ProductCard({ product }: { product: Product }) {
   const addToCart = useCallback((e: React.MouseEvent) => {
     e.preventDefault(); e.stopPropagation();
     if (isOutOfStock) return;
+    if (product.productType === "variable") {
+      setQuickViewOpen(true);
+      return;
+    }
     add(product);
     setAdded(true);
     setTimeout(() => setAdded(false), 1400);
@@ -131,8 +135,8 @@ export function ProductCard({ product }: { product: Product }) {
           <Heart size={15} fill={saved ? "currentColor" : "none"} strokeWidth={2} />
         </button>
 
-        {/* Quick-add cart & Quick view — bottom-right, slides up on hover */}
-        <div className={`absolute bottom-3 right-3 z-10 flex gap-2 transition-all duration-300 ${hovering ? "opacity-100 translate-y-0" : "opacity-0 translate-y-3"}`}>
+        {/* Quick-add cart & Quick view — bottom-right */}
+        <div className="absolute bottom-3 right-3 z-10 flex gap-1.5 transition-all duration-300 max-sm:opacity-100 max-sm:translate-y-0 sm:opacity-0 sm:translate-y-3 group-hover:opacity-100 group-hover:translate-y-0">
           <button
             onClick={(e) => {
               e.preventDefault(); e.stopPropagation();

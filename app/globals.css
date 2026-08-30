@@ -22,12 +22,12 @@
   --blue-light: #eff6ff;
 
   /* Surface colors */
-  --cream: #fffaf4;
-  --cream-deep: #f4ecdf;
-  --paper: #fffdf9;
-  --ink: #17232d;
-  --muted: #6d777d;
-  --line: #e6ddd0;
+  --cream: #faf8f5;
+  --cream-deep: #f2ebe0;
+  --paper: #ffffff;
+  --ink: #0f1c27;
+  --muted: #647079;
+  --line: #e8e2d9;
 
   /* Admin surfaces */
   --admin-bg: #f1f4f7;
@@ -147,9 +147,10 @@ img { display: block; max-width: 100%; }
 .section-heading {
   color: var(--navy);
   font-family: var(--font-display);
-  font-size: clamp(2.1rem, 4.5vw, 3.75rem);
+  font-size: clamp(1.75rem, 3.8vw, 3.25rem);
   font-weight: 700;
-  line-height: 1.05;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
 }
 
 /* ── Button Variants ────────────────────────────────────────── */

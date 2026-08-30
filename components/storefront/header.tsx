@@ -173,7 +173,7 @@ export function Header() {
           </Link>
 
           {/* Desktop Nav */}
-          <nav className="ml-6 hidden items-center gap-0.5 xl:flex" aria-label="Primary navigation">
+          <nav className="ml-6 hidden items-center gap-1 lg:flex" aria-label="Primary navigation">
             {navLinks.map((link) => {
               if (link.isDropdown) {
                 return (

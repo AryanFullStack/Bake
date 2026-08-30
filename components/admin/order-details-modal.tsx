@@ -307,50 +307,67 @@ export function OrderDetailsModal({
                   </span>
                 </div>
 
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left text-xs">
-                    <thead className="border-b border-line text-[10px] font-bold uppercase tracking-wider text-muted">
-                      <tr>
-                        <th className="pb-2">Item</th>
-                        <th className="pb-2">SKU</th>
-                        <th className="pb-2 text-right">Unit Price</th>
-                        <th className="pb-2 text-center">Qty</th>
-                        <th className="pb-2 text-right">Line Total</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-line/60">
-                      {(order.order_items ?? []).map((item) => (
-                        <tr key={item.id} className="hover:bg-cream/20">
-                          <td className="py-3">
-                            <div className="flex items-center gap-3">
-                              {item.image_path ? (
-                                <img
-                                  src={item.image_path}
-                                  alt={item.product_name}
-                                  className="h-10 w-10 rounded-lg object-cover border border-line"
-                                />
-                              ) : (
-                                <div className="h-10 w-10 rounded-lg bg-cream-deep grid place-items-center text-muted text-[10px]">
-                                  No Img
-                                </div>
-                              )}
-                              <div>
-                                <p className="font-bold text-navy text-xs">{item.product_name}</p>
-                                {item.variation_title && (
-                                  <p className="text-[11px] text-orange font-semibold">{item.variation_title}</p>
-                                )}
-                              </div>
-                            </div>
-                          </td>
-                          <td className="py-3 font-mono text-muted">{item.sku || "—"}</td>
-                          <td className="py-3 text-right font-semibold text-navy">{formatPKR(item.unit_price)}</td>
-                          <td className="py-3 text-center font-bold text-navy">{item.quantity}</td>
-                          <td className="py-3 text-right font-extrabold text-navy">{formatPKR(item.line_total)}</td>
+                {(!order.order_items || order.order_items.length === 0) ? (
+                  <div className="p-4 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-xs space-y-2">
+                    <p className="font-extrabold flex items-center gap-1.5 text-amber-950">
+                      <AlertCircle size={15} className="text-amber-600" /> Data Integrity Warning: 0 Order Items Recorded
+                    </p>
+                    <p className="text-[11px] text-amber-800">
+                      This historical order record was created with a total of <strong className="text-amber-950">{formatPKR(order.total)}</strong>, but the item details were not stored in <code className="font-mono bg-amber-100 px-1 rounded text-amber-950">order_items</code>. Click "Edit Order" to attach products to this record.
+                    </p>
+                    <button
+                      onClick={() => onOpenEdit(order)}
+                      className="mt-1 inline-flex items-center gap-1 bg-amber-600 text-white font-bold px-3 py-1.5 rounded-lg text-xs hover:bg-amber-700 transition-colors"
+                    >
+                      <Edit3 size={13} /> Edit & Attach Items
+                    </button>
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left text-xs">
+                      <thead className="border-b border-line text-[10px] font-bold uppercase tracking-wider text-muted">
+                        <tr>
+                          <th className="pb-2">Item</th>
+                          <th className="pb-2">SKU</th>
+                          <th className="pb-2 text-right">Unit Price</th>
+                          <th className="pb-2 text-center">Qty</th>
+                          <th className="pb-2 text-right">Line Total</th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+                      </thead>
+                      <tbody className="divide-y divide-line/60">
+                        {order.order_items.map((item) => (
+                          <tr key={item.id} className="hover:bg-cream/20">
+                            <td className="py-3">
+                              <div className="flex items-center gap-3">
+                                {item.image_path ? (
+                                  <img
+                                    src={item.image_path}
+                                    alt={item.product_name}
+                                    className="h-10 w-10 rounded-lg object-cover border border-line"
+                                  />
+                                ) : (
+                                  <div className="h-10 w-10 rounded-lg bg-cream-deep grid place-items-center text-muted text-[10px]">
+                                    No Img
+                                  </div>
+                                )}
+                                <div>
+                                  <p className="font-bold text-navy text-xs">{item.product_name}</p>
+                                  {item.variation_title && (
+                                    <p className="text-[11px] text-orange font-semibold">{item.variation_title}</p>
+                                  )}
+                                </div>
+                              </div>
+                            </td>
+                            <td className="py-3 font-mono text-muted">{item.sku || "—"}</td>
+                            <td className="py-3 text-right font-semibold text-navy">{formatPKR(item.unit_price)}</td>
+                            <td className="py-3 text-center font-bold text-navy">{item.quantity}</td>
+                            <td className="py-3 text-right font-extrabold text-navy">{formatPKR(item.line_total)}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
 
                 {/* Subtotal & Final Totals */}
                 <div className="pt-4 border-t border-line flex flex-col items-end space-y-1.5 text-xs text-muted">

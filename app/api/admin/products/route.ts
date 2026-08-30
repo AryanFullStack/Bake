@@ -116,7 +116,10 @@ async function syncProductVariations(supabase: any, productId: string, product: 
     await syncVariationMedia(supabase, variationId, variation, product.name);
   }
   const removed = (existing ?? []).filter((row: any) => !incomingKeys.has(row.combination_key)).map((row: any) => row.id);
-  if (removed.length) await supabase.from("product_variations").update({ status: "inactive", updated_at: new Date().toISOString() }).in("id", removed);
+  if (removed.length) {
+    await supabase.from("product_variation_images").delete().in("variation_id", removed);
+    await supabase.from("product_variations").delete().in("id", removed);
+  }
   const { data: totals } = await supabase.from("product_variations").select("stock_quantity").eq("product_id", productId).eq("status", "active");
   await supabase.from("products").update({ stock_quantity: (totals ?? []).reduce((sum: number, row: any) => sum + Number(row.stock_quantity || 0), 0) }).eq("id", productId);
 }
@@ -420,7 +423,35 @@ export async function DELETE(req: NextRequest) {
       }
     }
 
-    // 2. Delete product record (DB cascade deletes product_images and product_variations)
+    // 2. Clean child tables explicitly to ensure FK constraints do not block deletion
+    try {
+      await supabase.from("product_images").delete().eq("product_id", productId);
+      await supabase.from("product_faqs").delete().eq("product_id", productId);
+      await supabase.from("reviews").delete().eq("product_id", productId);
+      
+      const { data: vars } = await supabase.from("product_variations").select("id").eq("product_id", productId);
+      if (vars && vars.length > 0) {
+        const vIds = vars.map((v: any) => v.id);
+        await supabase.from("product_variation_images").delete().in("variation_id", vIds);
+        await supabase.from("product_variations").delete().eq("product_id", productId);
+      }
+
+      const { data: attrs } = await supabase.from("product_attributes").select("id").eq("product_id", productId);
+      if (attrs && attrs.length > 0) {
+        const aIds = attrs.map((a: any) => a.id);
+        const { data: vals } = await supabase.from("product_attribute_values").select("id").in("attribute_id", aIds);
+        if (vals && vals.length > 0) {
+          const valIds = vals.map((v: any) => v.id);
+          await supabase.from("product_attribute_images").delete().in("attribute_value_id", valIds);
+          await supabase.from("product_attribute_values").delete().in("attribute_id", aIds);
+        }
+        await supabase.from("product_attributes").delete().eq("product_id", productId);
+      }
+    } catch (err) {
+      console.warn("[API admin/products DELETE] Child cleanup warning:", err);
+    }
+
+    // 3. Delete main product record
     const { error: delErr } = await supabase.from("products").delete().eq("id", productId);
 
     if (delErr) {

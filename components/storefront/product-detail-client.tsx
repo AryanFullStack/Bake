@@ -15,34 +15,102 @@ import { ProductReviewsSection } from "./product-reviews-section";
 
 type Tab = "description" | "specifications" | "ingredients" | "care" | "delivery" | "returns" | "reviews" | "faqs";
 
+function normalizeKey(str: string) {
+  return str ? str.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)+/g, "") : "";
+}
+
 function variationMatches(selection: Record<string, string>, variation: ProductVariation) {
-  return Object.entries(selection).every(([key, value]) => variation.attributes?.[key] === value);
+  if (!variation.attributes) return false;
+  const varAttrs = variation.attributes;
+  const varKeys = Object.keys(varAttrs);
+
+  return Object.entries(selection).every(([selKey, selVal]) => {
+    const normSelKey = normalizeKey(selKey);
+    const normSelVal = normalizeKey(selVal);
+
+    const matchingKey = varKeys.find((k) => normalizeKey(k) === normSelKey);
+    if (!matchingKey) return false;
+
+    const varVal = String(varAttrs[matchingKey]);
+    return normalizeKey(varVal) === normSelVal || varVal === selVal;
+  });
 }
 
 function attributeLabel(attribute: ProductAttribute, value: string) {
-  return attribute.values.find((option) => option.slug === value || option.label === value)?.label ?? value;
+  const normVal = normalizeKey(value);
+  const matched = attribute.values.find(
+    (option) => normalizeKey(option.slug) === normVal || normalizeKey(option.label) === normVal
+  );
+  return matched?.label ?? value;
 }
 
 export function ProductDetailClient({ product, reviews, faqs = [] }: { product: Product; reviews: any[]; faqs?: any[] }) {
   const { add } = useCart();
-  const variations = product.variations ?? [];
-  const attributes = product.attributes?.length
-    ? product.attributes
-    : Array.from(new Set(variations.flatMap((variation) => Object.keys(variation.attributes ?? {})))).map((name) => ({
-      name,
-      slug: name.toLowerCase().replace(/[^a-z0-9]+/g, "-"),
-      displayType: name.toLowerCase().includes("color") ? "color" as const : "button" as const,
-      values: Array.from(new Set(variations.map((variation) => variation.attributes?.[name]).filter(Boolean))).map((value) => ({ label: value, slug: value, isActive: true, swatchColor: undefined, swatchImage: undefined })),
-    }));
+  const variations = useMemo(() => product.variations ?? [], [product]);
+
+  const attributes = useMemo(() => {
+    if (product.attributes?.length) return product.attributes;
+
+    const attrMap = new Map<string, Set<string>>();
+    for (const v of variations) {
+      if (!v.attributes) continue;
+      for (const [k, val] of Object.entries(v.attributes)) {
+        if (!val) continue;
+        const normKey = k.trim();
+        if (!attrMap.has(normKey)) {
+          attrMap.set(normKey, new Set());
+        }
+        attrMap.get(normKey)!.add(String(val).trim());
+      }
+    }
+
+    return Array.from(attrMap.entries()).map(([name, valuesSet], index) => {
+      const slug = normalizeKey(name);
+      return {
+        id: `attr-${index}`,
+        name: name,
+        slug: slug,
+        displayType: name.toLowerCase().includes("color") ? ("color" as const) : ("button" as const),
+        values: Array.from(valuesSet).map((val) => ({
+          label: val,
+          slug: normalizeKey(val),
+          isActive: true,
+        })),
+      };
+    });
+  }, [product, variations]);
+
   const [selection, setSelection] = useState<Record<string, string>>({});
   const [quantity, setQuantity] = useState(1);
   const [saved, setSaved] = useState(false);
   const [activeTab, setActiveTab] = useState<Tab>("description");
   const [addedToast, setAddedToast] = useState(false);
+  const [validationError, setValidationError] = useState<string | null>(null);
   const [activeImage, setActiveImage] = useState(0);
   const [zoomOpen, setZoomOpen] = useState(false);
   const [touchStartX, setTouchStartX] = useState<number | null>(null);
   const thumbsRef = useRef<HTMLDivElement>(null);
+
+  // Pre-select first active variation on load
+  useEffect(() => {
+    if (variations.length > 0 && attributes.length > 0 && Object.keys(selection).length === 0) {
+      const firstActive = variations.find((v) => v.status === "active" && v.attributes);
+      if (firstActive && firstActive.attributes) {
+        const initialSel: Record<string, string> = {};
+        for (const attr of attributes) {
+          const matchingKey = Object.keys(firstActive.attributes).find(
+            (k) => normalizeKey(k) === normalizeKey(attr.slug) || normalizeKey(k) === normalizeKey(attr.name)
+          );
+          if (matchingKey) {
+            initialSel[attr.slug] = normalizeKey(String(firstActive.attributes[matchingKey]));
+          }
+        }
+        if (Object.keys(initialSel).length > 0) {
+          setSelection(initialSel);
+        }
+      }
+    }
+  }, [variations, attributes, selection]);
 
   const activeVariation = useMemo(() => {
     if (!variations.length || Object.keys(selection).length !== attributes.length) return null;
@@ -93,11 +161,43 @@ export function ProductDetailClient({ product, reviews, faqs = [] }: { product: 
     } catch { setSaved((current) => !current); }
   }
 
-  function addSelectedToCart() {
-    if (!hasRequiredSelection || !activeVariation && variations.length || isOutOfStock) return;
+  function addSelectedToCart(e?: React.MouseEvent) {
+    if (attributes.length > 0) {
+      const missingAttribute = attributes.find((attr) => !selection[attr.slug]);
+      if (missingAttribute) {
+        if (e) e.preventDefault();
+        setValidationError(`Please select a ${missingAttribute.name} before adding this product to your cart.`);
+        return false;
+      }
+    }
+
+    if (variations.length > 0 && !activeVariation) {
+      if (e) e.preventDefault();
+      setValidationError("Selected combination is unavailable. Please choose another option.");
+      return false;
+    }
+
+    if (isOutOfStock) {
+      if (e) e.preventDefault();
+      setValidationError("Selected product option is currently out of stock.");
+      return false;
+    }
+
+    setValidationError(null);
+
+    const variationAttrValues = activeVariation?.attributes
+      ? Object.entries(activeVariation.attributes)
+          .map(([attrSlug, valSlug]) => {
+            const attrObj = attributes.find((a) => a.slug === attrSlug || a.name.toLowerCase() === attrSlug.toLowerCase());
+            return attrObj ? attributeLabel(attrObj, valSlug) : valSlug;
+          })
+          .join(" · ")
+      : undefined;
+
     const item = activeVariation ? {
       ...product,
-      name: activeTitle,
+      name: product.name,
+      variationTitle: activeTitle !== product.name ? activeTitle : variationAttrValues || activeTitle,
       description: activeDescription,
       price: activeVariation.regularPrice,
       salePrice: activeVariation.salePrice,
@@ -106,9 +206,11 @@ export function ProductDetailClient({ product, reviews, faqs = [] }: { product: 
       variationId: activeVariation.id,
       variationAttributes: activeVariation.attributes,
     } : product;
-    add(item);
+
+    add(item, quantity);
     setAddedToast(true);
-    window.setTimeout(() => setAddedToast(false), 2200);
+    window.setTimeout(() => setAddedToast(false), 2400);
+    return true;
   }
 
   const avgRating = reviews.length ? reviews.reduce((sum, review) => sum + review.rating, 0) / reviews.length : product.rating ?? 0;
@@ -135,9 +237,9 @@ export function ProductDetailClient({ product, reviews, faqs = [] }: { product: 
         <div>
           <div className="flex items-center justify-between gap-4"><p className="eyebrow">{product.category}{product.brand ? ` · ${product.brand}` : ""}</p><button onClick={toggleWishlist} aria-label="Save product" className={`rounded-full border p-3 transition ${saved ? "border-orange bg-orange/10 text-orange" : "border-line bg-white text-navy hover:border-orange hover:text-orange"}`}><Heart size={18} fill={saved ? "currentColor" : "none"} /></button></div>
           <h1 className="mt-3 font-display text-4xl font-bold leading-tight text-navy sm:text-5xl">{activeTitle}</h1>
-          <div className="mt-4 flex flex-wrap items-center gap-3"><span className="flex items-center gap-1.5 rounded-full border border-orange/20 bg-orange/10 px-3 py-1.5 text-xs font-bold text-navy"><Star size={13} fill="currentColor" className="text-orange" /> {avgRating ? avgRating.toFixed(1) : "New"}</span><button onClick={() => setActiveTab("reviews")} className="text-xs font-bold text-muted hover:text-orange">{reviews.length} reviews</button><span className="text-line">•</span>{!hasRequiredSelection ? <span className="text-xs font-bold text-muted">Select options to see availability</span> : isOutOfStock ? <span className="text-xs font-bold text-red-500">Out of stock</span> : isLowStock ? <span className="text-xs font-bold text-amber-600">Only {activeStock} left</span> : <span className="flex items-center gap-1.5 text-xs font-bold text-green"><ShieldCheck size={13} /> In stock</span>}</div>
+          <div className="mt-4 flex flex-wrap items-center gap-3"><span className="flex items-center gap-1.5 rounded-full border border-orange/20 bg-orange/10 px-3 py-1.5 text-xs font-bold text-navy"><Star size={13} fill="currentColor" className="text-orange" /> {avgRating ? avgRating.toFixed(1) : "New"}</span><button onClick={() => setActiveTab("reviews")} className="text-xs font-bold text-muted hover:text-orange">{reviews.length} reviews</button><span className="text-line">•</span>{!hasRequiredSelection ? <span className="text-xs font-bold text-amber-600">Select options to check availability</span> : isOutOfStock ? <span className="text-xs font-bold text-red-500">Out of stock</span> : isLowStock ? <span className="text-xs font-bold text-amber-600">Only {activeStock} left</span> : <span className="flex items-center gap-1.5 text-xs font-bold text-green"><ShieldCheck size={13} /> In stock</span>}</div>
 
-          <div className="mt-6 rounded-2xl border border-line/70 bg-white p-5 shadow-xs"><div className="flex flex-wrap items-baseline gap-3"><span className="font-display text-3xl font-extrabold text-navy">{!hasRequiredSelection && priceRange ? `From ${priceRange}` : formatPKR(activeSalePrice ?? activePrice)}</span>{hasRequiredSelection && activeSalePrice ? <><span className="text-lg font-medium text-muted line-through">{formatPKR(activePrice)}</span>{discountPercent ? <span className="badge badge-sale">Save {discountPercent}%</span> : null}</> : null}</div><p className="mt-1.5 text-xs text-muted">Taxes included · Free delivery on orders over Rs. 2,000</p></div>
+          <div className="mt-6 rounded-2xl border border-line/70 bg-white p-5 shadow-xs"><div className="flex flex-wrap items-baseline gap-3"><span className="font-display text-3xl font-extrabold text-navy">{!hasRequiredSelection && priceRange ? `From ${priceRange}` : formatPKR(activeSalePrice ?? activePrice)}</span>{hasRequiredSelection && activeSalePrice ? <><span className="text-lg font-medium text-muted line-through">{formatPKR(activePrice)}</span>{discountPercent ? <span className="badge badge-sale">Save {discountPercent}%</span> : null}</> : null}</div><p className="mt-1.5 text-xs text-muted">Taxes included · Free delivery on orders over Rs. 3,000</p></div>
 
           {attributes.length > 0 ? (
             <div className="mt-6 grid gap-5">
@@ -146,7 +248,7 @@ export function ProductDetailClient({ product, reviews, faqs = [] }: { product: 
                 {Object.keys(selection).length > 0 && (
                   <button
                     type="button"
-                    onClick={() => setSelection({})}
+                    onClick={() => { setSelection({}); setValidationError(null); }}
                     className="inline-flex items-center gap-1 text-xs font-bold text-orange hover:underline"
                   >
                     <RotateCcw size={12} /> Clear all selections
@@ -165,20 +267,21 @@ export function ProductDetailClient({ product, reviews, faqs = [] }: { product: 
                         </span>
                         <button
                           type="button"
-                          onClick={() =>
+                          onClick={() => {
                             setSelection((current) => {
                               const next = { ...current };
                               delete next[attribute.slug];
                               return next;
-                            })
-                          }
+                            });
+                            setValidationError(null);
+                          }}
                           className="text-[10px] font-semibold text-muted hover:text-red-500"
                         >
                           (Deselect)
                         </button>
                       </div>
                     ) : (
-                      <span className="text-xs font-semibold text-muted">Choose option</span>
+                      <span className="text-xs font-semibold text-amber-600">Choose option *</span>
                     )}
                   </div>
 
@@ -188,9 +291,10 @@ export function ProductDetailClient({ product, reviews, faqs = [] }: { product: 
                       .map((value) => {
                         const selected = selection[attribute.slug] === value.slug;
                         const available = compatibleVariations(attribute.slug, value.slug);
-                        const imageSwatch = value.swatchImage;
+                        const imageSwatch = (value as any).swatchImage;
 
                         const handleOptionClick = () => {
+                          setValidationError(null);
                           setSelection((current) => {
                             if (current[attribute.slug] === value.slug) {
                               const next = { ...current };
@@ -239,7 +343,7 @@ export function ProductDetailClient({ product, reviews, faqs = [] }: { product: 
                             {attribute.displayType === "color" ? (
                               <span
                                 className="h-5 w-5 rounded-full border border-black/15 shadow-xs"
-                                style={{ backgroundColor: value.swatchColor ?? "#e6ddd0" }}
+                                style={{ backgroundColor: (value as any).swatchColor ?? "#e6ddd0" }}
                                 title={value.label}
                               />
                             ) : attribute.displayType === "image" && imageSwatch ? (
@@ -262,7 +366,37 @@ export function ProductDetailClient({ product, reviews, faqs = [] }: { product: 
           ) : null}
 
           <p className="mt-6 text-[15px] font-medium leading-relaxed text-muted">{activeDescription}</p>
-          <div className="mt-7 flex flex-col gap-3"><div className="flex gap-3"><div className="flex items-center rounded-2xl border-2 border-line bg-white px-2 shadow-xs"><button disabled={!hasRequiredSelection || isOutOfStock || quantity <= 1} onClick={() => setQuantity((current) => Math.max(1, current - 1))} className="p-3 text-navy disabled:opacity-30" aria-label="Decrease quantity"><Minus size={15} /></button><span className="w-8 text-center font-extrabold text-navy">{quantity}</span><button disabled={!hasRequiredSelection || isOutOfStock || quantity >= activeStock} onClick={() => setQuantity((current) => Math.min(activeStock, current + 1))} className="p-3 text-navy disabled:opacity-30" aria-label="Increase quantity"><Plus size={15} /></button></div><button disabled={!hasRequiredSelection || isOutOfStock} onClick={addSelectedToCart} className="button-primary flex-1 disabled:cursor-not-allowed disabled:opacity-50">{addedToast ? <><Check size={17} /> Added to basket</> : <><Plus size={17} /> Add to basket</>}</button><button onClick={() => navigator.share?.({ title: activeTitle, url: window.location.href })} className="button-secondary px-3" aria-label="Share product"><Share2 size={17} /></button></div><Link href="/checkout" onClick={addSelectedToCart} className={`button-secondary w-full ${!hasRequiredSelection || isOutOfStock ? "pointer-events-none opacity-50" : ""}`}><Sparkles size={15} /> Buy now · Express checkout <ArrowRight size={15} /></Link></div>
+
+          {validationError && (
+            <div className="mt-4 rounded-xl border border-red-200 bg-red-50 p-4 text-xs font-bold text-red-700 shadow-xs flex items-center gap-2">
+              <Info size={16} className="shrink-0 text-red-600" />
+              <span>{validationError}</span>
+            </div>
+          )}
+
+          <div className="mt-7 flex flex-col gap-3">
+            <div className="flex gap-3">
+              <div className="flex items-center rounded-2xl border-2 border-line bg-white px-2 shadow-xs">
+                <button disabled={isOutOfStock || quantity <= 1} onClick={() => setQuantity((current) => Math.max(1, current - 1))} className="p-3 text-navy disabled:opacity-30" aria-label="Decrease quantity"><Minus size={15} /></button>
+                <span className="w-8 text-center font-extrabold text-navy">{quantity}</span>
+                <button disabled={isOutOfStock || (hasRequiredSelection && quantity >= activeStock)} onClick={() => setQuantity((current) => Math.min(activeStock, current + 1))} className="p-3 text-navy disabled:opacity-30" aria-label="Increase quantity"><Plus size={15} /></button>
+              </div>
+              <button onClick={(e) => addSelectedToCart(e)} className="button-primary flex-1">
+                {addedToast ? <><Check size={17} /> Added to basket</> : <><Plus size={17} /> Add to basket</>}
+              </button>
+              <button onClick={() => navigator.share?.({ title: activeTitle, url: window.location.href })} className="button-secondary px-3" aria-label="Share product"><Share2 size={17} /></button>
+            </div>
+            <Link
+              href="/checkout"
+              onClick={(e) => {
+                const ok = addSelectedToCart(e);
+                if (!ok) e.preventDefault();
+              }}
+              className="button-secondary w-full"
+            >
+              <Sparkles size={15} /> Buy now · Express checkout <ArrowRight size={15} />
+            </Link>
+          </div>
           {addedToast ? <div className="mt-3 flex items-center gap-3 rounded-xl border border-green/25 bg-green-light p-3.5 text-xs font-bold text-green"><Check size={15} /> Added {quantity} × {activeTitle}<Link href="/cart" className="ml-auto underline">View basket →</Link></div> : null}
           <div className="mt-7 grid grid-cols-3 gap-3 border-t border-line/60 pt-6">{[{ icon: Truck, label: "Same-day delivery", sub: "Order before 1 PM" }, { icon: ShieldCheck, label: "Secure checkout", sub: "SSL encrypted" }, { icon: RotateCcw, label: "Easy returns", sub: "Within 24 hours" }].map(({ icon: Icon, label, sub }) => <div key={label} className="flex flex-col items-center gap-1.5 rounded-xl bg-cream-deep/60 p-3 text-center"><Icon size={18} className="text-orange" /><span className="text-[11px] font-bold leading-tight text-navy">{label}</span><span className="text-[10px] text-muted">{sub}</span></div>)}</div><p className="mt-4 flex items-center gap-2 text-xs text-muted"><Package size={12} /><strong className="text-navy">SKU:</strong> {activeSku ?? "Assigned after selection"}</p>
         </div>
@@ -273,4 +407,5 @@ export function ProductDetailClient({ product, reviews, faqs = [] }: { product: 
       {zoomOpen ? <div className="modal-overlay" onClick={() => setZoomOpen(false)}><div className="relative w-full max-w-4xl" onClick={(event) => event.stopPropagation()}><button onClick={() => setZoomOpen(false)} className="absolute -top-12 right-0 rounded-full bg-white/20 p-2 text-white" aria-label="Close zoom"><X size={20} /></button><div className="relative aspect-square w-full overflow-hidden rounded-3xl"><Image src={activeImages[activeImage] ?? product.image} alt={activeTitle} fill sizes="90vw" className="object-contain" /></div></div></div> : null}
     </div>
   );
+
 }

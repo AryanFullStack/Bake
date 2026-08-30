@@ -13,21 +13,44 @@ export async function GET(
 
   const { id } = await params;
   const supabase = await createSupabaseServerClient();
+  const dbClient = createSupabaseAdminClient() ?? supabase;
 
-  const { data: order, error } = await supabase
+  const { data: rawOrder, error } = await dbClient
     .from("orders")
-    .select("*, order_items(*), payments(*), order_status_history(*, profiles(full_name, role)), couriers(*)")
+    .select("*, order_items(*), payments(*), order_status_history(*), couriers(*)")
     .eq("id", id)
     .single();
 
-  if (error || !order) {
+  if (error || !rawOrder) {
     return NextResponse.json({ error: "Order not found" }, { status: 404 });
+  }
+
+  let order = { ...rawOrder };
+  if (order.order_status_history && order.order_status_history.length > 0) {
+    const changedByIds = Array.from(
+      new Set(
+        order.order_status_history
+          .map((h: any) => h.changed_by)
+          .filter(Boolean)
+      )
+    );
+    if (changedByIds.length > 0) {
+      const { data: profileRows } = await dbClient
+        .from("profiles")
+        .select("id, full_name, role")
+        .in("id", changedByIds);
+      const profileMap = new Map((profileRows || []).map((p: any) => [p.id, p]));
+      order.order_status_history = order.order_status_history.map((h: any) => ({
+        ...h,
+        profiles: h.changed_by ? profileMap.get(h.changed_by) || null : null,
+      }));
+    }
   }
 
   // Fetch customer lifetime stats if customer is linked or has phone
   let customerStats = { total_orders: 1, total_spent: Number(order.total), latest_order_date: order.created_at };
   if (order.user_id || order.customer_phone) {
-    let statsQuery = supabase.from("orders").select("id, total, created_at");
+    let statsQuery = dbClient.from("orders").select("id, total, created_at");
     if (order.user_id) {
       statsQuery = statsQuery.eq("user_id", order.user_id);
     } else {

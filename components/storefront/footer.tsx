@@ -11,7 +11,7 @@ export function Footer() {
   const pathname = usePathname();
   if (pathname.startsWith("/admin")) return null;
   return (
-    <footer className="mt-20 bg-navy pb-24 pt-14 text-white md:pb-8 md:pt-16">
+    <footer className="mt-12 md:mt-20 bg-navy pb-28 pt-14 text-white md:pb-12 md:pt-16">
       <div className="container-shell border-b border-white/10 pb-12">
         <div className="grid gap-10 md:grid-cols-[1.4fr_1fr_1fr_1fr] lg:gap-8">
 

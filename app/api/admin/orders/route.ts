@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { assertAdminApi } from "@/lib/auth";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 
 export async function GET(request: Request) {
   const admin = await assertAdminApi();
@@ -19,50 +20,58 @@ export async function GET(request: Request) {
   const limit = Math.min(100, Math.max(1, parseInt(searchParams.get("limit") || "25", 10)));
 
   const supabase = await createSupabaseServerClient();
+  const adminClient = createSupabaseAdminClient();
+  const dbClient = adminClient ?? supabase;
 
   // 1. Calculate overall stats across all orders in database
-  const { data: allOrdersForStats } = await supabase
+  const { data: allOrdersForStats, error: statsErr } = await dbClient
     .from("orders")
-    .select("id, total, status, payment_method, created_at, payments(status)");
+    .select("id, total, subtotal, delivery_fee, discount, status, payment_method, created_at, payments(status)");
+
+  if (statsErr) {
+    console.error("[Admin Orders API] Stats query error:", statsErr);
+  }
 
   const now = new Date();
-  const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString();
+  const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0);
 
   let totalOrdersCount = 0;
   let todayOrdersCount = 0;
   let totalSalesAmount = 0;
   let todaySalesAmount = 0;
   let pendingOrdersCount = 0;
-  let confirmedOrdersCount = 0;
   let processingOrdersCount = 0;
+  let readyOrdersCount = 0;
   let shippedOrdersCount = 0;
   let deliveredOrdersCount = 0;
   let cancelledOrdersCount = 0;
-  let returnedOrdersCount = 0;
   let pendingPaymentsCount = 0;
+  let refundedAmount = 0;
 
-  if (allOrdersForStats) {
+  if (allOrdersForStats && allOrdersForStats.length > 0) {
     totalOrdersCount = allOrdersForStats.length;
     for (const ord of allOrdersForStats) {
       const ordTotal = Number(ord.total || 0);
       const isLive = !["cancelled", "returned"].includes(ord.status);
-      const isToday = ord.created_at >= startOfToday;
+      const ordDate = new Date(ord.created_at);
+      const isToday = ordDate >= startOfToday;
 
       if (isToday) todayOrdersCount++;
       if (isLive) {
         totalSalesAmount += ordTotal;
         if (isToday) todaySalesAmount += ordTotal;
+      } else {
+        refundedAmount += ordTotal;
       }
 
       if (["placed", "confirmed", "processing", "baking", "ready"].includes(ord.status)) pendingOrdersCount++;
-      if (ord.status === "confirmed") confirmedOrdersCount++;
-      if (["processing", "baking", "ready"].includes(ord.status)) processingOrdersCount++;
+      if (["processing", "baking"].includes(ord.status)) processingOrdersCount++;
+      if (ord.status === "ready") readyOrdersCount++;
       if (ord.status === "out_for_delivery") shippedOrdersCount++;
       if (ord.status === "delivered") deliveredOrdersCount++;
-      if (ord.status === "cancelled") cancelledOrdersCount++;
-      if (ord.status === "returned") returnedOrdersCount++;
+      if (ord.status === "cancelled" || ord.status === "returned") cancelledOrdersCount++;
 
-      const pStatus = ord.payments?.[0]?.status;
+      const pStatus = Array.isArray(ord.payments) ? ord.payments[0]?.status : (ord.payments as any)?.status;
       if (pStatus === "pending" || pStatus === "pending_verification") {
         pendingPaymentsCount++;
       }
@@ -72,9 +81,10 @@ export async function GET(request: Request) {
   const averageOrderValue = totalOrdersCount > 0 ? Math.round(totalSalesAmount / totalOrdersCount) : 0;
 
   // 2. Build filtered query for table display
-  let query = supabase
+  // 2. Build filtered query for table display
+  let query = dbClient
     .from("orders")
-    .select("*, order_items(*), payments(*), order_status_history(*, profiles(full_name, role)), couriers(*)", { count: "exact" });
+    .select("*, order_items(*), payments(*), order_status_history(*), couriers(*)", { count: "exact" });
 
   if (search) {
     query = query.or(
@@ -97,10 +107,10 @@ export async function GET(request: Request) {
   }
 
   if (dateRange === "today") {
-    query = query.gte("created_at", startOfToday);
+    query = query.gte("created_at", startOfToday.toISOString());
   } else if (dateRange === "yesterday") {
-    const yesterday = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1).toISOString();
-    query = query.gte("created_at", yesterday).lt("created_at", startOfToday);
+    const yesterday = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1, 0, 0, 0, 0).toISOString();
+    query = query.gte("created_at", yesterday).lt("created_at", startOfToday.toISOString());
   } else if (dateRange === "last_7_days") {
     const last7 = new Date(now.valueOf() - 7 * 24 * 60 * 60 * 1000).toISOString();
     query = query.gte("created_at", last7);
@@ -129,7 +139,39 @@ export async function GET(request: Request) {
   // Post-filter payment status if filter specified
   let orders = rawOrders ?? [];
   if (paymentStatus !== "all") {
-    orders = orders.filter((o: any) => o.payments?.[0]?.status === paymentStatus);
+    orders = orders.filter((o: any) => {
+      const pStat = Array.isArray(o.payments) ? o.payments[0]?.status : o.payments?.status;
+      return pStat === paymentStatus;
+    });
+  }
+
+  // Populate profiles for order_status_history entries
+  if (orders.length > 0) {
+    const changedByIds = Array.from(
+      new Set(
+        orders
+          .flatMap((o: any) => o.order_status_history || [])
+          .map((h: any) => h.changed_by)
+          .filter(Boolean)
+      )
+    );
+
+    if (changedByIds.length > 0) {
+      const { data: profileRows } = await dbClient
+        .from("profiles")
+        .select("id, full_name, role")
+        .in("id", changedByIds);
+
+      const profileMap = new Map((profileRows || []).map((p: any) => [p.id, p]));
+
+      orders = orders.map((ord: any) => ({
+        ...ord,
+        order_status_history: (ord.order_status_history || []).map((h: any) => ({
+          ...h,
+          profiles: h.changed_by ? profileMap.get(h.changed_by) || null : null,
+        })),
+      }));
+    }
   }
 
   return NextResponse.json({
@@ -143,13 +185,13 @@ export async function GET(request: Request) {
       total_sales: totalSalesAmount,
       today_sales: todaySalesAmount,
       pending_orders: pendingOrdersCount,
-      confirmed_orders: confirmedOrdersCount,
       processing_orders: processingOrdersCount,
+      ready_orders: readyOrdersCount,
       shipped_orders: shippedOrdersCount,
       delivered_orders: deliveredOrdersCount,
       cancelled_orders: cancelledOrdersCount,
-      returned_orders: returnedOrdersCount,
       pending_payments: pendingPaymentsCount,
+      refunded_amount: refundedAmount,
       average_order_value: averageOrderValue,
     },
   });
@@ -170,16 +212,18 @@ export async function PATCH(request: Request) {
 
   try {
     const body = await request.json();
+    const supabase = await createSupabaseServerClient();
+    const adminClient = createSupabaseAdminClient();
+    const dbClient = adminClient ?? supabase;
 
-    // If single order update payload passed (legacy support)
+    // Single order update payload
     if (body.id && !body.action) {
-      const supabase = await createSupabaseServerClient();
-      const { data: order } = await supabase.from("orders").select("status").eq("id", body.id).single();
+      const { data: order } = await dbClient.from("orders").select("status").eq("id", body.id).single();
       if (!order) return NextResponse.json({ error: "Order not found" }, { status: 404 });
 
       if (body.status && body.status !== order.status) {
-        await supabase.from("orders").update({ status: body.status }).eq("id", body.id);
-        await supabase.from("order_status_history").insert({
+        await dbClient.from("orders").update({ status: body.status }).eq("id", body.id);
+        await dbClient.from("order_status_history").insert({
           order_id: body.id,
           old_status: order.status,
           new_status: body.status,
@@ -188,7 +232,7 @@ export async function PATCH(request: Request) {
         });
       }
       if (body.payment_status) {
-        await supabase.from("payments").update({
+        await dbClient.from("payments").update({
           status: body.payment_status,
           verified_by: body.payment_status === "paid" ? admin.user.id : null,
           verified_at: body.payment_status === "paid" ? new Date().toISOString() : null,
@@ -201,14 +245,12 @@ export async function PATCH(request: Request) {
     const parsed = bulkActionSchema.safeParse(body);
     if (!parsed.success) return NextResponse.json({ error: "Invalid bulk update" }, { status: 400 });
 
-    const supabase = await createSupabaseServerClient();
-
     if (parsed.data.action === "bulk_status" && parsed.data.status) {
       for (const orderId of parsed.data.order_ids) {
-        const { data: current } = await supabase.from("orders").select("status").eq("id", orderId).single();
+        const { data: current } = await dbClient.from("orders").select("status").eq("id", orderId).single();
         if (current) {
-          await supabase.from("orders").update({ status: parsed.data.status }).eq("id", orderId);
-          await supabase.from("order_status_history").insert({
+          await dbClient.from("orders").update({ status: parsed.data.status }).eq("id", orderId);
+          await dbClient.from("order_status_history").insert({
             order_id: orderId,
             old_status: current.status,
             new_status: parsed.data.status,
@@ -218,13 +260,13 @@ export async function PATCH(request: Request) {
         }
       }
     } else if (parsed.data.action === "bulk_courier" && parsed.data.courier_id) {
-      const { data: courier } = await supabase.from("couriers").select("name").eq("id", parsed.data.courier_id).single();
-      await supabase.from("orders").update({
+      const { data: courier } = await dbClient.from("couriers").select("name").eq("id", parsed.data.courier_id).single();
+      await dbClient.from("orders").update({
         courier_id: parsed.data.courier_id,
         courier_name: courier?.name || null,
       }).in("id", parsed.data.order_ids);
     } else if (parsed.data.action === "bulk_payment_status" && parsed.data.payment_status) {
-      await supabase.from("payments").update({
+      await dbClient.from("payments").update({
         status: parsed.data.payment_status,
         verified_by: parsed.data.payment_status === "paid" ? admin.user.id : null,
         verified_at: parsed.data.payment_status === "paid" ? new Date().toISOString() : null,

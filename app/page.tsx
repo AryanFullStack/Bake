@@ -272,36 +272,7 @@ const SHOP_BY_CATEGORIES = [
   },
 ];
 
-const FEATURED_SHOWCASE_CARDS = [
-  {
-    category: "Fresh Bakery",
-    subtitle: "Cakes & Pastries",
-    image: "/cakechake.jpg",
-    href: "/shop?category=bakery",
-    accentTag: "text-orange",
-  },
-  {
-    category: "Home Décor",
-    subtitle: "Vases & Living",
-    image: "/homeItems.jfif",
-    href: "/shop?category=home-decor",
-    accentTag: "text-green",
-  },
-  {
-    category: "Kitchen",
-    subtitle: "Essentials & Storage",
-    image: "/kicthens.jpg",
-    href: "/shop?category=kitchen",
-    accentTag: "text-blue-400",
-  },
-  {
-    category: "Watches",
-    subtitle: "Classic & Modern",
-    image: "https://images.unsplash.com/photo-1523275335684-37898b6baf30?auto=format&fit=crop&w=800&q=80",
-    href: "/shop?category=watches",
-    accentTag: "text-purple-300",
-  },
-];
+
 
 /* ── Stars helper ─────────────────────────────────────────── */
 function Stars({ rating = 5 }: { rating?: number }) {
@@ -415,38 +386,6 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* ── 5. Featured Category Showcase (4-Card Visual Strip) ───── */}
-      <section className="container-shell pb-14 md:pb-20">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
-          {FEATURED_SHOWCASE_CARDS.map((card) => (
-            <Link
-              key={card.category}
-              href={card.href}
-              className="group relative aspect-[1.25] sm:aspect-[1.1] overflow-hidden rounded-3xl border border-line bg-white shadow-xs transition-all duration-500 hover:-translate-y-1 hover:shadow-lg"
-            >
-              <Image
-                src={card.image}
-                alt={card.category}
-                fill
-                sizes="(max-width: 640px) 100vw, 25vw"
-                className="object-cover transition-transform duration-700 group-hover:scale-105"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-navy/85 via-navy/30 to-transparent" />
-              <div className="absolute bottom-4 left-4 right-4 flex items-end justify-between">
-                <div>
-                  <span className={`text-[10px] font-extrabold uppercase tracking-widest ${card.accentTag}`}>
-                    {card.category}
-                  </span>
-                  <h3 className="text-sm sm:text-base font-bold text-white mt-0.5">{card.subtitle}</h3>
-                </div>
-                <span className="grid h-8 w-8 place-items-center rounded-full bg-white/20 text-white backdrop-blur-xs group-hover:bg-orange group-hover:text-white transition-all">
-                  <ArrowRight size={14} />
-                </span>
-              </div>
-            </Link>
-          ))}
-        </div>
-      </section>
 
       {/* ── 6. Bakery + Custom Cake Studio Signature Split Layout ─── */}
       <section className="relative overflow-hidden bg-navy text-white py-16 md:py-24">
@@ -463,7 +402,7 @@ export default async function HomePage() {
             <div className="flex flex-col justify-between rounded-3xl border border-white/15 bg-white/5 p-6 sm:p-8 backdrop-blur-md overflow-hidden shadow-xl hover:border-white/25 transition-all">
               <div>
                 {/* Bakery Image Banner */}
-                <div className="relative aspect-[1.6] w-full overflow-hidden rounded-2xl mb-6 shadow-md">
+                <div className="relative aspect-[1.6] w-full overflow-hidden rounded-2xl mb-6 shadow-md bg-navy-dark">
                   <Image
                     src="/cake.jpg"
                     alt="Freshly baked cakes and pastries"
@@ -478,7 +417,7 @@ export default async function HomePage() {
                 </div>
 
                 <span className="eyebrow text-orange">Fresh Bakery</span>
-                <h2 className="mt-2 font-display text-2xl sm:text-3xl font-bold leading-tight">
+                <h2 className="mt-2 font-display text-2xl sm:text-3xl font-bold leading-tight text-white">
                   Freshly Baked Daily.
                 </h2>
                 <p className="mt-3 text-xs sm:text-sm leading-relaxed text-white/75">
@@ -510,15 +449,28 @@ export default async function HomePage() {
             {/* Right — Custom Cake Studio Card with Image */}
             <div className="flex flex-col justify-between rounded-3xl border border-orange/30 bg-orange/10 p-6 sm:p-8 backdrop-blur-md overflow-hidden shadow-xl hover:border-orange/50 transition-all">
               <div>
-                {/* Custom Cake Image Banner */}
-                <div className="relative aspect-[1.6] w-full overflow-hidden rounded-2xl mb-6 shadow-md">
-                  <Image
-                    src="/custoemcake2.png"
-                    alt="Custom celebration cake finished in frosting"
-                    fill
-                    sizes="(max-width: 768px) 100vw, 50vw"
-                    className="object-cover transition-transform duration-700 hover:scale-105"
-                  />
+                {/* Custom Cake Image Banner (Desktop: /custoemcake2.png, Mobile: /CakeM.png) */}
+                <div className="relative aspect-[1.6] w-full overflow-hidden rounded-2xl mb-6 shadow-md bg-navy-dark">
+                  {/* Desktop Image (≥768px) */}
+                  <div className="hidden md:block absolute inset-0 w-full h-full">
+                    <Image
+                      src="/custoemcake2.png"
+                      alt="Custom celebration cake finished in frosting"
+                      fill
+                      sizes="50vw"
+                      className="object-cover transition-transform duration-700 hover:scale-105"
+                    />
+                  </div>
+                  {/* Mobile Image (<768px) — /CakeM.png */}
+                  <div className="md:hidden absolute inset-0 w-full h-full">
+                    <Image
+                      src="/CakeM.png"
+                      alt="Custom celebration cake mobile visual"
+                      fill
+                      sizes="100vw"
+                      className="object-cover object-center transition-transform duration-700 hover:scale-105"
+                    />
+                  </div>
                   <div className="absolute inset-0 bg-gradient-to-t from-navy/80 via-transparent to-transparent" />
                   <span className="absolute bottom-3 left-3 inline-flex items-center gap-1.5 rounded-full border border-orange/40 bg-orange/90 px-3 py-1 text-[11px] font-bold text-white backdrop-blur-xs">
                     <Sparkles size={13} /> Custom Decorator Studio
@@ -583,7 +535,7 @@ export default async function HomePage() {
           </Link>
         </div>
 
-        <div className="grid grid-cols-2 gap-4 sm:gap-5 lg:grid-cols-3 xl:grid-cols-6">
+        <div className="grid grid-cols-2 gap-2.5 sm:gap-5 lg:grid-cols-3 xl:grid-cols-6">
           {mostLoved.map((product, i) => (
             <div key={product.id} className="animate-slide-up" style={{ animationDelay: `${i * 0.06}s` }}>
               <ProductCard product={product} />
@@ -613,7 +565,7 @@ export default async function HomePage() {
             <DealsCountdown />
           </div>
 
-          <div className="grid grid-cols-2 gap-4 sm:gap-5 lg:grid-cols-4">
+          <div className="grid grid-cols-2 gap-2.5 sm:gap-5 lg:grid-cols-4">
             {dealProducts.map((product, i) => (
               <div key={product.id} className="animate-slide-up" style={{ animationDelay: `${i * 0.08}s` }}>
                 <ProductCard product={product} />
@@ -651,7 +603,7 @@ export default async function HomePage() {
           </Link>
         </div>
 
-        <div className="grid grid-cols-2 gap-4 sm:gap-5 lg:grid-cols-4">
+        <div className="grid grid-cols-2 gap-2.5 sm:gap-5 lg:grid-cols-4">
           {newArrivals.map((product, i) => (
             <div key={product.id} className="animate-fade-in" style={{ animationDelay: `${i * 0.07}s` }}>
               <ProductCard product={product} />

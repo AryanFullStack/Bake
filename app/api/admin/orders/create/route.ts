@@ -120,7 +120,25 @@ export async function POST(request: Request) {
       courierName = c?.name ?? null;
     }
 
-    // 1. Create order
+    // Try database RPC for atomic transactional order creation
+    const { data: rpcOrderNumber, error: rpcErr } = await supabase.rpc("create_admin_order", {
+      p_customer: parsed.data.customer,
+      p_items: parsed.data.items,
+      p_payment_method: parsed.data.payment_method,
+      p_payment_status: parsed.data.payment_status,
+      p_discount: discount,
+      p_delivery_fee: deliveryFee,
+      p_courier_id: parsed.data.courier_id || null,
+      p_tracking_number: parsed.data.tracking_number || null,
+      p_admin_notes: parsed.data.admin_notes || null,
+      p_created_by: admin.user.id,
+    });
+
+    if (!rpcErr && rpcOrderNumber) {
+      return NextResponse.json({ ok: true, order_number: rpcOrderNumber });
+    }
+
+    // Fallback with explicit rollback if RPC is unavailable
     const { data: order, error: orderErr } = await dbClient
       .from("orders")
       .insert({
@@ -152,64 +170,68 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: orderErr?.message || "Failed to create order" }, { status: 400 });
     }
 
-    // 2. Create order items & adjust stock
-    for (const item of validatedItems) {
-      await dbClient.from("order_items").insert({
-        order_id: order.id,
-        product_id: item.product_id,
-        variation_id: item.variation_id,
-        variation_attributes: item.variation_attributes,
-        variation_title: item.variation_title,
-        image_path: item.image_path,
-        product_name: item.product_name,
-        sku: item.sku,
-        unit_price: item.unit_price,
-        quantity: item.quantity,
-        line_total: item.line_total,
-      });
+    try {
+      for (const item of validatedItems) {
+        const { error: itemErr } = await dbClient.from("order_items").insert({
+          order_id: order.id,
+          product_id: item.product_id,
+          variation_id: item.variation_id,
+          variation_attributes: item.variation_attributes,
+          variation_title: item.variation_title,
+          image_path: item.image_path,
+          product_name: item.product_name,
+          sku: item.sku,
+          unit_price: item.unit_price,
+          quantity: item.quantity,
+          line_total: item.line_total,
+        });
 
-      if (item.product_id) {
-        if (item.is_variable && item.variation_id) {
-          const { data: v } = await dbClient.from("product_variations").select("stock_quantity").eq("id", item.variation_id).single();
-          if (v) {
-            await dbClient.from("product_variations").update({ stock_quantity: Math.max(0, (v.stock_quantity ?? 0) - item.quantity) }).eq("id", item.variation_id);
-          }
-        } else {
-          const { data: p } = await dbClient.from("products").select("stock_quantity").eq("id", item.product_id).single();
-          if (p) {
-            await dbClient.from("products").update({ stock_quantity: Math.max(0, (p.stock_quantity ?? 0) - item.quantity) }).eq("id", item.product_id);
+        if (itemErr) throw new Error(`Item insert failed: ${itemErr.message}`);
+
+        if (item.product_id) {
+          if (item.is_variable && item.variation_id) {
+            const { data: v } = await dbClient.from("product_variations").select("stock_quantity").eq("id", item.variation_id).single();
+            if (v) {
+              await dbClient.from("product_variations").update({ stock_quantity: Math.max(0, (v.stock_quantity ?? 0) - item.quantity) }).eq("id", item.variation_id);
+            }
+          } else {
+            const { data: p } = await dbClient.from("products").select("stock_quantity").eq("id", item.product_id).single();
+            if (p) {
+              await dbClient.from("products").update({ stock_quantity: Math.max(0, (p.stock_quantity ?? 0) - item.quantity) }).eq("id", item.product_id);
+            }
           }
         }
       }
+
+      await dbClient.from("payments").insert({
+        order_id: order.id,
+        method: parsed.data.payment_method,
+        status: parsed.data.payment_status,
+        verified_by: parsed.data.payment_status === "paid" ? admin.user.id : null,
+        verified_at: parsed.data.payment_status === "paid" ? new Date().toISOString() : null,
+      });
+
+      await dbClient.from("order_status_history").insert({
+        order_id: order.id,
+        new_status: "placed",
+        note: "Order manually created by staff",
+        changed_by: admin.user.id,
+      });
+
+      await dbClient.from("admin_activity_logs").insert({
+        actor_id: admin.user.id,
+        action: "create_manual_order",
+        entity_type: "order",
+        entity_id: order.id,
+        metadata: { order_number: orderNumber, total, customer_name: parsed.data.customer.full_name },
+      });
+
+      return NextResponse.json({ ok: true, id: order.id, order_number: orderNumber });
+    } catch (itemException: any) {
+      // Rollback orphaned order header to prevent 0-item order records
+      await dbClient.from("orders").delete().eq("id", order.id);
+      return NextResponse.json({ error: itemException?.message || "Order item insertion failed. Order rolled back." }, { status: 400 });
     }
-
-    // 3. Create payment record
-    await dbClient.from("payments").insert({
-      order_id: order.id,
-      method: parsed.data.payment_method,
-      status: parsed.data.payment_status,
-      verified_by: parsed.data.payment_status === "paid" ? admin.user.id : null,
-      verified_at: parsed.data.payment_status === "paid" ? new Date().toISOString() : null,
-    });
-
-    // 4. Create initial status history entry
-    await dbClient.from("order_status_history").insert({
-      order_id: order.id,
-      new_status: "placed",
-      note: "Order manually created by staff",
-      changed_by: admin.user.id,
-    });
-
-    // 5. Record admin activity log
-    await dbClient.from("admin_activity_logs").insert({
-      actor_id: admin.user.id,
-      action: "create_manual_order",
-      entity_type: "order",
-      entity_id: order.id,
-      metadata: { order_number: orderNumber, total, customer_name: parsed.data.customer.full_name },
-    });
-
-    return NextResponse.json({ ok: true, id: order.id, order_number: orderNumber });
   } catch (err: any) {
     return NextResponse.json({ error: err?.message || "Failed to create order" }, { status: 500 });
   }

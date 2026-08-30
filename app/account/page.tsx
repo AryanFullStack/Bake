@@ -12,8 +12,9 @@ export default async function AccountPage() {
     data: { user },
   } = await supabase.auth.getUser();
 
-  // Fetch profile role
+  // Fetch profile role if user is logged in
   let isAdmin = false;
+
   if (user) {
     const { data: profile } = await supabase
       .from("profiles")
@@ -59,7 +60,7 @@ export default async function AccountPage() {
           <form action={handleSignOut}>
             <button
               type="submit"
-              className="inline-flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-5 py-3 text-xs font-extrabold text-red-600 transition-colors hover:bg-red-100 shadow-xs"
+              className="inline-flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-5 py-3 text-xs font-extrabold text-red-600 transition-colors hover:bg-red-100 shadow-xs cursor-pointer"
             >
               <LogOut size={16} /> Sign Out
             </button>
@@ -104,7 +105,7 @@ export default async function AccountPage() {
         <AccountCard
           href="/account/addresses"
           icon={<MapPin size={24} />}
-          title="Saved Addresses"
+          title="My Address"
           description="Manage delivery locations"
         />
         {!user ? (
@@ -123,6 +124,8 @@ export default async function AccountPage() {
           />
         )}
       </div>
+
+
 
       {/* Custom Cake Banner */}
       <div className="mt-10 grid overflow-hidden rounded-[32px] bg-gradient-to-r from-navy via-navy to-navy-light p-8 sm:p-10 text-white shadow-xl">

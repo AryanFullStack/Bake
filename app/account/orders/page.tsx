@@ -20,7 +20,7 @@ export default async function OrdersPage() {
   const supabase = await createSupabaseServerClient();
   const { data: orders } = await supabase
     .from("orders")
-    .select("id, order_number, total, status, created_at, order_items(product_id, product_name, quantity, products(slug))")
+    .select("id, order_number, total, status, created_at, order_items(product_id, product_name, quantity, products!left(slug))")
     .eq("user_id", user.id)
     .order("created_at", { ascending: false })
     .limit(100);
@@ -60,10 +60,17 @@ export default async function OrdersPage() {
                     <p className="font-display text-xl font-bold text-navy">{formatPKR(order.total)}</p>
                     <div className="mt-2 flex items-center gap-3 justify-start sm:justify-end">
                       <Link
+                        href={`/account/orders/${order.id}`}
+                        className="inline-flex items-center gap-1 text-xs font-bold text-orange hover:underline"
+                      >
+                        View Order Details →
+                      </Link>
+                      <span className="text-line">•</span>
+                      <Link
                         href={`/track-order?order=${order.order_number}`}
                         className="inline-flex items-center gap-1 text-xs font-bold text-navy hover:text-orange"
                       >
-                        Track Order <ArrowRight size={13} />
+                        Track <ArrowRight size={13} />
                       </Link>
                     </div>
                   </div>

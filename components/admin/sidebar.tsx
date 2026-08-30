@@ -15,6 +15,7 @@ const navGroups = [
     items: [
       { label: "Dashboard", href: "/admin", icon: LayoutDashboard, exact: true },
       { label: "Orders", href: "/admin/orders", icon: ShoppingBag },
+      { label: "Reports", href: "/admin/reports", icon: BarChart3 },
     ],
   },
   {

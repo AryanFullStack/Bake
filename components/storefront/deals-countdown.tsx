@@ -33,7 +33,7 @@ export function DealsCountdown() {
 
   return (
     <div className="flex flex-col items-start md:items-end gap-1">
-      <p className="flex items-center gap-1.5 text-xs font-bold text-muted mb-2">
+      <p className="flex items-center gap-1.5 text-xs font-extrabold uppercase tracking-widest text-orange mb-1.5">
         <Clock size={13} className="text-orange" />
         Deals reset in
       </p>
@@ -45,11 +45,11 @@ export function DealsCountdown() {
         ].map(({ val, label }, i) => (
           <div key={label} className="flex items-center gap-2">
             <div className="countdown-digit">
-              <span className="countdown-number">{pad(val)}</span>
-              <span className="countdown-label">{label}</span>
+              <span className="countdown-number bg-white/10 text-orange border border-white/20 backdrop-blur-md">{pad(val)}</span>
+              <span className="countdown-label text-white/60">{label}</span>
             </div>
             {i < 2 && (
-              <span className="mb-5 text-2xl font-black text-navy/40">:</span>
+              <span className="mb-5 text-xl font-black text-white/40">:</span>
             )}
           </div>
         ))}

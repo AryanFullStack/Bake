@@ -88,7 +88,7 @@ export async function getProducts(options: { featured?: boolean; bestseller?: bo
   let query = supabase
     .from("products")
     .select("id,slug,sku,name,description,price,sale_price,stock_quantity,low_stock_threshold,is_published,is_featured,is_bestseller,seo_title,seo_description,tags,category_id,brand_id,featured_image,product_type,categories:category_id(name,slug),brands(name,slug),product_images(storage_path,alt_text,sort_order)")
-    .eq("is_published", true)
+    .or("is_published.eq.true,is_published.is.null,status.eq.published")
     .order("created_at", { ascending: false })
     .limit(options.limit ?? 48);
   if (options.featured) query = query.eq("is_featured", true);
@@ -113,44 +113,83 @@ export async function getProducts(options: { featured?: boolean; bestseller?: bo
 export async function getProductBySlug(slug: string) {
   if (!configured()) return null;
   const supabase = await createSupabaseServerClient();
-  const { data: row, error } = await supabase
+  
+  const rawSlug = decodeURIComponent(slug).trim();
+  const slugified = rawSlug.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)+/g, "");
+  const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(rawSlug);
+
+  // Step 1: Find the product record efficiently and flexibly
+  let productQuery = supabase
     .from("products")
-    .select("id,slug,sku,name,description,short_description,specifications,ingredients,care_instructions,delivery_information,return_policy,price,sale_price,stock_quantity,low_stock_threshold,is_published,is_featured,is_bestseller,seo_title,seo_description,tags,category_id,brand_id,featured_image,product_type,categories:category_id(name,slug),brands(name,slug),product_images(storage_path,alt_text,sort_order),product_attributes(id,name,slug,display_type,sort_order,is_required,controls_images,product_attribute_values(id,label,slug,sort_order,swatch_color,swatch_image,is_active,product_attribute_images(id,storage_path,sort_order,product_image_id))),product_variations(id,combination_key,name,title,description,sku,barcode,regular_price,sale_price,stock_quantity,low_stock_threshold,attributes,status,weight,dimensions,specifications,product_variation_images(storage_path,alt_text,sort_order,is_featured))")
-    .eq("slug", slug)
-    .eq("is_published", true)
-    .maybeSingle();
-  if (error || !row) return null;
-  const { data: faqs } = await supabase
-    .from("product_faqs")
-    .select("id,question,answer,sort_order")
-    .eq("product_id", row.id)
-    .eq("is_published", true)
-    .order("sort_order");
+    .select("id,slug,sku,name,description,short_description,specifications,ingredients,care_instructions,delivery_information,return_policy,price,sale_price,stock_quantity,low_stock_threshold,is_published,status,is_featured,is_bestseller,seo_title,seo_description,tags,category_id,brand_id,featured_image,product_type,categories:category_id(name,slug),brands(name,slug),product_images(storage_path,alt_text,sort_order)");
 
-  let reviews: any[] = [];
-  const { data: rawReviews, error: reviewsErr } = await supabase
-    .from("reviews")
-    .select("id,product_id,order_id,user_id,rating,body,status,is_approved,is_verified_purchase,reviewer_name,guest_name,guest_email,created_at")
-    .eq("product_id", row.id)
-    .or("status.eq.approved,is_approved.eq.true")
-    .order("created_at", { ascending: false })
-    .limit(200);
-
-  if (reviewsErr) {
-    const { data: fallbackReviews } = await supabase
-      .from("reviews")
-      .select("id,product_id,order_id,user_id,rating,body,is_approved,created_at")
-      .eq("product_id", row.id)
-      .eq("is_approved", true)
-      .order("created_at", { ascending: false })
-      .limit(200);
-    reviews = fallbackReviews ?? [];
+  if (isUuid) {
+    productQuery = productQuery.or(`id.eq.${rawSlug},slug.eq.${rawSlug},slug.eq.${slugified}`);
+  } else if (slugified && slugified !== rawSlug.toLowerCase()) {
+    productQuery = productQuery.or(`slug.eq.${rawSlug},slug.eq.${slugified},slug.ilike.${rawSlug},slug.ilike.${slugified},sku.eq.${rawSlug}`);
   } else {
-    reviews = rawReviews ?? [];
+    productQuery = productQuery.or(`slug.eq.${rawSlug},slug.ilike.${rawSlug},sku.eq.${rawSlug}`);
   }
 
+  let { data: rows, error: searchErr } = await productQuery.limit(5);
+
+  if (searchErr || !rows || rows.length === 0) {
+    // Fallback: search by name ilike
+    const cleanSearchName = rawSlug.replace(/[-_]+/g, " ");
+    const { data: nameRows } = await supabase
+      .from("products")
+      .select("id,slug,sku,name,description,short_description,specifications,ingredients,care_instructions,delivery_information,return_policy,price,sale_price,stock_quantity,low_stock_threshold,is_published,status,is_featured,is_bestseller,seo_title,seo_description,tags,category_id,brand_id,featured_image,product_type,categories:category_id(name,slug),brands(name,slug),product_images(storage_path,alt_text,sort_order)")
+      .ilike("name", `%${cleanSearchName}%`)
+      .limit(1);
+
+    rows = nameRows ?? [];
+  }
+
+  if (!rows || rows.length === 0) return null;
+
+  // Prefer published product if multiple returned, otherwise first matching row
+  const row = rows.find((r: any) => r.is_published || r.status === "published") ?? rows[0];
+  const productId = row.id;
+
+  // Step 2: Safely fetch attributes, variations, faqs, and reviews in separate resilient queries
+  const [attrRes, varRes, faqRes, reviewRes] = await Promise.all([
+    supabase
+      .from("product_attributes")
+      .select("id,name,slug,display_type,sort_order,is_required,controls_images,product_attribute_values(id,label,slug,sort_order,swatch_color,swatch_image,is_active,product_attribute_images(id,storage_path,sort_order,product_image_id))")
+      .eq("product_id", productId)
+      .order("sort_order"),
+    supabase
+      .from("product_variations")
+      .select("id,combination_key,name,title,description,sku,barcode,regular_price,sale_price,stock_quantity,low_stock_threshold,attributes,status,weight,dimensions,specifications,product_variation_images(storage_path,alt_text,sort_order,is_featured)")
+      .eq("product_id", productId),
+    supabase
+      .from("product_faqs")
+      .select("id,question,answer,sort_order")
+      .eq("product_id", productId)
+      .eq("is_published", true)
+      .order("sort_order"),
+    supabase
+      .from("reviews")
+      .select("id,product_id,order_id,user_id,rating,body,status,is_approved,is_verified_purchase,reviewer_name,guest_name,guest_email,created_at")
+      .eq("product_id", productId)
+      .or("status.eq.approved,is_approved.eq.true")
+      .order("created_at", { ascending: false })
+      .limit(200),
+  ]);
+
+  const productAttributes = attrRes.data ?? [];
+  const productVariations = varRes.data ?? [];
+  const faqs = faqRes.data ?? [];
+  const reviews = reviewRes.data ?? [];
+
+  const fullRow = {
+    ...row,
+    product_attributes: productAttributes,
+    product_variations: productVariations,
+  };
+
   const rating = reviews.length ? reviews.reduce((sum: number, review: any) => sum + review.rating, 0) / reviews.length : 0;
-  return { product: mapProduct({ ...row, average_rating: rating, review_count: reviews.length }), reviews, faqs: faqs ?? [] };
+  return { product: mapProduct({ ...fullRow, average_rating: rating, review_count: reviews.length }), reviews, faqs };
 }
 
 export async function getHomeContent() {

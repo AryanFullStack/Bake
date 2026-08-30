@@ -16,6 +16,23 @@ export async function GET(
 
     const fileData = await storage.getFileBuffer(relativePath);
     if (!fileData) {
+      try {
+        const fs = await import("fs");
+        const pathModule = await import("path");
+        const placeholderPath = pathModule.resolve(process.cwd(), "public", "placeholder-bake.svg");
+        if (fs.existsSync(placeholderPath)) {
+          const svgBuffer = await fs.promises.readFile(placeholderPath);
+          return new NextResponse(svgBuffer, {
+            status: 200,
+            headers: {
+              "Content-Type": "image/svg+xml",
+              "Cache-Control": "public, max-age=86400",
+            },
+          });
+        }
+      } catch (e) {
+        console.error("[API media/serve] Fallback image error:", e);
+      }
       return new NextResponse("Image Not Found", { status: 404 });
     }
 

@@ -95,9 +95,19 @@ export default function CartPage() {
                             {item.name}
                           </Link>
                         </h2>
+                        {item.variationTitle && item.variationTitle !== item.name && (
+                          <p className="mt-0.5 text-xs font-bold text-orange">
+                            Option: {item.variationTitle}
+                          </p>
+                        )}
                         {item.variationAttributes && (
-                          <p className="mt-1 text-xs font-semibold text-muted">
+                          <p className="mt-0.5 text-xs font-semibold text-muted">
                             {Object.entries(item.variationAttributes).map(([key, value]) => `${key}: ${value}`).join(" · ")}
+                          </p>
+                        )}
+                        {item.sku && (
+                          <p className="mt-0.5 text-[11px] text-muted font-mono">
+                            SKU: {item.sku}
                           </p>
                         )}
                       </div>
