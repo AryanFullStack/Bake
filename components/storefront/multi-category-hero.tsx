@@ -85,63 +85,57 @@ export function MultiCategoryHero() {
   const [activeScene, setActiveScene] = useState(0);
   const prefersReducedMotion = useReducedMotion();
 
-  /* Scroll setup with spring physics for butter-smooth momentum transitions */
+  /* Direct scroll progress for zero-lag 1:1 scroll responsiveness */
   const { scrollYProgress } = useScroll({
     target: containerRef,
     offset: ["start start", "end end"],
   });
 
-  const smoothProgress = useSpring(scrollYProgress, {
-    stiffness: 100,
-    damping: 28,
-    restDelta: 0.0001,
-  });
-
   /*
    * 3D Stacked Deck Scroll Transformations:
-   * Total section height: 340vh
-   * Scene 0: Fixed at base (y: 0%). Scales down 1.0 -> 0.94 as Scene 1 enters.
-   * Scene 1: Slides up 100% -> 0% between 0.12 and 0.42. Scales down 1.0 -> 0.94 as Scene 2 enters.
-   * Scene 2: Slides up 100% -> 0% between 0.58 and 0.88.
+   * Optimized height: 180vh (short, snappy, user-friendly scroll distance)
+   * Scene 0: Fixed at base (y: 0%). Scales down 1.0 -> 0.95 as Scene 1 enters.
+   * Scene 1: Slides up 100% -> 0% between 0.05 and 0.45. Scales down 1.0 -> 0.95 as Scene 2 enters.
+   * Scene 2: Slides up 100% -> 0% between 0.50 and 0.90.
    */
 
   // Slide translation transforms
   const scene1Y = useTransform(
-    smoothProgress,
-    [0, 0.12, 0.42, 1],
+    scrollYProgress,
+    [0, 0.05, 0.45, 1],
     ["100%", "100%", "0%", "0%"]
   );
   const scene2Y = useTransform(
-    smoothProgress,
-    [0, 0.58, 0.88, 1],
+    scrollYProgress,
+    [0, 0.50, 0.90, 1],
     ["100%", "100%", "0%", "0%"]
   );
 
   // Depth scaling for underlying deck layers
-  const scene0Scale = useTransform(smoothProgress, [0.15, 0.42], [1, 0.94]);
-  const scene0Dim = useTransform(smoothProgress, [0.15, 0.42], [0, 0.55]);
+  const scene0Scale = useTransform(scrollYProgress, [0.08, 0.45], [1, 0.95]);
+  const scene0Dim = useTransform(scrollYProgress, [0.08, 0.45], [0, 0.5]);
 
-  const scene1Scale = useTransform(smoothProgress, [0.58, 0.88], [1, 0.94]);
-  const scene1Dim = useTransform(smoothProgress, [0.58, 0.88], [0, 0.55]);
+  const scene1Scale = useTransform(scrollYProgress, [0.50, 0.90], [1, 0.95]);
+  const scene1Dim = useTransform(scrollYProgress, [0.50, 0.90], [0, 0.5]);
 
-  // Subtle background image parallax zoom
-  const img0Zoom = useTransform(smoothProgress, [0, 0.42], [1, 1.06]);
-  const img1Zoom = useTransform(smoothProgress, [0.12, 0.88], [1, 1.06]);
-  const img2Zoom = useTransform(smoothProgress, [0.58, 1], [1, 1.05]);
+  // Fast background image parallax zoom
+  const img0Zoom = useTransform(scrollYProgress, [0, 0.45], [1, 1.04]);
+  const img1Zoom = useTransform(scrollYProgress, [0.05, 0.90], [1, 1.04]);
+  const img2Zoom = useTransform(scrollYProgress, [0.50, 1], [1, 1.04]);
 
   // Progress fill calculations for indicator bars
-  const progress0 = useTransform(smoothProgress, [0, 0.35], [0, 1]);
-  const progress1 = useTransform(smoothProgress, [0.12, 0.70], [0, 1]);
-  const progress2 = useTransform(smoothProgress, [0.58, 1.0], [0, 1]);
+  const progress0 = useTransform(scrollYProgress, [0, 0.38], [0, 1]);
+  const progress1 = useTransform(scrollYProgress, [0.05, 0.72], [0, 1]);
+  const progress2 = useTransform(scrollYProgress, [0.50, 1.0], [0, 1]);
 
   // Track active scene state cleanly
-  useMotionValueEvent(smoothProgress, "change", (v) => {
-    if (v < 0.35) setActiveScene(0);
-    else if (v < 0.70) setActiveScene(1);
+  useMotionValueEvent(scrollYProgress, "change", (v) => {
+    if (v < 0.38) setActiveScene(0);
+    else if (v < 0.72) setActiveScene(1);
     else setActiveScene(2);
   });
 
-  /* Smooth scroll to specific target scene ratio */
+  /* Fast scroll to target scene */
   const scrollToScene = (index: number) => {
     if (!containerRef.current) return;
     const container = containerRef.current;
@@ -150,7 +144,7 @@ export function MultiCategoryHero() {
     const containerTop = rect.top + scrollTop;
     const scrollableHeight = container.clientHeight - window.innerHeight;
 
-    const targets = [0, 0.48, 0.94];
+    const targets = [0, 0.50, 0.95];
     const targetScroll = containerTop + targets[index] * scrollableHeight;
 
     window.scrollTo({
@@ -187,10 +181,10 @@ export function MultiCategoryHero() {
     <section
       ref={containerRef}
       className="relative w-full bg-navy-dark"
-      style={{ height: "340vh" }}
+      style={{ height: "180vh" }}
       aria-label="Hero Banners"
     >
-      {/* Sticky Fullscreen Hero Viewport (h-[100dvh] prevents mobile address bar reflow) */}
+      {/* Sticky Fullscreen Hero Viewport */}
       <div className="sticky top-0 h-[100dvh] w-full overflow-hidden bg-black">
         {SCENES.map((scene, idx) => {
           const { y, deckScale, dimOpacity, imgScale, zIndex } = sceneTransforms[idx];
@@ -206,7 +200,7 @@ export function MultiCategoryHero() {
                 willChange: "transform",
                 pointerEvents: isActive ? "auto" : "none",
               }}
-              className="absolute inset-0 w-full h-full transform-gpu origin-bottom shadow-2xl transition-shadow duration-300"
+              className="absolute inset-0 w-full h-full transform-gpu origin-bottom shadow-2xl transition-shadow duration-200"
             >
               {/* Card Container */}
               <div className="relative w-full h-full overflow-hidden bg-navy-dark flex items-center justify-center">
@@ -246,16 +240,16 @@ export function MultiCategoryHero() {
                 {/* 3D Depth Dimming Overlay when covered by upper card */}
                 <motion.div
                   style={{ opacity: dimOpacity }}
-                  className="absolute inset-0 bg-black pointer-events-none z-10 transition-opacity duration-150"
+                  className="absolute inset-0 bg-black pointer-events-none z-10 transition-opacity duration-100"
                 />
 
                 {/* Editorial Typography & Centered CTA */}
                 <div className="relative z-20 w-full max-w-[640px] px-6 text-center flex flex-col items-center justify-center">
                   {/* Eyebrow Badge */}
                   <motion.div
-                    initial={prefersReducedMotion ? false : { opacity: 0, y: -10 }}
-                    animate={isActive ? { opacity: 1, y: 0 } : { opacity: 0, y: -10 }}
-                    transition={{ duration: 0.4 }}
+                    initial={prefersReducedMotion ? false : { opacity: 0, y: -6 }}
+                    animate={isActive ? { opacity: 1, y: 0 } : { opacity: 0, y: -6 }}
+                    transition={{ duration: 0.2 }}
                     className="inline-flex items-center gap-2 rounded-full border border-white/25 bg-black/40 px-4 py-1.5 backdrop-blur-md mb-3.5 shadow-lg"
                   >
                     <Sparkles size={13} className="text-orange" />
@@ -266,9 +260,9 @@ export function MultiCategoryHero() {
 
                   {/* Main Title */}
                   <motion.h1
-                    initial={prefersReducedMotion ? false : { opacity: 0, y: 14 }}
-                    animate={isActive ? { opacity: 1, y: 0 } : { opacity: 0, y: 14 }}
-                    transition={{ duration: 0.45, delay: 0.08 }}
+                    initial={prefersReducedMotion ? false : { opacity: 0, y: 8 }}
+                    animate={isActive ? { opacity: 1, y: 0 } : { opacity: 0, y: 8 }}
+                    transition={{ duration: 0.2, delay: 0.03 }}
                     className="font-display font-black text-3.5xl sm:text-5xl lg:text-6xl text-white tracking-tight leading-[1.05] drop-shadow-xl"
                   >
                     {scene.title}
@@ -276,9 +270,9 @@ export function MultiCategoryHero() {
 
                   {/* Supporting Subtitle */}
                   <motion.p
-                    initial={prefersReducedMotion ? false : { opacity: 0, y: 10 }}
-                    animate={isActive ? { opacity: 1, y: 0 } : { opacity: 0, y: 10 }}
-                    transition={{ duration: 0.45, delay: 0.16 }}
+                    initial={prefersReducedMotion ? false : { opacity: 0, y: 6 }}
+                    animate={isActive ? { opacity: 1, y: 0 } : { opacity: 0, y: 6 }}
+                    transition={{ duration: 0.2, delay: 0.06 }}
                     className="mt-2.5 sm:mt-3 text-xs sm:text-base text-white/90 font-medium leading-relaxed max-w-[440px] drop-shadow-md"
                   >
                     {scene.subtitle}
@@ -286,9 +280,9 @@ export function MultiCategoryHero() {
 
                   {/* CTA Button */}
                   <motion.div
-                    initial={prefersReducedMotion ? false : { opacity: 0, scale: 0.94 }}
-                    animate={isActive ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 0.94 }}
-                    transition={{ duration: 0.4, delay: 0.24 }}
+                    initial={prefersReducedMotion ? false : { opacity: 0, scale: 0.96 }}
+                    animate={isActive ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 0.96 }}
+                    transition={{ duration: 0.2, delay: 0.09 }}
                     className="mt-5 sm:mt-6"
                   >
                     <Link
@@ -322,14 +316,14 @@ export function MultiCategoryHero() {
               <button
                 key={scene.id}
                 onClick={() => scrollToScene(idx)}
-                className={`group relative flex items-center gap-2 px-2.5 py-1 rounded-full transition-all duration-300 ${
+                className={`group relative flex items-center gap-2 px-2.5 py-1 rounded-full transition-all duration-200 ${
                   active ? "bg-white/15" : "hover:bg-white/10"
                 }`}
                 title={`Go to ${scene.eyebrow}`}
               >
                 {/* Scene Number */}
                 <span
-                  className={`text-[11px] font-black transition-colors duration-300 ${
+                  className={`text-[11px] font-black transition-colors duration-200 ${
                     active ? "text-orange" : "text-white/60 group-hover:text-white"
                   }`}
                 >
@@ -365,8 +359,8 @@ export function MultiCategoryHero() {
 
         {/* ── Animated Scroll Down Prompt Widget ── */}
         <motion.div
-          animate={{ y: [0, 6, 0] }}
-          transition={{ duration: 1.8, repeat: Infinity, ease: "easeInOut" }}
+          animate={{ y: [0, 5, 0] }}
+          transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
           className="absolute bottom-6 right-6 z-40 hidden md:flex items-center gap-2 px-3 py-1.5 rounded-full bg-black/40 border border-white/15 backdrop-blur-md pointer-events-none"
         >
           <span className="text-[10px] font-bold uppercase tracking-wider text-white/70">
