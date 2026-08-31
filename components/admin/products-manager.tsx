@@ -31,6 +31,7 @@ interface ProductRow {
   brands?: { id: string; name: string; slug: string } | { id: string; name: string; slug: string }[] | null | any;
   product_images?: any[];
   product_variations?: any[];
+  product_attributes?: any[];
   updated_at: string;
 }
 
