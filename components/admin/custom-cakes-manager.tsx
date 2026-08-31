@@ -139,11 +139,11 @@ export function AdminCustomCakesManager({ initialRequests }: { initialRequests: 
   }
 
   return (
-    <div className="p-6 md:p-10 flex flex-col gap-6">
+    <div className="p-4 sm:p-6 md:p-10 flex flex-col gap-6 min-w-0 overflow-x-hidden">
       <div>
-        <p className="text-xs font-bold uppercase tracking-wider text-orange">Cake Studio Operations</p>
-        <h1 className="mt-1 font-display text-4xl font-bold text-navy">Custom Cake Consultation Requests</h1>
-        <p className="mt-1 text-sm text-muted font-medium">
+        <p className="text-[11px] sm:text-xs font-bold uppercase tracking-wider text-orange">Cake Studio Operations</p>
+        <h1 className="mt-1 font-display text-2xl sm:text-4xl font-bold text-navy">Custom Cake Consultation Requests</h1>
+        <p className="mt-1 text-xs sm:text-sm text-muted font-medium">
           {requests.length} custom cake consultations in database • Manage status, prepare formal quotations & convert to orders.
         </p>
       </div>

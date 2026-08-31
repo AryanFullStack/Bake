@@ -231,7 +231,7 @@ export function AdminCategoriesManager() {
   const getSubcategories = (parentId: string) => categories.filter((c) => c.parent_id === parentId);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 p-4 sm:p-6 md:p-8 min-w-0 overflow-x-hidden">
       {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b border-navy/10 pb-5">
         <div>
@@ -396,7 +396,7 @@ export function AdminCategoriesManager() {
         <div className="modal-overlay">
           <form
             onSubmit={handleSave}
-            className="w-full max-w-xl rounded-2xl bg-white p-6 shadow-2xl border border-line animate-scale-in"
+            className="w-full max-w-xl max-h-[92vh] overflow-y-auto rounded-2xl bg-white p-4 sm:p-6 shadow-2xl border border-line animate-scale-in"
           >
             <div className="flex items-center justify-between border-b border-line pb-4">
               <h2 className="text-lg font-bold text-navy">

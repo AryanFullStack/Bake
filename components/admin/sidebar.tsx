@@ -43,7 +43,7 @@ const navGroups = [
   },
 ];
 
-export function AdminSidebar() {
+export function AdminSidebar({ onNavigate }: { onNavigate?: () => void }) {
   const pathname = usePathname();
 
   function isActive(href: string, exact = false) {
@@ -52,12 +52,12 @@ export function AdminSidebar() {
 
   return (
     <aside
-      className="flex h-screen w-[252px] flex-col overflow-y-auto overflow-x-hidden border-r border-white/[.07] text-white"
+      className="flex h-full min-h-screen w-[252px] flex-col overflow-y-auto overflow-x-hidden border-r border-white/[.07] text-white"
       style={{ background: "var(--admin-sidebar)" }}
     >
       {/* ── Logo ────────────────────────────────────── */}
       <div className="px-5 pt-6 pb-4 border-b border-white/[.07]">
-        <Link href="/admin" className="flex items-center gap-3">
+        <Link href="/admin" onClick={onNavigate} className="flex items-center gap-3">
           <div className="rounded-xl bg-white px-2 py-1.5 shadow-sm">
             <Image src="/logobake-01.png" alt="Bake Mart Bazaar" width={120} height={36} className="h-8 w-auto object-contain" />
           </div>
@@ -84,6 +84,7 @@ export function AdminSidebar() {
                   <Link
                     key={href}
                     href={href}
+                    onClick={onNavigate}
                     className={`group relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-[13px] font-semibold transition-all duration-200 ${
                       active
                         ? "bg-orange/15 text-orange"
@@ -110,12 +111,14 @@ export function AdminSidebar() {
         <Link
           href="/"
           target="_blank"
+          onClick={onNavigate}
           className="flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-xs font-semibold text-white/45 hover:bg-white/[.06] hover:text-white transition-colors"
         >
           <ExternalLink size={14} /> View Storefront
         </Link>
         <Link
           href="/api/auth/signout"
+          onClick={onNavigate}
           className="flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-xs font-semibold text-white/45 hover:bg-red-500/15 hover:text-red-400 transition-colors"
         >
           <LogOut size={14} /> Sign Out

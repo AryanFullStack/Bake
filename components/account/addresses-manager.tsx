@@ -147,7 +147,7 @@ export function AddressesManager({ initialAddresses }: { initialAddresses: Addre
   }
 
   return (
-    <div className="grid gap-8 lg:grid-cols-[1fr_420px] items-start">
+    <div className="grid gap-8 grid-cols-1 lg:grid-cols-[1fr_420px] items-start min-w-0 overflow-x-hidden">
       {/* Left Side: Address List */}
       <section className="flex flex-col gap-4">
         <div className="flex items-center justify-between">

@@ -50,13 +50,13 @@ export default async function AdminPage() {
   const parentCats = (categories.data ?? []).filter((c: any) => !c.parent_id);
 
   return (
-    <div className="p-5 md:p-8 lg:p-10">
+    <div className="p-4 sm:p-6 md:p-8 lg:p-10 min-w-0 overflow-x-hidden">
       {/* Header */}
       <div className="flex flex-col justify-between gap-5 border-b border-line pb-7 sm:flex-row sm:items-end">
         <div>
           <p className="eyebrow">Live Operations & Management</p>
-          <h1 className="mt-3 font-display text-4xl font-bold text-navy">Good morning, Admin.</h1>
-          <p className="mt-2 text-sm text-muted">Complete control over your products, categories, orders and custom cake studio.</p>
+          <h1 className="mt-3 font-display text-3xl sm:text-4xl font-bold text-navy">Good morning, Admin.</h1>
+          <p className="mt-2 text-xs sm:text-sm text-muted">Complete control over your products, categories, orders and custom cake studio.</p>
         </div>
         <div className="flex flex-wrap items-center gap-3">
           <Link href="/admin/categories" className="inline-flex items-center gap-2 rounded-xl border border-line bg-white px-4 py-2.5 text-xs font-extrabold text-navy hover:border-orange hover:text-orange shadow-xs">
@@ -69,7 +69,7 @@ export default async function AdminPage() {
       </div>
 
       {/* Overview Stats */}
-      <div className="mt-7 grid grid-cols-2 gap-3 lg:grid-cols-4">
+      <div className="mt-7 grid grid-cols-2 gap-3 sm:grid-cols-2 lg:grid-cols-4">
         {stats.map((stat: any) => (
           stat.href ? (
             <Link key={stat.label} href={stat.href} className="border border-line bg-white p-5 shadow-[0_8px_24px_rgba(6,33,54,.04)] hover:border-orange/40 hover:shadow-md transition-all" style={{ borderRadius: "var(--radius-card)" }}>

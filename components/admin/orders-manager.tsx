@@ -277,15 +277,15 @@ export function AdminOrdersManager({ initialOrders }: { initialOrders: any[] }) 
   const totalPages = Math.ceil(totalCount / pageSize);
 
   return (
-    <div className="p-6 md:p-10 flex flex-col gap-6">
+    <div className="p-4 sm:p-6 md:p-10 flex flex-col gap-6 min-w-0 overflow-x-hidden">
       {/* Header & Quick Action Buttons */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <p className="text-xs font-bold uppercase tracking-wider text-orange flex items-center gap-1.5">
+          <p className="text-[11px] sm:text-xs font-bold uppercase tracking-wider text-orange flex items-center gap-1.5">
             <ShoppingBag size={14} /> Database Order Management
           </p>
-          <h1 className="mt-1 font-display text-4xl font-bold text-navy">Order Operations Hub</h1>
-          <p className="mt-1 text-sm text-muted font-medium">
+          <h1 className="mt-1 font-display text-2xl sm:text-4xl font-bold text-navy">Order Operations Hub</h1>
+          <p className="mt-1 text-xs sm:text-sm text-muted font-medium">
             Real-time synchronization with checkout. Total {totalCount} orders recorded in Supabase.
           </p>
         </div>

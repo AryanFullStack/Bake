@@ -678,34 +678,34 @@ export function ProductWizard({ initialProduct, product, categories, brands, onC
   ];
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-navy/60 p-3 sm:p-6 backdrop-blur-sm animate-scale-in">
-      <div className="flex h-[94vh] w-full max-w-6xl flex-col overflow-hidden rounded-3xl bg-white shadow-2xl border border-admin-border">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-navy/60 p-2 sm:p-4 md:p-6 backdrop-blur-sm animate-scale-in">
+      <div className="flex h-[96vh] sm:h-[94vh] w-full max-w-6xl flex-col overflow-hidden rounded-2xl sm:rounded-3xl bg-white shadow-2xl border border-admin-border">
         {/* Header */}
-        <header className="flex items-center justify-between border-b border-admin-border px-6 py-4 bg-white">
+        <header className="flex items-center justify-between border-b border-admin-border px-4 sm:px-6 py-3.5 bg-white">
           <div>
             <div className="flex items-center gap-2">
-              <span className="rounded-full bg-orange/10 px-2.5 py-0.5 text-[10px] font-extrabold uppercase tracking-wider text-orange">
+              <span className="rounded-full bg-orange/10 px-2 py-0.5 text-[9px] sm:text-[10px] font-extrabold uppercase tracking-wider text-orange">
                 Product Builder
               </span>
               {current?.id && (
-                <span className="text-xs font-mono text-admin-muted">ID: {current.id.slice(0, 8)}</span>
+                <span className="text-[11px] font-mono text-admin-muted hidden sm:inline">ID: {current.id.slice(0, 8)}</span>
               )}
             </div>
-            <h2 className="mt-0.5 text-xl font-bold text-navy">
+            <h2 className="mt-0.5 text-base sm:text-xl font-bold text-navy truncate max-w-[200px] sm:max-w-md">
               {current?.id ? `Edit: ${current.name}` : "Add New Product"}
             </h2>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3">
             <button
               onClick={() => setShowPreviewModal(true)}
-              className="inline-flex items-center gap-1.5 rounded-xl border border-admin-border bg-admin-bg px-3.5 py-2 text-xs font-bold text-navy hover:bg-white transition-colors"
+              className="inline-flex items-center gap-1.5 rounded-xl border border-admin-border bg-admin-bg px-2.5 sm:px-3.5 py-1.5 sm:py-2 text-xs font-bold text-navy hover:bg-white transition-colors"
             >
-              <Eye size={14} className="text-orange" /> Preview Storefront
+              <Eye size={14} className="text-orange" /> <span className="hidden sm:inline">Preview Storefront</span>
             </button>
             <button
               onClick={onClose}
-              className="rounded-full p-2 text-admin-muted hover:bg-admin-bg hover:text-navy transition-colors"
+              className="rounded-full p-1.5 text-admin-muted hover:bg-admin-bg hover:text-navy transition-colors cursor-pointer"
               aria-label="Close"
             >
               <X size={20} />
@@ -714,20 +714,20 @@ export function ProductWizard({ initialProduct, product, categories, brands, onC
         </header>
 
         {/* Step Tabs Navigation Bar */}
-        <div className="flex overflow-x-auto border-b border-admin-border bg-admin-bg/60">
+        <div className="flex overflow-x-auto border-b border-admin-border bg-admin-bg/60 scrollbar-none px-1">
           {steps.map(s => {
             const active = step === s.id;
             return (
               <button
                 key={s.id}
                 onClick={() => setStep(s.id)}
-                className={`flex shrink-0 items-center gap-2 border-b-2 px-4 py-3 text-xs font-extrabold transition-colors ${
+                className={`flex shrink-0 items-center gap-1.5 sm:gap-2 border-b-2 px-3 sm:px-4 py-2.5 sm:py-3 text-[11px] sm:text-xs font-extrabold transition-colors ${
                   active
                     ? "border-orange bg-white text-orange shadow-xs"
                     : "border-transparent text-admin-muted hover:text-navy"
                 }`}
               >
-                <span className={`grid h-5 w-5 place-items-center rounded-full text-[10px] font-bold ${active ? "bg-orange text-white" : "bg-admin-border text-admin-muted"}`}>
+                <span className={`grid h-4 sm:h-5 w-4 sm:w-5 place-items-center rounded-full text-[9px] sm:text-[10px] font-bold ${active ? "bg-orange text-white" : "bg-admin-border text-admin-muted"}`}>
                   {s.id}
                 </span>
                 {s.label}
@@ -737,7 +737,7 @@ export function ProductWizard({ initialProduct, product, categories, brands, onC
         </div>
 
         {/* Body Content */}
-        <main className="flex-1 overflow-y-auto p-6 md:p-8">
+        <main className="flex-1 overflow-y-auto p-4 sm:p-6 md:p-8">
           {/* STEP 1: BASICS */}
           {step === 1 && (
             <div className="mx-auto grid max-w-4xl gap-6">

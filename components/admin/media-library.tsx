@@ -312,7 +312,7 @@ export function MediaLibrary() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 p-4 sm:p-6 md:p-8 min-w-0 overflow-x-hidden">
       {/* Header & Metrics */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b border-navy/10 pb-5">
         <div>

@@ -54,12 +54,12 @@ export function AdminCustomersManager({ initialCustomers }: { initialCustomers: 
   }
 
   return (
-    <div className="p-6 md:p-10 flex flex-col gap-6">
+    <div className="p-4 sm:p-6 md:p-10 flex flex-col gap-6 min-w-0 overflow-x-hidden">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <p className="text-xs font-bold uppercase tracking-wider text-orange">Customer Database</p>
-          <h1 className="mt-1 font-display text-4xl font-bold text-navy">Customers</h1>
-          <p className="mt-1 text-sm text-muted font-medium">
+          <p className="text-[11px] sm:text-xs font-bold uppercase tracking-wider text-orange">Customer Database</p>
+          <h1 className="mt-1 font-display text-2xl sm:text-4xl font-bold text-navy">Customers</h1>
+          <p className="mt-1 text-xs sm:text-sm text-muted font-medium">
             {customers.length} registered profiles · View customer spending, saved addresses & order history.
           </p>
         </div>

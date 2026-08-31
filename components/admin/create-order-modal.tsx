@@ -243,17 +243,17 @@ export function CreateOrderModal({ couriers, onClose, onSuccess }: CreateOrderMo
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-navy/60 backdrop-blur-xs p-4 overflow-y-auto">
-      <div className="relative w-full max-w-4xl rounded-3xl bg-white shadow-2xl overflow-hidden flex flex-col max-h-[92vh]">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-navy/60 backdrop-blur-xs p-2 sm:p-4 md:p-6 overflow-y-auto">
+      <div className="relative w-full max-w-4xl rounded-2xl sm:rounded-3xl bg-white shadow-2xl overflow-hidden flex flex-col max-h-[94vh] sm:max-h-[92vh]">
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-line bg-cream/50 px-6 py-4">
+        <div className="flex items-center justify-between border-b border-line bg-cream/50 px-4 sm:px-6 py-3.5">
           <div className="flex items-center gap-2">
             <ShoppingBag size={18} className="text-orange" />
-            <h3 className="text-lg font-bold text-navy">Create Manual Customer Order</h3>
+            <h3 className="text-base sm:text-lg font-bold text-navy">Create Manual Customer Order</h3>
           </div>
           <button
             onClick={onClose}
-            className="grid h-9 w-9 place-items-center rounded-xl bg-white border border-line text-muted hover:text-navy hover:bg-cream transition-colors"
+            className="grid h-8 sm:h-9 w-8 sm:w-9 place-items-center rounded-xl bg-white border border-line text-muted hover:text-navy hover:bg-cream transition-colors cursor-pointer"
           >
             <X size={18} />
           </button>

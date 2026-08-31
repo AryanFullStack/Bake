@@ -34,14 +34,14 @@ export default async function AccountPage() {
   };
 
   return (
-    <div className="container-shell py-10 md:py-16">
+    <div className="container-shell py-6 sm:py-10 md:py-16 min-w-0 overflow-x-hidden">
       {/* Header Profile Section */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 rounded-[32px] bg-white p-8 border border-line/80 shadow-xs">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 rounded-[24px] sm:rounded-[32px] bg-white p-5 sm:p-8 border border-line/80 shadow-xs">
         <div>
-          <div className="inline-flex items-center gap-2 rounded-full bg-orange/10 px-3.5 py-1.5 text-xs font-bold text-orange border border-orange/20 mb-2">
+          <div className="inline-flex items-center gap-2 rounded-full bg-orange/10 px-3 py-1 text-xs font-bold text-orange border border-orange/20 mb-2">
             <Sparkles size={13} /> CUSTOMER PORTAL
           </div>
-          <h1 className="font-display text-4xl sm:text-5xl font-bold text-navy">
+          <h1 className="font-display text-2xl sm:text-4xl lg:text-5xl font-bold text-navy">
             {user ? `Welcome back, ${user.user_metadata?.full_name || "Valued Customer"}.` : "Hello, Guest Baker."}
           </h1>
           <p className="mt-2 text-sm text-muted font-medium">

@@ -122,14 +122,14 @@ export function AdminReviewsManager({ initialReviews }: AdminReviewsManagerProps
   }
 
   return (
-    <div className="p-6 md:p-10 flex flex-col gap-8 max-w-7xl mx-auto">
+    <div className="p-4 sm:p-6 md:p-10 flex flex-col gap-8 max-w-7xl mx-auto min-w-0 overflow-x-hidden">
       {/* Header Title & Metrics */}
       <div>
         <span className="text-xs font-extrabold uppercase tracking-widest text-orange bg-orange/10 px-3 py-1 rounded-full border border-orange/20">
           Admin Moderation
         </span>
-        <h1 className="mt-2 font-display text-4xl font-extrabold text-navy">Review Management</h1>
-        <p className="mt-1 text-sm text-muted font-medium">
+        <h1 className="mt-2 font-display text-2xl sm:text-4xl font-extrabold text-navy">Review Management</h1>
+        <p className="mt-1 text-xs sm:text-sm text-muted font-medium">
           Moderate customer product reviews, audit verified purchases, add internal notes, and manage public visibility.
         </p>
       </div>

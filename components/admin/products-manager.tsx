@@ -164,7 +164,7 @@ export function AdminProductsManager({ initialProducts = [], categories = [], br
   const toggleOne = (id: string) => setSelectedIds(prev => prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]);
 
   return (
-    <div className="min-h-screen bg-admin-bg p-6 md:p-8">
+    <div className="min-h-screen bg-admin-bg p-4 sm:p-6 md:p-8 min-w-0 overflow-x-hidden">
       {/* ── Header ──────────────────────────────────── */}
       <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>

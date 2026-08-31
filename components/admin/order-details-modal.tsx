@@ -177,40 +177,40 @@ export function OrderDetailsModal({
   const trackingLink = `/track-order?order=${order.order_number}&phone=${order.customer_phone}`;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-navy/60 backdrop-blur-xs p-4 overflow-y-auto">
-      <div className="relative w-full max-w-5xl rounded-3xl bg-white shadow-2xl overflow-hidden flex flex-col max-h-[92vh]">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-navy/60 backdrop-blur-xs p-2 sm:p-4 md:p-6 overflow-y-auto">
+      <div className="relative w-full max-w-5xl rounded-2xl sm:rounded-3xl bg-white shadow-2xl overflow-hidden flex flex-col max-h-[94vh] sm:max-h-[92vh]">
         {/* Top Control Bar */}
-        <div className="flex items-center justify-between border-b border-line bg-cream/50 px-6 py-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-line bg-cream/50 px-4 sm:px-6 py-3.5">
           <div className="flex items-center gap-3">
-            <span className={`rounded-full px-3 py-1 text-xs font-black uppercase tracking-wider border capitalize ${statusColors[order.status]}`}>
+            <span className={`rounded-full px-2.5 sm:px-3 py-0.5 sm:py-1 text-[10px] sm:text-xs font-black uppercase tracking-wider border capitalize ${statusColors[order.status]}`}>
               {order.status.replace(/_/g, " ")}
             </span>
             <div>
-              <h2 className="text-xl font-display font-bold text-navy flex items-center gap-2">
+              <h2 className="text-base sm:text-xl font-display font-bold text-navy flex items-center gap-2">
                 Order #{order.order_number}
               </h2>
-              <p className="text-xs text-muted font-medium">Placed on {createdDate}</p>
+              <p className="text-[11px] sm:text-xs text-muted font-medium">Placed on {createdDate}</p>
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 self-end sm:self-auto">
             <button
               onClick={() => onOpenInvoice(order)}
-              className="inline-flex items-center gap-1.5 rounded-xl border border-line bg-white px-3.5 py-2 text-xs font-bold text-navy hover:border-orange hover:text-orange shadow-xs"
+              className="inline-flex items-center gap-1.5 rounded-xl border border-line bg-white px-2.5 sm:px-3.5 py-1.5 sm:py-2 text-xs font-bold text-navy hover:border-orange hover:text-orange shadow-xs"
             >
-              <Printer size={14} /> Print Invoice
+              <Printer size={14} /> <span className="hidden sm:inline">Print Invoice</span>
             </button>
 
             <button
               onClick={() => onOpenEdit(order)}
-              className="inline-flex items-center gap-1.5 rounded-xl bg-orange px-3.5 py-2 text-xs font-bold text-white shadow-md hover:bg-orange-dark"
+              className="inline-flex items-center gap-1.5 rounded-xl bg-orange px-2.5 sm:px-3.5 py-1.5 sm:py-2 text-xs font-bold text-white shadow-md hover:bg-orange-dark"
             >
-              <Edit3 size={14} /> Edit Order
+              <Edit3 size={14} /> <span className="hidden sm:inline">Edit Order</span>
             </button>
 
             <button
               onClick={onClose}
-              className="grid h-9 w-9 place-items-center rounded-xl bg-white border border-line text-muted hover:text-navy hover:bg-cream transition-colors ml-2"
+              className="grid h-8 sm:h-9 w-8 sm:w-9 place-items-center rounded-xl bg-white border border-line text-muted hover:text-navy hover:bg-cream transition-colors ml-1 cursor-pointer"
             >
               <X size={18} />
             </button>

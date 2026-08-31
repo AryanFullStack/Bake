@@ -45,15 +45,15 @@ export function AdminReportsManager() {
   }
 
   return (
-    <div className="p-6 md:p-10 flex flex-col gap-6">
+    <div className="p-4 sm:p-6 md:p-10 flex flex-col gap-6 min-w-0 overflow-x-hidden">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <p className="text-xs font-bold uppercase tracking-wider text-orange flex items-center gap-1.5">
+          <p className="text-[11px] sm:text-xs font-bold uppercase tracking-wider text-orange flex items-center gap-1.5">
             <BarChart3 size={14} /> Executive Analytics
           </p>
-          <h1 className="mt-1 font-display text-4xl font-bold text-navy">Business Reports & Sales Intelligence</h1>
-          <p className="mt-1 text-sm text-muted font-medium">
+          <h1 className="mt-1 font-display text-2xl sm:text-4xl font-bold text-navy">Business Reports & Sales Intelligence</h1>
+          <p className="mt-1 text-xs sm:text-sm text-muted font-medium">
             Real-time analytics for sales, top products, courier dispatch performance, and custom cakes.
           </p>
         </div>
