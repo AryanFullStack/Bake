@@ -35,7 +35,7 @@ export function HeroCarousel({ banners }: { banners: any[] }) {
   const body      = current?.body      ?? "Quality bakery, home décor, kitchen & everyday essentials — all in one place. Delivered fresh across Lahore.";
   const ctaHref   = current?.cta_href  ?? "/shop";
   const ctaLabel  = current?.cta_label ?? "Shop All Products";
-  const imgSrc    = current?.image_path ?? "https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=1400&q=90";
+  const imgSrc    = current?.image_path ?? "/bakery.png";
 
   return (
     <section className="relative overflow-hidden bg-navy">

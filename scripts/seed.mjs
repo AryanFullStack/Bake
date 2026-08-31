@@ -18,12 +18,12 @@ async function run() {
 
   // ── Categories ────────────────────────────────────────────────────────────
   const categories = [
-    { name: 'Celebration Cakes', slug: 'cakes', description: 'Layer cakes, cream cakes and celebration centrepieces.', image_path: 'https://images.unsplash.com/photo-1578985545062-69928b1d9587?auto=format&fit=crop&w=900&q=85', sort_order: 1, is_active: true },
-    { name: 'Pastries', slug: 'pastries', description: 'Flaky morning bakes and buttery tea-time favourites.', image_path: 'https://images.unsplash.com/photo-1555507036-ab1f4038808a?auto=format&fit=crop&w=900&q=85', sort_order: 2, is_active: true },
-    { name: 'Cupcakes', slug: 'cupcakes', description: 'Small-batch cupcakes for gifting and sharing.', image_path: 'https://images.unsplash.com/photo-1587668178277-295251f900ce?auto=format&fit=crop&w=900&q=85', sort_order: 3, is_active: true },
-    { name: 'Brownies', slug: 'brownies', description: 'Dense, fudgy trays with generous chocolate.', image_path: 'https://images.unsplash.com/photo-1606313564200-e75d5e30476c?auto=format&fit=crop&w=900&q=85', sort_order: 4, is_active: true },
-    { name: 'Cookies', slug: 'cookies', description: 'Crisp edges, soft centres and bakery-fresh boxes.', image_path: 'https://images.unsplash.com/photo-1499636136210-6f4ee915583e?auto=format&fit=crop&w=900&q=85', sort_order: 5, is_active: true },
-    { name: 'Desserts', slug: 'desserts', description: 'Individual desserts for sweet little moments.', image_path: 'https://images.unsplash.com/photo-1551024506-0bccd828d307?auto=format&fit=crop&w=900&q=85', sort_order: 6, is_active: true },
+    { name: 'Bakery', slug: 'bakery', description: 'Freshly baked cakes, pastries & desserts.', image_path: '/bakery.png', sort_order: 1, is_active: true },
+    { name: 'Celebration Cakes', slug: 'cakes', description: 'Layer cakes, cream cakes and celebration centrepieces.', image_path: '/celebration-cakes.png', sort_order: 2, is_active: true },
+    { name: 'Baskets & Storage', slug: 'baskets', description: 'Organise your home beautifully.', image_path: '/baskets.png', sort_order: 3, is_active: true },
+    { name: 'Watches', slug: 'watches', description: 'Classic & modern timepieces.', image_path: '/WD.jpeg', sort_order: 4, is_active: true },
+    { name: 'Kitchen Essentials', slug: 'kitchen', description: 'Utensils, storage & accessories.', image_path: '/kicthens.jpg', sort_order: 5, is_active: true },
+    { name: 'Home Decoration', slug: 'home-decor', description: 'Vases, wall art & decorative items.', image_path: '/homeDisktop.png', sort_order: 6, is_active: true },
   ];
 
   const { error: catErr } = await supabase

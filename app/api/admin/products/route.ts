@@ -331,7 +331,7 @@ export async function PATCH(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { id, gallery_images, variations, attributes, ...updates } = body;
+    const { id, gallery_images, variations, attributes, categories, brands, product_images, product_variations, product_attributes, ...updates } = body;
 
     if (!id) {
       return NextResponse.json({ error: "Product ID is required." }, { status: 400 });

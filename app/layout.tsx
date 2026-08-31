@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Playfair_Display, Manrope } from "next/font/google";
 import { CartProvider } from "@/components/storefront/cart-provider";
+import { LenisProvider } from "@/components/storefront/lenis-provider";
 import { Header } from "@/components/storefront/header";
 import { Footer } from "@/components/storefront/footer";
 import "./globals.css";
@@ -36,11 +37,13 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
   return (
     <html lang="en" suppressHydrationWarning className={`${playfair.variable} ${manrope.variable}`}>
       <body suppressHydrationWarning className="min-h-screen flex flex-col antialiased bg-cream text-ink font-sans">
-        <CartProvider>
-          <Header />
-          <main className="flex-1">{children}</main>
-          <Footer />
-        </CartProvider>
+        <LenisProvider>
+          <CartProvider>
+            <Header />
+            <main className="flex-1">{children}</main>
+            <Footer />
+          </CartProvider>
+        </LenisProvider>
       </body>
     </html>
   );

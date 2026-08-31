@@ -1,7 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { assertAdminApi } from "@/lib/auth";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { mediaService } from "@/lib/media/media-service";
+
+async function getAdminDatabaseClient() {
+  return createSupabaseAdminClient() || (await createSupabaseServerClient());
+}
 
 export async function POST(req: NextRequest) {
   try {
@@ -16,7 +21,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "No product IDs provided for bulk action." }, { status: 400 });
     }
 
-    const supabase = await createSupabaseServerClient();
+    const supabase = await getAdminDatabaseClient();
 
     if (action === "publish") {
       const { error } = await supabase

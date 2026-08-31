@@ -72,7 +72,7 @@ export function ShopBrowser({
     if (!el) return;
     const obs = new IntersectionObserver(
       ([entry]) => setToolbarStuck(!entry.isIntersecting),
-      { threshold: 1, rootMargin: "-1px 0px 0px 0px" }
+      { threshold: 1, rootMargin: "-65px 0px 0px 0px" }
     );
     obs.observe(el);
     return () => obs.disconnect();
@@ -147,9 +147,9 @@ export function ShopBrowser({
       {/* ── Sticky Controls Bar ──────────────────────── */}
       <div
         ref={toolbarRef}
-        className={`sticky top-0 z-40 transition-all duration-300 ${
+        className={`sticky top-[64px] sm:top-[76px] z-30 transition-all duration-300 ${
           toolbarStuck
-            ? "border-b border-line/80 bg-white/95 shadow-sm backdrop-blur-sm"
+            ? "border-b border-line/80 bg-cream/95 shadow-sm backdrop-blur-md"
             : "bg-transparent"
         }`}
       >
@@ -221,7 +221,7 @@ export function ShopBrowser({
       <div className="container-shell py-6 md:py-8">
         <div className="grid gap-8 md:grid-cols-[240px_1fr]">
           {/* Sidebar */}
-          <aside className="hidden md:flex md:flex-col gap-4 sticky top-24 h-fit">
+          <aside className="hidden md:flex md:flex-col gap-4 sticky top-[136px] h-fit">
             <div className="rounded-2xl bg-white p-5 border border-line/70 shadow-xs">
               <FilterPanel categories={categories} category={category} setCategory={setCategory} saleOnly={saleOnly} setSaleOnly={setSaleOnly} products={products} />
             </div>

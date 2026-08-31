@@ -11,22 +11,47 @@ export async function getCategories(): Promise<Category[]> {
   const supabase = await createSupabaseServerClient();
   const { data } = await supabase.from("categories").select("id,name,slug,description,image_path,parent_id").order("sort_order").limit(100);
   
-  const dbCategories = (data ?? []).map((row: any) => ({
-    id: row.id,
-    name: row.name,
-    slug: row.slug,
-    description: row.description,
-    image: row.image_path ?? "/placeholder-bake.svg",
-    parent_id: row.parent_id ?? null,
-  }));
+  const defaultImageMap: Record<string, string> = {
+    bakery: "/bakery.png",
+    baskets: "/baskets.png",
+    "baskets-storage": "/baskets.png",
+    watches: "/WD.jpeg",
+    kitchen: "/kicthens.jpg",
+    "home-decor": "/homeDisktop.png",
+    cakes: "/celebration-cakes.png",
+    "celebration-cakes": "/celebration-cakes.png",
+    "daily-essentials": "/homeItems.jfif",
+    pastries: "/bakery.png",
+    cupcakes: "/celebration-cakes.png",
+    brownies: "/bakery.png",
+    cookies: "/bakery.png",
+    desserts: "/celebration-cakes.png",
+  };
+
+  const dbCategories = (data ?? []).map((row: any) => {
+    let img = row.image_path;
+    if (!img || img === "/placeholder-bake.svg" || img.includes("unsplash.com")) {
+      img = defaultImageMap[row.slug] || defaultImageMap[row.name?.toLowerCase()] || "/bakery.png";
+    }
+
+    return {
+      id: row.id,
+      name: row.name,
+      slug: row.slug,
+      description: row.description,
+      image: img,
+      parent_id: row.parent_id ?? null,
+    };
+  });
 
   const standardPresets: Array<{ name: string; slug: string; description: string; image: string }> = [
-    { name: "Bakery", slug: "bakery", description: "Freshly baked cakes, pastries & desserts", image: "https://images.unsplash.com/photo-1509440159596-0249088772ff?auto=format&fit=crop&w=900&q=85" },
-    { name: "Daily Essentials", slug: "daily-essentials", description: "Everyday grocery & household needs", image: "https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=900&q=85" },
-    { name: "Home Decoration", slug: "home-decor", description: "Vases, wall art & decorative items", image: "https://images.unsplash.com/photo-1586023492125-27b2c045efd7?auto=format&fit=crop&w=900&q=85" },
-    { name: "Kitchen Essentials", slug: "kitchen", description: "Utensils, storage & accessories", image: "https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?auto=format&fit=crop&w=900&q=85" },
-    { name: "Watches", slug: "watches", description: "Classic & modern timepieces", image: "https://images.unsplash.com/photo-1523275335684-37898b6baf30?auto=format&fit=crop&w=900&q=85" },
-    { name: "Baskets & Storage", slug: "baskets", description: "Organise your home beautifully", image: "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?auto=format&fit=crop&w=900&q=85" },
+    { name: "Bakery", slug: "bakery", description: "Freshly baked cakes, pastries & desserts", image: "/bakery.png" },
+    { name: "Celebration Cakes", slug: "cakes", description: "Layer cakes, cream cakes and celebration centrepieces", image: "/celebration-cakes.png" },
+    { name: "Baskets & Storage", slug: "baskets", description: "Organise your home beautifully", image: "/baskets.png" },
+    { name: "Watches", slug: "watches", description: "Classic & modern timepieces", image: "/WD.jpeg" },
+    { name: "Kitchen Essentials", slug: "kitchen", description: "Utensils, storage & accessories", image: "/kicthens.jpg" },
+    { name: "Home Decoration", slug: "home-decor", description: "Vases, wall art & decorative items", image: "/homeDisktop.png" },
+    { name: "Daily Essentials", slug: "daily-essentials", description: "Everyday grocery & household needs", image: "/homeItems.jfif" },
   ];
 
   const result = [...dbCategories];

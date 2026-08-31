@@ -110,11 +110,14 @@ export function AdminProductsManager({ initialProducts = [], categories = [], br
 
   useEffect(() => { fetchProducts(); }, [fetchProducts]);
 
+  useEffect(() => { setSelectedIds([]); }, [page, searchQuery, selectedCategory, selectedStockStatus, selectedStatus]);
+
   const handleBulk = async () => {
     if (!selectedIds.length || !bulkAction) return;
+    if (bulkAction === "delete" && !confirm(`Are you sure you want to delete ${selectedIds.length} product(s) permanently?`)) return;
     const res = await fetch("/api/admin/products/bulk", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: bulkAction, ids: selectedIds, stockValue: bulkStockValue }) });
     const json = await res.json();
-    if (json.success) { setSelectedIds([]); setBulkAction(""); fetchProducts(); showToast(`Bulk action applied to ${selectedIds.length} products`); }
+    if (json.success) { setSelectedIds([]); setBulkAction(""); setBulkStockValue(""); fetchProducts(); showToast(`Bulk action applied to ${selectedIds.length} products`); }
     else showToast(json.error || "Bulk action failed", "error");
   };
 
@@ -138,13 +141,25 @@ export function AdminProductsManager({ initialProducts = [], categories = [], br
   const handleSaveQuickEdit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!quickEditProduct) return;
-    const res = await fetch("/api/admin/products", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(quickEditProduct) });
+    const { categories, brands, product_images, product_variations, product_attributes, ...payload } = quickEditProduct;
+    const res = await fetch("/api/admin/products", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
     const json = await res.json();
     if (json.success) { setQuickEditProduct(null); fetchProducts(); showToast("Product updated"); }
-    else showToast("Update failed", "error");
+    else showToast(json.error || "Update failed", "error");
   };
 
-  const toggleAll = () => setSelectedIds(selectedIds.length === products.length ? [] : products.map(p => p.id));
+  const allSelectedOnPage = products.length > 0 && products.every(p => selectedIds.includes(p.id));
+
+  const toggleAll = () => {
+    if (allSelectedOnPage) {
+      const pageIds = new Set(products.map(p => p.id));
+      setSelectedIds(prev => prev.filter(id => !pageIds.has(id)));
+    } else {
+      const pageIds = products.map(p => p.id);
+      setSelectedIds(prev => Array.from(new Set([...prev, ...pageIds])));
+    }
+  };
+
   const toggleOne = (id: string) => setSelectedIds(prev => prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]);
 
   return (
@@ -247,7 +262,7 @@ export function AdminProductsManager({ initialProducts = [], categories = [], br
             <thead className="border-b border-admin-border bg-admin-bg text-xs font-bold uppercase tracking-wider text-admin-muted">
               <tr>
                 <th className="p-3 w-10">
-                  <input type="checkbox" checked={selectedIds.length === products.length && products.length > 0} onChange={toggleAll} className="h-4 w-4 accent-orange cursor-pointer rounded" />
+                  <input type="checkbox" checked={allSelectedOnPage} onChange={toggleAll} className="h-4 w-4 accent-orange cursor-pointer rounded" />
                 </th>
                 <th className="p-3">Product</th>
                 <th className="p-3 hidden md:table-cell">Category</th>

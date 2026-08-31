@@ -193,16 +193,16 @@ export function AdminCategoriesManager() {
     if (!confirm("Add standard Bake Mart Bazaar category presets (Bakery, Celebration Cakes, Pastries, Cupcakes, Home Décor, Kitchen, Watches, Baskets, Grocery)?")) return;
     setLoading(true);
     const presets = [
-      { name: "Bakery", slug: "bakery", description: "Freshly baked cakes, pastries & desserts" },
-      { name: "Celebration Cakes", slug: "cakes", description: "Custom & birthday celebration cakes", parent_name: "Bakery" },
-      { name: "Pastries", slug: "pastries", description: "Fresh layered pastries & slices", parent_name: "Bakery" },
-      { name: "Cupcakes", slug: "cupcakes", description: "Decorated gourmet cupcakes", parent_name: "Bakery" },
-      { name: "Brownies & Cookies", slug: "cookies", description: "Fudge brownies & baked cookies", parent_name: "Bakery" },
-      { name: "Home Decoration", slug: "home-decor", description: "Vases, wall art & decorative items" },
-      { name: "Kitchen Essentials", slug: "kitchen", description: "Utensils, storage & accessories" },
-      { name: "Watches", slug: "watches", description: "Classic & modern timepieces" },
-      { name: "Baskets & Storage", slug: "baskets", description: "Organise your home beautifully" },
-      { name: "Daily Essentials", slug: "daily-essentials", description: "Everyday grocery & household needs" },
+      { name: "Bakery", slug: "bakery", description: "Freshly baked cakes, pastries & desserts", icon_path: "/bakery.png" },
+      { name: "Celebration Cakes", slug: "cakes", description: "Custom & birthday celebration cakes", icon_path: "/celebration-cakes.png" },
+      { name: "Pastries", slug: "pastries", description: "Fresh layered pastries & slices", icon_path: "/bakery.png" },
+      { name: "Cupcakes", slug: "cupcakes", description: "Decorated gourmet cupcakes", icon_path: "/celebration-cakes.png" },
+      { name: "Brownies & Cookies", slug: "cookies", description: "Fudge brownies & baked cookies", icon_path: "/bakery.png" },
+      { name: "Home Decoration", slug: "home-decor", description: "Vases, wall art & decorative items", icon_path: "/homeDisktop.png" },
+      { name: "Kitchen Essentials", slug: "kitchen", description: "Utensils, storage & accessories", icon_path: "/kicthens.jpg" },
+      { name: "Watches", slug: "watches", description: "Classic & modern timepieces", icon_path: "/WD.jpeg" },
+      { name: "Baskets & Storage", slug: "baskets", description: "Organise your home beautifully", icon_path: "/baskets.png" },
+      { name: "Daily Essentials", slug: "daily-essentials", description: "Everyday grocery & household needs", icon_path: "/homeItems.jfif" },
     ];
 
     try {
@@ -214,6 +214,7 @@ export function AdminCategoriesManager() {
             name: preset.name,
             slug: preset.slug,
             description: preset.description,
+            icon_path: preset.icon_path,
             is_published: true,
           }),
         });

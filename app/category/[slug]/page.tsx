@@ -12,32 +12,37 @@ const CATEGORY_DETAILS: Record<string, { title: string; desc: string; banner: st
   bakery: {
     title: "Fresh Bakery",
     desc: "Cakes, pastries, cupcakes, brownies, cookies & desserts prepared fresh in small batches daily.",
-    banner: "https://images.unsplash.com/photo-1509440159596-0249088772ff?auto=format&fit=crop&w=1400&q=90",
+    banner: "/bakery.png",
+  },
+  cakes: {
+    title: "Celebration Cakes",
+    desc: "Layer cakes, cream cakes, and handcrafted celebration centrepieces.",
+    banner: "/celebration-cakes.png",
   },
   "home-decor": {
     title: "Home Decoration",
     desc: "Vases, wall art, lamps, and decorative accents carefully curated for beautiful living spaces.",
-    banner: "https://images.unsplash.com/photo-1586023492125-27b2c045efd7?auto=format&fit=crop&w=1400&q=90",
+    banner: "/homeDisktop.png",
   },
   kitchen: {
     title: "Kitchen Essentials",
     desc: "Everyday kitchen utensils, organizers, storage sets, and accessories for convenient living.",
-    banner: "https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?auto=format&fit=crop&w=1400&q=90",
+    banner: "/kicthens.jpg",
   },
   watches: {
     title: "Watches & Timepieces",
     desc: "Classic and modern wristwatches designed for elegance, style, and durability.",
-    banner: "https://images.unsplash.com/photo-1523275335684-37898b6baf30?auto=format&fit=crop&w=1400&q=90",
+    banner: "/WD.jpeg",
   },
   baskets: {
     title: "Baskets & Storage",
     desc: "Organise your home beautifully with durable storage baskets, bins, and woven hampers.",
-    banner: "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?auto=format&fit=crop&w=1400&q=90",
+    banner: "/baskets.png",
   },
   "daily-essentials": {
     title: "Daily Essentials & Grocery",
     desc: "Everyday household needs, pantry items, and daily products delivered fast to your door.",
-    banner: "https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=1400&q=90",
+    banner: "/homeItems.jfif",
   },
 };
 

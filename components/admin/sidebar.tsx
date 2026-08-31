@@ -6,7 +6,7 @@ import { usePathname } from "next/navigation";
 import {
   BarChart3, Cake, ChevronRight, ExternalLink,
   FolderTree, Images, LayoutDashboard, LogOut,
-  Package, Settings, ShoppingBag, Star, Users,
+  Package, Settings, ShoppingBag, Star, Tag, Users,
 } from "lucide-react";
 
 const navGroups = [
@@ -22,6 +22,7 @@ const navGroups = [
     label: "Catalog",
     items: [
       { label: "Products", href: "/admin/products", icon: Package },
+      { label: "Deals & Promotions", href: "/admin/products?filter=deals", icon: Tag },
       { label: "Categories", href: "/admin/categories", icon: FolderTree },
       { label: "Media Library", href: "/admin/media", icon: Images },
     ],

@@ -2,8 +2,8 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
   Cake, ChevronDown, ChevronRight, Grid3x3, Heart, Home, Menu,
   PhoneCall, Search, ShoppingBag, ShoppingBasket, ShoppingCart, Sparkles,
@@ -75,6 +75,102 @@ const mobileNavLinks = [
   { label: "Contact Us",        href: "/contact" },
 ];
 
+function HeaderNav({
+  pathname,
+  megaRef,
+  megaOpen,
+  setMegaOpen,
+}: {
+  pathname: string;
+  megaRef: React.RefObject<HTMLDivElement | null>;
+  megaOpen: boolean;
+  setMegaOpen: React.Dispatch<React.SetStateAction<boolean>>;
+}) {
+  const searchParams = useSearchParams();
+  const categoryParam = searchParams.get("category");
+
+  return (
+    <nav className="ml-6 hidden items-center gap-1 lg:flex" aria-label="Primary navigation">
+      {navLinks.map((link) => {
+        if (link.isDropdown) {
+          return (
+            <div key={link.label} className="relative" ref={megaRef}>
+              <button
+                onClick={() => setMegaOpen((v) => !v)}
+                className={`flex items-center gap-1 rounded-lg px-3 py-2 text-[13px] font-bold transition-colors ${
+                  megaOpen ? "bg-orange-light text-orange" : "text-navy hover:bg-white hover:text-orange"
+                }`}
+              >
+                {link.label}
+                <ChevronDown size={14} className={`transition-transform ${megaOpen ? "rotate-180" : ""}`} />
+              </button>
+
+              {/* Categorized Mega Dropdown */}
+              {megaOpen && (
+                <div className="absolute left-1/2 top-full mt-2 z-[110] w-[540px] -translate-x-1/2 rounded-2xl border border-line bg-white p-4 shadow-xl animate-scale-in">
+                  <div className="grid grid-cols-2 gap-4">
+                    {navCategories.map((catGroup) => (
+                      <div key={catGroup.title} className="space-y-1">
+                        <p className="text-[11px] font-extrabold uppercase tracking-wider text-orange border-b border-line/60 pb-1 mb-1.5">
+                          {catGroup.title}
+                        </p>
+                        {catGroup.items.map((item) => (
+                          <Link
+                            key={item.label}
+                            href={item.href}
+                            onClick={() => setMegaOpen(false)}
+                            className="block rounded-lg px-2 py-1 text-[12px] font-bold text-navy hover:bg-orange-light hover:text-orange transition-colors"
+                          >
+                            {item.label}
+                          </Link>
+                        ))}
+                      </div>
+                    ))}
+                  </div>
+                  <div className="mt-3 border-t border-line pt-2.5 px-1 flex items-center justify-between text-[12px] font-extrabold text-orange">
+                    <span>Explore everything you need</span>
+                    <Link
+                      href="/shop"
+                      onClick={() => setMegaOpen(false)}
+                      className="flex items-center gap-1 hover:text-orange-dark"
+                    >
+                      Browse All Products <ChevronRight size={14} />
+                    </Link>
+                  </div>
+                </div>
+              )}
+            </div>
+          );
+        }
+
+        let active = false;
+        if (link.href === "/") {
+          active = pathname === "/";
+        } else if (link.href === "/shop") {
+          active = pathname === "/shop" && categoryParam !== "bakery";
+        } else if (link.href.includes("?category=")) {
+          const targetCategory = new URLSearchParams(link.href.split("?")[1]).get("category");
+          active = pathname === "/shop" && categoryParam === targetCategory;
+        } else {
+          active = pathname.startsWith(link.href);
+        }
+
+        return (
+          <Link
+            key={link.label}
+            href={link.href}
+            className={`rounded-lg px-3.5 py-2 text-[13px] font-bold transition-colors ${
+              active ? "bg-orange-light text-orange" : "text-navy hover:bg-white hover:text-orange"
+            }`}
+          >
+            {link.label}
+          </Link>
+        );
+      })}
+    </nav>
+  );
+}
+
 export function Header() {
   const pathname = usePathname();
   const router   = useRouter();
@@ -143,7 +239,7 @@ export function Header() {
 
       {/* ── Main Header ── */}
       <header
-        className={`sticky top-0 z-40 border-b border-line/70 transition-all ${
+        className={`sticky top-0 z-50 border-b border-line/70 transition-all ${
           scrolled ? "bg-cream/95 shadow-[0_8px_24px_rgba(6,33,54,.06)] backdrop-blur-md" : "bg-cream"
         }`}
       >
@@ -173,73 +269,17 @@ export function Header() {
           </Link>
 
           {/* Desktop Nav */}
-          <nav className="ml-6 hidden items-center gap-1 lg:flex" aria-label="Primary navigation">
-            {navLinks.map((link) => {
-              if (link.isDropdown) {
-                return (
-                  <div key={link.label} className="relative" ref={megaRef}>
-                    <button
-                      onClick={() => setMegaOpen((v) => !v)}
-                      className={`flex items-center gap-1 rounded-lg px-3 py-2 text-[13px] font-bold transition-colors ${
-                        megaOpen ? "bg-orange-light text-orange" : "text-navy hover:bg-white hover:text-orange"
-                      }`}
-                    >
-                      {link.label}
-                      <ChevronDown size={14} className={`transition-transform ${megaOpen ? "rotate-180" : ""}`} />
-                    </button>
-
-                    {/* Categorized Mega Dropdown */}
-                    {megaOpen && (
-                      <div className="absolute left-1/2 top-full mt-2 z-50 w-[540px] -translate-x-1/2 rounded-2xl border border-line bg-white p-4 shadow-xl animate-scale-in">
-                        <div className="grid grid-cols-2 gap-4">
-                          {navCategories.map((catGroup) => (
-                            <div key={catGroup.title} className="space-y-1">
-                              <p className="text-[11px] font-extrabold uppercase tracking-wider text-orange border-b border-line/60 pb-1 mb-1.5">
-                                {catGroup.title}
-                              </p>
-                              {catGroup.items.map((item) => (
-                                <Link
-                                  key={item.label}
-                                  href={item.href}
-                                  onClick={() => setMegaOpen(false)}
-                                  className="block rounded-lg px-2 py-1 text-[12px] font-bold text-navy hover:bg-orange-light hover:text-orange transition-colors"
-                                >
-                                  {item.label}
-                                </Link>
-                              ))}
-                            </div>
-                          ))}
-                        </div>
-                        <div className="mt-3 border-t border-line pt-2.5 px-1 flex items-center justify-between text-[12px] font-extrabold text-orange">
-                          <span>Explore everything you need</span>
-                          <Link
-                            href="/shop"
-                            onClick={() => setMegaOpen(false)}
-                            className="flex items-center gap-1 hover:text-orange-dark"
-                          >
-                            Browse All Products <ChevronRight size={14} />
-                          </Link>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                );
-              }
-
-              const active = link.href === "/" ? pathname === "/" : pathname.startsWith(link.href.split("?")[0]) && link.href !== "/shop";
-              return (
-                <Link
-                  key={link.label}
-                  href={link.href}
-                  className={`rounded-lg px-3.5 py-2 text-[13px] font-bold transition-colors ${
-                    active ? "bg-orange-light text-orange" : "text-navy hover:bg-white hover:text-orange"
-                  }`}
-                >
+          <Suspense fallback={
+            <nav className="ml-6 hidden items-center gap-1 lg:flex" aria-label="Primary navigation">
+              {navLinks.map((link) => (
+                <Link key={link.label} href={link.href} className="rounded-lg px-3.5 py-2 text-[13px] font-bold text-navy">
                   {link.label}
                 </Link>
-              );
-            })}
-          </nav>
+              ))}
+            </nav>
+          }>
+            <HeaderNav pathname={pathname} megaRef={megaRef} megaOpen={megaOpen} setMegaOpen={setMegaOpen} />
+          </Suspense>
 
           {/* Right icons */}
           <div className="ml-auto flex items-center gap-1.5 sm:gap-2">
@@ -297,7 +337,7 @@ export function Header() {
 
       {/* ── Mobile Drawer ── */}
       {menuOpen && (
-        <div className="fixed inset-0 z-50 md:hidden" role="dialog" aria-modal="true" aria-label="Mobile navigation">
+        <div className="fixed inset-0 z-[200] md:hidden" role="dialog" aria-modal="true" aria-label="Mobile navigation">
           <button className="absolute inset-0 bg-navy/50" onClick={() => setMenuOpen(false)} aria-label="Close navigation overlay" />
           <div className="absolute inset-y-0 left-0 flex w-[min(88vw,360px)] flex-col bg-cream shadow-2xl animate-fade-in overflow-y-auto">
             <div className="flex items-center justify-between border-b border-line px-5 py-5 sticky top-0 bg-cream z-10">
