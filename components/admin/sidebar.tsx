@@ -52,7 +52,7 @@ export function AdminSidebar() {
 
   return (
     <aside
-      className="sticky top-0 flex h-screen w-[252px] flex-col overflow-y-auto overflow-x-hidden border-r border-white/[.07] text-white"
+      className="flex h-screen w-[252px] flex-col overflow-y-auto overflow-x-hidden border-r border-white/[.07] text-white"
       style={{ background: "var(--admin-sidebar)" }}
     >
       {/* ── Logo ────────────────────────────────────── */}
