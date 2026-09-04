@@ -5,13 +5,14 @@ import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ArrowRight, Check, ChevronLeft, ChevronRight, Heart, Info, Minus, Package,
-  Plus, RotateCcw, Share2, ShieldCheck, Sparkles, Star, Truck, X, ZoomIn,
+  Plus, RotateCcw, Share2, ShieldCheck, Sparkles, Star, Truck, X, Zap, ZoomIn,
 } from "lucide-react";
 import type { Product, ProductAttribute, ProductVariation } from "@/lib/types";
 import { formatPKR } from "@/lib/catalog";
 import { resolveProductGallery } from "@/lib/gallery-resolver";
 import { useCart } from "./cart-provider";
 import { ProductReviewsSection } from "./product-reviews-section";
+import { DealsCountdown } from "./deals-countdown";
 
 type Tab = "description" | "specifications" | "ingredients" | "care" | "delivery" | "returns" | "reviews" | "faqs";
 
@@ -239,7 +240,44 @@ export function ProductDetailClient({ product, reviews, faqs = [] }: { product: 
           <h1 className="mt-3 font-display text-4xl font-bold leading-tight text-navy sm:text-5xl">{activeTitle}</h1>
           <div className="mt-4 flex flex-wrap items-center gap-3"><span className="flex items-center gap-1.5 rounded-full border border-orange/20 bg-orange/10 px-3 py-1.5 text-xs font-bold text-navy"><Star size={13} fill="currentColor" className="text-orange" /> {avgRating ? avgRating.toFixed(1) : "New"}</span><button onClick={() => setActiveTab("reviews")} className="text-xs font-bold text-muted hover:text-orange">{reviews.length} reviews</button><span className="text-line">•</span>{!hasRequiredSelection ? <span className="text-xs font-bold text-amber-600">Select options to check availability</span> : isOutOfStock ? <span className="text-xs font-bold text-red-500">Out of stock</span> : isLowStock ? <span className="text-xs font-bold text-amber-600">Only {activeStock} left</span> : <span className="flex items-center gap-1.5 text-xs font-bold text-green"><ShieldCheck size={13} /> In stock</span>}</div>
 
-          <div className="mt-6 rounded-2xl border border-line/70 bg-white p-5 shadow-xs"><div className="flex flex-wrap items-baseline gap-3"><span className="font-display text-3xl font-extrabold text-navy">{!hasRequiredSelection && priceRange ? `From ${priceRange}` : formatPKR(activeSalePrice ?? activePrice)}</span>{hasRequiredSelection && activeSalePrice ? <><span className="text-lg font-medium text-muted line-through">{formatPKR(activePrice)}</span>{discountPercent ? <span className="badge badge-sale">Save {discountPercent}%</span> : null}</> : null}</div><p className="mt-1.5 text-xs text-muted">Taxes included · Free delivery on orders over Rs. 3,000</p></div>
+          {/* Price & Special Deal Block */}
+          {activeSalePrice ? (
+            <div className="mt-6 rounded-2xl border border-orange/40 bg-orange/10 p-5 shadow-xs">
+              <div className="flex flex-wrap items-center justify-between gap-3 border-b border-orange/20 pb-3 mb-3">
+                <span className="badge badge-sale flex items-center gap-1 shadow-xs">
+                  <Zap size={12} className="fill-current" /> Special Deal
+                </span>
+                <DealsCountdown
+                  targetDate={(activeVariation as any)?.dealInfo?.endAt ?? (product as any)?.dealInfo?.endAt}
+                  label="Deal ends in"
+                  compact
+                />
+              </div>
+              <div className="flex flex-wrap items-baseline gap-3">
+                <span className="font-display text-3xl font-extrabold text-navy">
+                  {!hasRequiredSelection && priceRange ? `From ${priceRange}` : formatPKR(activeSalePrice)}
+                </span>
+                <span className="text-lg font-medium text-muted line-through">
+                  {formatPKR(activePrice)}
+                </span>
+                {discountPercent ? (
+                  <span className="rounded-full bg-green/15 px-2.5 py-0.5 text-xs font-black text-green-dark">
+                    Save {discountPercent}% ({formatPKR(activePrice - activeSalePrice)})
+                  </span>
+                ) : null}
+              </div>
+              <p className="mt-2 text-xs text-muted">Taxes included · Free delivery on orders over Rs. 3,000</p>
+            </div>
+          ) : (
+            <div className="mt-6 rounded-2xl border border-line/70 bg-white p-5 shadow-xs">
+              <div className="flex flex-wrap items-baseline gap-3">
+                <span className="font-display text-3xl font-extrabold text-navy">
+                  {!hasRequiredSelection && priceRange ? `From ${priceRange}` : formatPKR(activePrice)}
+                </span>
+              </div>
+              <p className="mt-1.5 text-xs text-muted">Taxes included · Free delivery on orders over Rs. 3,000</p>
+            </div>
+          )}
 
           {attributes.length > 0 ? (
             <div className="mt-6 grid gap-5">

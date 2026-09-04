@@ -1,6 +1,7 @@
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { mapProduct } from "@/lib/catalog";
 import type { Category, Product } from "@/lib/types";
+import { getActiveDeals, getStorefrontDeals, getFeaturedDeal, attachDealPricingToProduct } from "@/lib/deals";
 
 function configured() {
   return Boolean(process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
@@ -132,7 +133,12 @@ export async function getProducts(options: { featured?: boolean; bestseller?: bo
     const current = summary.get(review.product_id) ?? { total: 0, count: 0 };
     current.total += review.rating; current.count += 1; summary.set(review.product_id, current);
   }
-  return rows.map((row: any) => { const s = summary.get(row.id); return mapProduct({ ...row, average_rating: s ? s.total / s.count : 0, review_count: s?.count ?? 0 }); });
+  const activeDeals = await getActiveDeals();
+  return rows.map((row: any) => {
+    const s = summary.get(row.id);
+    const mapped = mapProduct({ ...row, average_rating: s ? s.total / s.count : 0, review_count: s?.count ?? 0 });
+    return attachDealPricingToProduct(mapped, activeDeals);
+  });
 }
 
 export async function getProductBySlug(slug: string) {
@@ -177,7 +183,7 @@ export async function getProductBySlug(slug: string) {
   const productId = row.id;
 
   // Step 2: Safely fetch attributes, variations, faqs, and reviews in separate resilient queries
-  const [attrRes, varRes, faqRes, reviewRes] = await Promise.all([
+  const [attrRes, varRes, faqRes, reviewRes, activeDeals] = await Promise.all([
     supabase
       .from("product_attributes")
       .select("id,name,slug,display_type,sort_order,is_required,controls_images,product_attribute_values(id,label,slug,sort_order,swatch_color,swatch_image,is_active,product_attribute_images(id,storage_path,sort_order,product_image_id))")
@@ -200,6 +206,7 @@ export async function getProductBySlug(slug: string) {
       .or("status.eq.approved,is_approved.eq.true")
       .order("created_at", { ascending: false })
       .limit(200),
+    getActiveDeals(),
   ]);
 
   const productAttributes = attrRes.data ?? [];
@@ -214,12 +221,24 @@ export async function getProductBySlug(slug: string) {
   };
 
   const rating = reviews.length ? reviews.reduce((sum: number, review: any) => sum + review.rating, 0) / reviews.length : 0;
-  return { product: mapProduct({ ...fullRow, average_rating: rating, review_count: reviews.length }), reviews, faqs };
+  const mapped = mapProduct({ ...fullRow, average_rating: rating, review_count: reviews.length });
+  const finalProduct = attachDealPricingToProduct(mapped, activeDeals);
+
+  return { product: finalProduct, reviews, faqs };
 }
 
 export async function getHomeContent() {
-  const [categories, featured, bestsellers, banners, faqs, reviews] = await Promise.all([getCategories(), getProducts({ featured: true, limit: 8 }), getProducts({ bestseller: true, limit: 8 }), getBanners(), getFaqs(), getFeaturedReviews()]);
-  return { categories, featured, bestsellers, banners, faqs, reviews };
+  const [categories, featured, bestsellers, banners, faqs, reviews, activeDeals, featuredDeal] = await Promise.all([
+    getCategories(),
+    getProducts({ featured: true, limit: 8 }),
+    getProducts({ bestseller: true, limit: 8 }),
+    getBanners(),
+    getFaqs(),
+    getFeaturedReviews(),
+    getStorefrontDeals(),
+    getFeaturedDeal(),
+  ]);
+  return { categories, featured, bestsellers, banners, faqs, reviews, activeDeals, featuredDeal };
 }
 
 export async function getFeaturedReviews() {

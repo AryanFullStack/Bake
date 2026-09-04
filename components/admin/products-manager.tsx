@@ -1,11 +1,12 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useState, useEffect, useCallback } from "react";
 import {
-  Check, ChevronLeft, ChevronRight, Copy, Eye, Filter, Layers,
-  MoreVertical, Package, Pencil, Plus, RefreshCw, Search, Trash2, X, XCircle,
+  ArrowRight, Check, ChevronLeft, ChevronRight, Copy, Eye, Filter, Layers,
+  MoreVertical, Package, Pencil, Plus, RefreshCw, Search, Tag, Trash2, X, XCircle,
 } from "lucide-react";
 import { formatPKR, publicStorageUrl } from "@/lib/catalog";
 import { ProductWizard } from "./product-wizard";
@@ -69,6 +70,7 @@ function StockBar({ qty, threshold }: { qty: number; threshold: number }) {
 export function AdminProductsManager({ initialProducts = [], categories = [], brands = [] }: AdminProductsManagerProps) {
   const searchParams = useSearchParams();
   const catParam = searchParams.get("category_id") || "";
+  const filterParam = searchParams.get("filter") || "";
 
   const [products, setProducts] = useState<ProductRow[]>(initialProducts);
   const [loading, setLoading] = useState(false);
@@ -80,6 +82,7 @@ export function AdminProductsManager({ initialProducts = [], categories = [], br
   const [selectedCategory, setSelectedCategory] = useState(catParam);
   const [selectedStockStatus, setSelectedStockStatus] = useState("");
   const [selectedStatus, setSelectedStatus] = useState("");
+  const [dealsOnlyFilter, setDealsOnlyFilter] = useState(filterParam === "deals");
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [bulkAction, setBulkAction] = useState("");
   const [bulkStockValue, setBulkStockValue] = useState("");
@@ -101,17 +104,21 @@ export function AdminProductsManager({ initialProducts = [], categories = [], br
       const res = await fetch(`/api/admin/products?${params}`);
       const json = await res.json();
       if (json.success) {
-        setProducts(json.products || []);
-        setTotalPages(json.pagination.totalPages || 1);
-        setTotalProducts(json.pagination.total || 0);
+        let list = json.products || [];
+        if (dealsOnlyFilter) {
+          list = list.filter((p: any) => p.sale_price || (Array.isArray(p.product_variations) && p.product_variations.some((v: any) => v.sale_price)));
+        }
+        setProducts(list);
+        setTotalPages(json.pagination?.totalPages || 1);
+        setTotalProducts(list.length || json.pagination?.total || 0);
       }
     } catch { /* silent */ }
     finally { setLoading(false); }
-  }, [page, limit, searchQuery, selectedCategory, selectedStockStatus, selectedStatus]);
+  }, [page, limit, searchQuery, selectedCategory, selectedStockStatus, selectedStatus, dealsOnlyFilter]);
 
   useEffect(() => { fetchProducts(); }, [fetchProducts]);
 
-  useEffect(() => { setSelectedIds([]); }, [page, searchQuery, selectedCategory, selectedStockStatus, selectedStatus]);
+  useEffect(() => { setSelectedIds([]); }, [page, searchQuery, selectedCategory, selectedStockStatus, selectedStatus, dealsOnlyFilter]);
 
   const handleBulk = async () => {
     if (!selectedIds.length || !bulkAction) return;
@@ -178,6 +185,24 @@ export function AdminProductsManager({ initialProducts = [], categories = [], br
           <Plus size={16} /> Add Product
         </button>
       </div>
+
+      {/* ── Deals Shortcut Banner ─────────────────────── */}
+      {(filterParam === "deals" || dealsOnlyFilter) && (
+        <div className="mb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 rounded-2xl border border-orange/30 bg-orange/10 p-5 backdrop-blur-xs">
+          <div className="flex items-center gap-3">
+            <div className="grid h-10 w-10 place-items-center rounded-xl bg-orange text-white shadow-xs">
+              <Tag size={20} />
+            </div>
+            <div>
+              <h3 className="text-sm font-bold text-navy">Products Currently on Deal</h3>
+              <p className="text-xs text-muted">Viewing products with promotional pricing. For full campaign management, scheduling, countdowns &amp; deal banners, visit Deals &amp; Promotions.</p>
+            </div>
+          </div>
+          <Link href="/admin/deals" className="button-primary shrink-0 text-xs px-4 py-2.5">
+            Manage Deals &amp; Promotions <ArrowRight size={14} />
+          </Link>
+        </div>
+      )}
 
       {/* ── Toolbar ─────────────────────────────────── */}
       <div className="mb-4 rounded-2xl border border-admin-border bg-white p-4 shadow-xs">

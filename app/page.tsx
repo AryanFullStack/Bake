@@ -4,9 +4,10 @@ import Link from "next/link";
 import {
   ArrowRight, Award, Cake, CheckCircle2, Heart, Home, Mail,
   Package, ShieldCheck, ShoppingBag, ShoppingBasket, Star,
-  Truck, UtensilsCrossed, Watch, Wheat, Sparkles,
+  Truck, UtensilsCrossed, Watch, Wheat, Sparkles, Zap,
 } from "lucide-react";
 import { getHomeContent } from "@/lib/storefront";
+import { calculateProductDealPrice } from "@/lib/deals";
 import { ProductCard } from "@/components/storefront/product-card";
 import { MultiCategoryHero } from "@/components/storefront/multi-category-hero";
 import { HomeKitchenShowcase } from "@/components/storefront/home-kitchen-showcase";
@@ -27,7 +28,7 @@ function Stars({ rating = 5 }: { rating?: number }) {
 /* ═══════════════════════════════════════════════════════════ */
 
 export default async function HomePage() {
-  const { categories, featured, bestsellers, reviews } = await getHomeContent();
+  const { categories, featured, bestsellers, reviews, activeDeals = [], featuredDeal } = await getHomeContent();
 
   /* ── Real DB products only ────────────────────────────── */
   const allDbProducts = [...bestsellers, ...featured];
@@ -43,11 +44,60 @@ export default async function HomePage() {
   const mostLoved: Product[] = uniqueProducts.slice(0, 6);
   const mostLovedIds = new Set(mostLoved.map((p) => p.id));
 
-  // Deals — products with a sale price, not already in mostLoved
-  const dealProducts: Product[] = uniqueProducts
-    .filter((p) => p.salePrice && !mostLovedIds.has(p.id))
-    .slice(0, 4);
-  const dealIds = new Set(dealProducts.map((p) => p.id));
+  // Collect all deal products from products list and active deals
+  const dealProductsMap = new Map<string, Product>();
+
+  for (const p of uniqueProducts) {
+    if (p.salePrice || p.dealInfo?.isOnDeal) {
+      dealProductsMap.set(p.id, p);
+    }
+  }
+
+  for (const deal of activeDeals) {
+    if (deal.deal_products) {
+      for (const dp of deal.deal_products) {
+        if (dp.products) {
+          const prodObj = dp.products as any;
+          if (!dealProductsMap.has(prodObj.id)) {
+            const varObj = dp.product_variations as any;
+            const regPrice = Number(prodObj.price ?? 0);
+            const actualRegPrice = varObj ? Number(varObj.regular_price ?? varObj.price ?? regPrice) : regPrice;
+
+            const dealCalc = calculateProductDealPrice({
+              productId: prodObj.id,
+              variationId: varObj?.id || null,
+              regularPrice: actualRegPrice,
+              activeDeals,
+            });
+
+            const effectiveSaleP = dealCalc.isOnDeal
+              ? dealCalc.dealPrice
+              : dp.custom_deal_price
+              ? Number(dp.custom_deal_price)
+              : null;
+
+            dealProductsMap.set(prodObj.id, {
+              id: prodObj.id,
+              name: varObj ? `${prodObj.name} (${varObj.name || Object.values(varObj.attributes || {}).join(" / ")})` : prodObj.name,
+              slug: prodObj.slug || prodObj.id,
+              category: prodObj.categories?.name || "Bake Mart",
+              description: prodObj.description || deal.short_description || "Special Deal Offer",
+              price: actualRegPrice,
+              salePrice: effectiveSaleP,
+              image: varObj?.featured_image || prodObj.featured_image || "/placeholder-bake.svg",
+              stock: varObj?.stock_quantity ?? prodObj.stock_quantity ?? 10,
+              isPublished: true,
+              productType: prodObj.product_type || "simple",
+              dealInfo: dealCalc,
+            } as any);
+          }
+        }
+      }
+    }
+  }
+
+  const displayDealProducts: Product[] = Array.from(dealProductsMap.values());
+  const dealIds = new Set(displayDealProducts.map((p) => p.id));
 
   // New Arrivals — remaining products
   const newArrivals: Product[] = uniqueProducts
@@ -306,10 +356,10 @@ export default async function HomePage() {
         </section>
       )}
 
-      {/* ── Limited-Time Deals — hide if no DB deal products ───── */}
-      {dealProducts.length > 0 && (
+      {/* ── Limited-Time Deals — hide if no DB active deals or deal products ───── */}
+      {(activeDeals.length > 0 || displayDealProducts.length > 0) && (
         <section className="relative overflow-hidden bg-navy text-white py-16 md:py-20">
-          {/* Poster inspired background glow */}
+          {/* Ambient background glow */}
           <div className="pointer-events-none absolute inset-0">
             <div
               className="absolute right-0 top-0 h-[450px] w-[450px] rounded-full opacity-30"
@@ -317,31 +367,75 @@ export default async function HomePage() {
             />
           </div>
 
-          <div className="container-shell relative z-10">
-            <div className="flex flex-col justify-between gap-4 md:flex-row md:items-end mb-10">
-              <div>
-                <span className="deal-badge mb-3 inline-block">🔥 Today's Best Deals</span>
-                <h2 className="font-display text-2xl sm:text-3xl font-bold text-white">
-                  Hand-picked offers — refreshed regularly.
-                </h2>
-              </div>
-              <DealsCountdown />
-            </div>
-
-            <div className="grid grid-cols-2 gap-2.5 sm:gap-5 lg:grid-cols-4">
-              {dealProducts.map((product, i) => (
-                <div key={product.id} className="animate-slide-up" style={{ animationDelay: `${i * 0.08}s` }}>
-                  <ProductCard product={product} />
+          <div className="container-shell relative z-10 space-y-10">
+            {/* Featured Promotional Banner (If set by Admin) */}
+            {featuredDeal ? (
+              <div className="rounded-3xl border border-orange/40 bg-orange/10 p-6 sm:p-10 backdrop-blur-md relative overflow-hidden flex flex-col md:flex-row md:items-center justify-between gap-6">
+                <div className="max-w-xl">
+                  <span className="deal-badge mb-3 inline-block">
+                    {featuredDeal.badge_text || "🔥 Featured Deal"}
+                  </span>
+                  <h3 className="font-display text-2xl sm:text-4xl font-extrabold text-white leading-tight">
+                    {featuredDeal.name}
+                  </h3>
+                  {featuredDeal.short_description && (
+                    <p className="mt-2 text-xs sm:text-sm text-white/80 leading-relaxed">
+                      {featuredDeal.short_description}
+                    </p>
+                  )}
+                  <div className="mt-5 flex items-center gap-3">
+                    <Link
+                      href={`/deals/${featuredDeal.slug}`}
+                      className="button-primary text-xs sm:text-sm px-6 py-2.5 shadow-md"
+                    >
+                      Shop Featured Deal <ArrowRight size={15} />
+                    </Link>
+                  </div>
                 </div>
-              ))}
-            </div>
+                <DealsCountdown targetDate={featuredDeal.end_at} label="Featured Deal Ends In" />
+              </div>
+            ) : (
+              /* Section Header when no featured deal banner */
+              <div className="flex flex-col justify-between gap-4 md:flex-row md:items-end">
+                <div>
+                  <span className="deal-badge mb-3 inline-block">🔥 Today's Best Deals</span>
+                  <h2 className="font-display text-2xl sm:text-3xl font-bold text-white">
+                    Hand-picked offers — refreshed regularly.
+                  </h2>
+                </div>
+                {activeDeals[0] && (
+                  <DealsCountdown targetDate={activeDeals[0].end_at} label="Offer Ends In" />
+                )}
+              </div>
+            )}
 
-            <div className="mt-10 text-center">
+            {/* Deal Products Grid */}
+            {displayDealProducts.length > 0 && (
+              <div>
+                <div className="flex items-center justify-between mb-6 border-b border-white/10 pb-3">
+                  <h3 className="text-xs sm:text-sm font-extrabold uppercase tracking-wider text-orange flex items-center gap-2">
+                    <Zap size={14} className="fill-current" /> Products Currently On Deal
+                  </h3>
+                  <span className="text-xs font-bold text-white/60">{displayDealProducts.length} Items Available</span>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2.5 sm:gap-5 lg:grid-cols-4">
+                  {displayDealProducts.slice(0, 8).map((product, i) => (
+                    <div key={product.id} className="animate-slide-up" style={{ animationDelay: `${i * 0.06}s` }}>
+                      <ProductCard product={product} />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* View All Deals CTA */}
+            <div className="text-center pt-2">
               <Link
-                href="/shop?sale=1"
-                className="button-secondary border-white/30 bg-white/10 text-white hover:bg-white hover:text-navy inline-flex items-center gap-2 text-xs sm:text-sm px-6 py-3"
+                href={activeDeals[0] ? `/deals/${activeDeals[0].slug}` : "/shop?sale=1"}
+                className="button-secondary border-white/30 bg-white/10 text-white hover:bg-white hover:text-navy inline-flex items-center gap-2 text-xs sm:text-sm px-8 py-3"
               >
-                View All Deals <ArrowRight size={14} />
+                View All Active Deals <ArrowRight size={14} />
               </Link>
             </div>
           </div>

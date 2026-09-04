@@ -51,9 +51,15 @@ export function ProductCard({ product }: { product: Product }) {
   })();
   const hasMultiple = allImages.length > 1;
 
-  const discount = product.salePrice && product.price > product.salePrice
+  const hasDeal = Boolean(product.dealInfo?.isOnDeal);
+  const effectiveRegularPrice = hasDeal ? product.dealInfo!.regularPrice : product.price;
+  const effectiveSalePrice = hasDeal ? product.dealInfo!.dealPrice : product.salePrice;
+  const discount = hasDeal
+    ? product.dealInfo!.discountPercentage
+    : product.salePrice && product.price > product.salePrice
     ? Math.round(((product.price - product.salePrice) / product.price) * 100)
     : null;
+  const badgeLabel = hasDeal && product.dealInfo!.badgeText ? product.dealInfo!.badgeText : `${discount}% OFF`;
 
   const isNew = !discount && !product.bestseller;
   const isOutOfStock = product.stock < 1;
@@ -116,7 +122,11 @@ export function ProductCard({ product }: { product: Product }) {
 
         {/* Badge stack — top-left */}
         <div className="absolute left-3 top-3 flex flex-col gap-1.5 z-10">
-          {discount && <span className="badge badge-sale">{discount}% off</span>}
+          {discount && (
+            <span className="badge badge-sale flex items-center gap-1 shadow-sm">
+              <Zap size={10} className="fill-current" /> {badgeLabel}
+            </span>
+          )}
           {product.bestseller && !discount && <span className="badge badge-bestseller">Bestseller</span>}
           {isNew && !discount && !product.bestseller && <span className="badge badge-new">New</span>}
           {isOutOfStock && <span className="badge badge-soldout">Sold out</span>}
@@ -218,19 +228,19 @@ export function ProductCard({ product }: { product: Product }) {
         <div className="mt-auto flex items-end justify-between gap-2 border-t border-line/60 pt-3 mt-3">
           <div>
             <span className="block text-[15px] font-extrabold text-navy">
-              {product.priceRange ? (
+              {product.priceRange && !hasDeal ? (
                 product.priceRange.includes("–") ? (
                   <span className="text-xs font-bold text-navy">{product.priceRange}</span>
                 ) : (
-                  formatPKR(product.salePrice ?? product.price)
+                  formatPKR(effectiveSalePrice ?? effectiveRegularPrice)
                 )
               ) : (
-                formatPKR(product.salePrice ?? product.price)
+                formatPKR(effectiveSalePrice ?? effectiveRegularPrice)
               )}
             </span>
-            {product.salePrice && !product.priceRange?.includes("–") && (
+            {effectiveSalePrice && effectiveSalePrice < effectiveRegularPrice && (
               <span className="text-[11px] font-medium text-muted line-through">
-                {formatPKR(product.price)}
+                {formatPKR(effectiveRegularPrice)}
               </span>
             )}
           </div>

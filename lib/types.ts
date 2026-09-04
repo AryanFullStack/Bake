@@ -108,6 +108,7 @@ export type Product = {
   productType?: "simple" | "variable";
   shortDescription?: string | null;
   specifications?: Record<string, string>;
+  dealInfo?: PriceCalculationResult;
   ingredients?: string | null;
   careInstructions?: string | null;
   deliveryInformation?: string | null;
@@ -282,5 +283,95 @@ export type ProductRow = {
   product_attributes?: any[];
   product_variations?: any[];
   updated_at: string;
+};
+
+export type DealType = "percentage" | "fixed" | "sale_price" | "buy_x_get_y";
+
+export type DealStatus = "draft" | "scheduled" | "active" | "paused" | "expired";
+
+export type DealProduct = {
+  id?: string;
+  deal_id?: string;
+  product_id: string;
+  variation_id?: string | null;
+  custom_deal_price?: number | null;
+  created_at?: string;
+  products?: {
+    id: string;
+    name: string;
+    sku: string;
+    price: number;
+    sale_price?: number | null;
+    featured_image?: string | null;
+    stock_quantity: number;
+    categories?: { name: string } | null;
+  } | null;
+  product_variations?: {
+    id: string;
+    name: string;
+    sku?: string | null;
+    regular_price: number;
+    sale_price?: number | null;
+    stock_quantity: number;
+    attributes?: Record<string, string>;
+  } | null;
+};
+
+export type Deal = {
+  id: string;
+  name: string;
+  slug: string;
+  description?: string | null;
+  short_description?: string | null;
+  deal_type: DealType;
+  discount_value: number;
+  banner_image?: string | null;
+  mobile_banner_image?: string | null;
+  badge_text?: string | null;
+  start_at: string;
+  end_at: string;
+  priority: number;
+  is_active: boolean;
+  is_featured: boolean;
+  max_quantity_per_customer?: number | null;
+  total_quantity?: number | null;
+  min_quantity?: number | null;
+  min_cart_amount?: number | null;
+  max_discount_amount?: number | null;
+  created_at?: string;
+  updated_at?: string;
+  status?: DealStatus;
+  deal_products?: DealProduct[];
+  products_count?: number;
+};
+
+export type PriceCalculationResult = {
+  regularPrice: number;
+  dealPrice: number;
+  discountAmount: number;
+  discountPercentage: number;
+  isOnDeal: boolean;
+  dealId?: string;
+  dealName?: string;
+  badgeText?: string;
+  endAt?: string;
+  priority?: number;
+};
+
+export type DealSummaryStats = {
+  totalDeals: number;
+  activeDeals: number;
+  scheduledDeals: number;
+  expiredDeals: number;
+  draftDeals: number;
+  productsOnDeal: number;
+};
+
+export type DealAnalytics = {
+  totalOrders: number;
+  unitsSold: number;
+  grossSales: number;
+  discountGiven: number;
+  averageOrderValue: number;
 };
 

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
+import { getActiveDeals, calculateProductDealPrice } from "@/lib/deals";
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -121,6 +122,8 @@ export async function POST(request: Request) {
 
     // Fallback: Validate product details & calculate trusted server pricing
     let subtotal = 0;
+    const activeDeals = await getActiveDeals();
+
     const validatedItems: Array<{
       product_id: string | null;
       variation_id: string | null;
@@ -133,6 +136,10 @@ export async function POST(request: Request) {
       quantity: number;
       line_total: number;
       is_variable: boolean;
+      deal_id?: string | null;
+      deal_name?: string | null;
+      regular_price?: number;
+      discount_amount?: number;
     }> = [];
 
     for (const item of parsed.data.items) {
@@ -184,6 +191,7 @@ export async function POST(request: Request) {
         );
       }
 
+      let regularPrice = Number(product.price);
       let unitPrice = Number(product.sale_price ?? product.price);
       let varTitle = product.name;
       let attributes: any = {};
@@ -217,6 +225,7 @@ export async function POST(request: Request) {
               { status: 400 }
             );
           }
+          regularPrice = Number(variation.regular_price ?? variation.price);
           unitPrice = Number(variation.sale_price ?? variation.regular_price);
           varTitle = variation.title || variation.name || product.name;
           attributes = variation.attributes ?? {};
@@ -231,6 +240,18 @@ export async function POST(request: Request) {
             { status: 400 }
           );
         }
+      }
+
+      // Check active deal pricing
+      const dealCalc = calculateProductDealPrice({
+        productId: product.id,
+        variationId: validVariationId,
+        regularPrice,
+        activeDeals,
+      });
+
+      if (dealCalc.isOnDeal) {
+        unitPrice = dealCalc.dealPrice;
       }
 
       const lineTotal = unitPrice * item.quantity;
@@ -248,6 +269,10 @@ export async function POST(request: Request) {
         quantity: item.quantity,
         line_total: lineTotal,
         is_variable: product.product_type === "variable",
+        deal_id: dealCalc.dealId || null,
+        deal_name: dealCalc.dealName || null,
+        regular_price: regularPrice,
+        discount_amount: dealCalc.discountAmount,
       });
     }
 
@@ -297,6 +322,10 @@ export async function POST(request: Request) {
       unit_price: item.unit_price,
       quantity: item.quantity,
       line_total: item.line_total,
+      deal_id: item.deal_id,
+      deal_name: item.deal_name,
+      regular_price: item.regular_price,
+      discount_amount: item.discount_amount,
     }));
 
     const { error: itemsInsertErr } = await dbClient.from("order_items").insert(itemsToInsert);

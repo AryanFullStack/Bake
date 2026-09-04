@@ -1,34 +1,23 @@
 import Link from "next/link";
-import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import { createClient } from "@/utils/supabase/server";
-import { Cake, Heart, MapPin, Package, UserRound, LogOut, LayoutDashboard, Sparkles, ArrowRight } from "lucide-react";
+import { getCurrentProfile } from "@/lib/auth";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { Cake, Heart, MapPin, Package, UserRound, LogOut, LayoutDashboard, Sparkles, ArrowRight, ShieldCheck } from "lucide-react";
 
 export default async function AccountPage() {
-  const cookieStore = await cookies();
-  const supabase = createClient(cookieStore);
+  const { user, profile } = await getCurrentProfile();
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  // Fetch profile role if user is logged in
-  let isAdmin = false;
-
-  if (user) {
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("role")
-      .eq("id", user.id)
-      .single();
-
-    isAdmin = profile?.role === "admin" || profile?.role === "manager";
-  }
+  const isAdmin = Boolean(
+    (profile && ["admin", "manager", "fulfilment"].includes(profile.role)) ||
+    (user && (
+      ["admin", "manager", "fulfilment"].includes(user.user_metadata?.role) ||
+      ["admin", "manager", "fulfilment"].includes(user.app_metadata?.role)
+    ))
+  );
 
   const handleSignOut = async () => {
     "use server";
-    const cookieStore = await cookies();
-    const supabase = createClient(cookieStore);
+    const supabase = await createSupabaseServerClient();
     await supabase.auth.signOut();
     redirect("/login");
   };

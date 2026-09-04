@@ -22,7 +22,7 @@ const navGroups = [
     label: "Catalog",
     items: [
       { label: "Products", href: "/admin/products", icon: Package },
-      { label: "Deals & Promotions", href: "/admin/products?filter=deals", icon: Tag },
+      { label: "Deals & Promotions", href: "/admin/deals", icon: Tag },
       { label: "Categories", href: "/admin/categories", icon: FolderTree },
       { label: "Media Library", href: "/admin/media", icon: Images },
     ],
