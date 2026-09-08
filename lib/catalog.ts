@@ -1,3 +1,5 @@
+import { resolveMediaUrl } from "./media-url";
+
 export function slugify(value: string) {
   return value
     .toLowerCase()
@@ -19,12 +21,7 @@ export function formatPKR(value: number | string | null | undefined) {
 }
 
 export function publicStorageUrl(path: string | null | undefined, bucket = "product-images") {
-  if (!path) return "/placeholder-bake.svg";
-  if (path.startsWith("/api/media/serve/") || path.startsWith("/uploads/") || path.startsWith("/") || /^https?:\/\//i.test(path)) {
-    return path;
-  }
-  const base = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  return base ? `${base}/storage/v1/object/public/${bucket}/${path}` : "/placeholder-bake.svg";
+  return resolveMediaUrl(path);
 }
 
 export function mapProduct(row: any) {

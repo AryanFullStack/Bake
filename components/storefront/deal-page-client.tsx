@@ -1,6 +1,6 @@
 "use client";
 
-import Image from "next/image";
+import { SafeImage } from "@/components/safe-image";
 import Link from "next/link";
 import { ArrowLeft, ArrowRight, Clock, Sparkles, Tag, ShoppingBag } from "lucide-react";
 import { DealsCountdown } from "@/components/storefront/deals-countdown";
@@ -78,7 +78,7 @@ export function DealPageClient({ deal }: DealPageClientProps) {
           <div className="absolute inset-0 z-0 opacity-40">
             <picture>
               <source media="(max-width: 768px)" srcSet={mobileBannerSrc} />
-              <Image
+              <SafeImage
                 src={bannerSrc}
                 alt={deal.name}
                 fill

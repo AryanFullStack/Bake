@@ -1,6 +1,6 @@
 "use client";
 
-import Image from "next/image";
+import { SafeImage } from "@/components/safe-image";
 import Link from "next/link";
 import { ArrowRight, Minus, Plus, ShoppingBag, Trash2, Truck } from "lucide-react";
 import { formatPKR } from "@/lib/catalog";
@@ -76,7 +76,7 @@ export default function CartPage() {
                   className="flex gap-4 rounded-2xl bg-white p-4 border border-line/80 shadow-xs items-center"
                 >
                   <div className="relative h-24 w-24 sm:h-28 sm:w-28 shrink-0 overflow-hidden rounded-xl bg-cream-deep border border-line">
-                    <Image
+                    <SafeImage
                       src={item.image}
                       alt={item.name}
                       fill

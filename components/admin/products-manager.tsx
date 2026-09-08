@@ -1,6 +1,6 @@
 "use client";
 
-import Image from "next/image";
+import { SafeImage } from "@/components/safe-image";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useState, useEffect, useCallback } from "react";
@@ -320,7 +320,7 @@ export function AdminProductsManager({ initialProducts = [], categories = [], br
                     <td className="p-3">
                       <div className="flex items-center gap-3">
                         <div className="relative h-11 w-11 flex-shrink-0 overflow-hidden rounded-xl border border-admin-border bg-admin-bg">
-                          <Image src={imgSrc} alt={p.name} fill sizes="44px" className="object-cover" />
+                          <SafeImage src={imgSrc} alt={p.name} fill sizes="44px" className="object-cover" />
                         </div>
                         <div className="min-w-0">
                           <p className="truncate max-w-[200px] text-sm font-bold text-navy">{p.name}</p>

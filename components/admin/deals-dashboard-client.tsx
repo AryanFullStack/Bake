@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import Image from "next/image";
+import { SafeImage } from "@/components/safe-image";
 import { useRouter } from "next/navigation";
 import {
   Calendar, CheckCircle2, ChevronRight, Clock, Copy, Eye,
@@ -291,7 +291,7 @@ export function DealsDashboardClient({ initialSummary, initialDeals }: DealsDash
                         <td className="p-4">
                           <div className="flex items-center gap-3">
                             <div className="relative h-12 w-16 flex-shrink-0 overflow-hidden rounded-xl border border-admin-border bg-navy-dark shadow-xs">
-                              <Image src={bannerSrc} alt={deal.name} fill sizes="64px" className="object-cover" />
+                              <SafeImage src={bannerSrc} alt={deal.name} fill sizes="64px" className="object-cover" />
                               {isFeatured && (
                                 <span className="absolute top-1 left-1 grid h-4 w-4 place-items-center rounded-full bg-orange text-white shadow-xs" title="Featured Deal">
                                   <Sparkles size={10} />
@@ -455,7 +455,7 @@ export function DealsDashboardClient({ initialSummary, initialDeals }: DealsDash
                     <div className="flex items-start justify-between gap-3">
                       <div className="flex items-center gap-3">
                         <div className="relative h-12 w-16 flex-shrink-0 overflow-hidden rounded-xl border border-admin-border bg-navy-dark">
-                          <Image src={bannerSrc} alt={deal.name} fill sizes="64px" className="object-cover" />
+                          <SafeImage src={bannerSrc} alt={deal.name} fill sizes="64px" className="object-cover" />
                         </div>
                         <div>
                           <h3 className="text-sm font-bold text-navy">{deal.name}</h3>

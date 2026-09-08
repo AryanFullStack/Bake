@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import { useState, useCallback } from "react";
 import { Check, Eye, Heart, Plus, ShoppingBag, Star, Zap } from "lucide-react";
@@ -8,6 +7,8 @@ import type { Product } from "@/lib/types";
 import { formatPKR } from "@/lib/catalog";
 import { useCart } from "./cart-provider";
 import { QuickViewModal } from "./quick-view-modal";
+import { SafeImage } from "@/components/safe-image";
+import { resolveMediaUrl } from "@/lib/media-url";
 
 /* ── Product Card Skeleton ──────────────────────────────────── */
 export function ProductCardSkeleton() {
@@ -38,13 +39,13 @@ export function ProductCard({ product }: { product: Product }) {
   const [added, setAdded] = useState(false);
   const [hovering, setHovering] = useState(false);
   const [quickViewOpen, setQuickViewOpen] = useState(false);
-  const [activeImg, setActiveImg] = useState(0);
 
   // Build de-duped image list: primary first, then gallery extras
   const allImages: string[] = (() => {
     const seen = new Set<string>();
     const imgs: string[] = [];
-    for (const src of [product.image, ...(product.images ?? [])]) {
+    for (const rawSrc of [product.image, ...(product.images ?? [])]) {
+      const src = resolveMediaUrl(rawSrc);
       if (src && !seen.has(src)) { seen.add(src); imgs.push(src); }
     }
     return imgs;
@@ -99,7 +100,7 @@ export function ProductCard({ product }: { product: Product }) {
       <div className="relative aspect-[.92] overflow-hidden bg-cream-deep">
         <Link href={`/products/${product.slug}`} className="block h-full" tabIndex={-1}>
           {/* Primary image */}
-          <Image
+          <SafeImage
             src={allImages[0]}
             alt={product.name}
             width={800} height={860}
@@ -109,7 +110,7 @@ export function ProductCard({ product }: { product: Product }) {
           />
           {/* Secondary (hover) image */}
           {hasMultiple && (
-            <Image
+            <SafeImage
               src={allImages[1]}
               alt={`${product.name} – alternate view`}
               width={800} height={860}

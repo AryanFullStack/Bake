@@ -1,6 +1,6 @@
 "use client";
 
-import Image from "next/image";
+import { SafeImage } from "@/components/safe-image";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
@@ -227,12 +227,12 @@ export function ProductDetailClient({ product, reviews, faqs = [] }: { product: 
       <div className="grid items-start gap-10 lg:grid-cols-[minmax(0,1.05fr)_minmax(380px,.95fr)] lg:gap-16">
         <div className="flex flex-col gap-4 lg:sticky lg:top-24">
           <div className="group relative aspect-square overflow-hidden rounded-[28px] border border-line/60 bg-cream-deep shadow-md" onTouchStart={(event) => setTouchStartX(event.touches[0].clientX)} onTouchEnd={(event) => { if (touchStartX == null) return; const delta = event.changedTouches[0].clientX - touchStartX; if (Math.abs(delta) > 40) delta < 0 ? nextImage() : prevImage(); setTouchStartX(null); }} onClick={() => setZoomOpen(true)}>
-            <Image src={activeImages[activeImage] ?? product.image} alt={activeTitle} fill sizes="(max-width: 1024px) 100vw, 52vw" priority className="object-cover transition-opacity duration-300" />
+            <SafeImage src={activeImages[activeImage] ?? product.image} alt={activeTitle} fill sizes="(max-width: 1024px) 100vw, 52vw" priority className="object-cover transition-opacity duration-300" />
             {discountPercent ? <span className="badge badge-sale absolute left-4 top-4 px-3 py-1.5 text-sm">{discountPercent}% OFF</span> : null}
             <div className="glass absolute bottom-4 right-4 flex items-center gap-1.5 rounded-xl px-2.5 py-1.5 text-xs font-bold text-navy opacity-0 transition-opacity group-hover:opacity-100"><ZoomIn size={13} /> Zoom</div>
             {activeImages.length > 1 ? <><button aria-label="Previous image" onClick={(event) => { event.stopPropagation(); prevImage(); }} className="glass absolute left-3 top-1/2 -translate-y-1/2 rounded-full p-2.5 text-navy opacity-0 shadow-sm transition-opacity group-hover:opacity-100"><ChevronLeft size={18} /></button><button aria-label="Next image" onClick={(event) => { event.stopPropagation(); nextImage(); }} className="glass absolute right-3 top-1/2 -translate-y-1/2 rounded-full p-2.5 text-navy opacity-0 shadow-sm transition-opacity group-hover:opacity-100"><ChevronRight size={18} /></button></> : null}
           </div>
-          {activeImages.length > 1 ? <div ref={thumbsRef} className="flex gap-2.5 overflow-x-auto pb-1">{activeImages.map((image, index) => <button key={`${image}-${index}`} aria-label={`View image ${index + 1}`} onClick={() => setActiveImage(index)} className={`relative h-[72px] w-[72px] flex-shrink-0 overflow-hidden rounded-xl border-2 transition ${index === activeImage ? "border-orange shadow-md" : "border-line/60 hover:border-orange/50"}`}><Image src={image} alt={`${activeTitle} view ${index + 1}`} fill sizes="72px" className="object-cover" /></button>)}</div> : null}
+          {activeImages.length > 1 ? <div ref={thumbsRef} className="flex gap-2.5 overflow-x-auto pb-1">{activeImages.map((image, index) => <button key={`${image}-${index}`} aria-label={`View image ${index + 1}`} onClick={() => setActiveImage(index)} className={`relative h-[72px] w-[72px] flex-shrink-0 overflow-hidden rounded-xl border-2 transition ${index === activeImage ? "border-orange shadow-md" : "border-line/60 hover:border-orange/50"}`}><SafeImage src={image} alt={`${activeTitle} view ${index + 1}`} fill sizes="72px" className="object-cover" /></button>)}</div> : null}
         </div>
 
         <div>
@@ -386,7 +386,7 @@ export function ProductDetailClient({ product, reviews, faqs = [] }: { product: 
                               />
                             ) : attribute.displayType === "image" && imageSwatch ? (
                               <span className="relative h-6 w-6 overflow-hidden rounded-md border border-line">
-                                <Image src={imageSwatch} alt="" fill sizes="24px" className="object-cover" />
+                                <SafeImage src={imageSwatch} alt="" fill sizes="24px" className="object-cover" />
                               </span>
                             ) : null}
                             {value.label}
@@ -442,7 +442,7 @@ export function ProductDetailClient({ product, reviews, faqs = [] }: { product: 
 
       <section className="mt-16 rounded-3xl border border-line/60 bg-white p-5 shadow-xs sm:p-8"><div className="flex gap-6 overflow-x-auto border-b border-line">{tabs.map((tab) => <button key={tab.id} onClick={() => setActiveTab(tab.id)} className={`relative whitespace-nowrap pb-4 text-sm font-bold ${activeTab === tab.id ? "text-orange after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:rounded-full after:bg-orange" : "text-muted hover:text-navy"}`}>{tab.label}</button>)}</div><div className="mt-7 max-w-3xl text-sm font-medium leading-relaxed text-muted">{activeTab === "description" && <p>{activeDescription}</p>}{activeTab === "specifications" && <div className="grid gap-2">{Object.entries(activeVariation?.specifications ?? product.specifications ?? {}).map(([key, value]) => <div key={key} className="flex justify-between gap-6 border-b border-line/60 py-2"><span className="font-bold text-navy">{key}</span><span>{String(value)}</span></div>)}</div>}{activeTab === "ingredients" && <p>{product.ingredients || "Ingredients information will be available soon."}</p>}{activeTab === "care" && <p>{product.careInstructions || "Care instructions will be available soon."}</p>}{activeTab === "delivery" && <p>{product.deliveryInformation || "Same-day delivery is available across Lahore for orders placed before 1:00 PM."}</p>}{activeTab === "returns" && <p>{product.returnPolicy || "Contact our support team within 24 hours of delivery for return assistance."}</p>}{activeTab === "reviews" && <ProductReviewsSection product={product} reviews={reviews} />}{activeTab === "faqs" && <div className="grid gap-3">{faqs.length ? faqs.map((faq) => <details key={faq.id} className="rounded-xl border border-line/70 p-4"><summary className="cursor-pointer font-bold text-navy">{faq.question}</summary><p className="mt-3">{faq.answer}</p></details>) : <p>Frequently asked questions will be available soon.</p>}</div>}</div></section>
 
-      {zoomOpen ? <div className="modal-overlay" onClick={() => setZoomOpen(false)}><div className="relative w-full max-w-4xl" onClick={(event) => event.stopPropagation()}><button onClick={() => setZoomOpen(false)} className="absolute -top-12 right-0 rounded-full bg-white/20 p-2 text-white" aria-label="Close zoom"><X size={20} /></button><div className="relative aspect-square w-full overflow-hidden rounded-3xl"><Image src={activeImages[activeImage] ?? product.image} alt={activeTitle} fill sizes="90vw" className="object-contain" /></div></div></div> : null}
+      {zoomOpen ? <div className="modal-overlay" onClick={() => setZoomOpen(false)}><div className="relative w-full max-w-4xl" onClick={(event) => event.stopPropagation()}><button onClick={() => setZoomOpen(false)} className="absolute -top-12 right-0 rounded-full bg-white/20 p-2 text-white" aria-label="Close zoom"><X size={20} /></button><div className="relative aspect-square w-full overflow-hidden rounded-3xl"><SafeImage src={activeImages[activeImage] ?? product.image} alt={activeTitle} fill sizes="90vw" className="object-contain" /></div></div></div> : null}
     </div>
   );
 

@@ -2,7 +2,7 @@
 
 import { FormEvent, useEffect, useState } from "react";
 import Link from "next/link";
-import Image from "next/image";
+import { SafeImage } from "@/components/safe-image";
 import {
   ArrowRight,
   Check,
@@ -620,7 +620,7 @@ export default function CheckoutPage() {
                   className="flex gap-3 text-xs font-medium items-center"
                 >
                   <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-xl bg-cream-deep border border-line">
-                    <Image src={item.image} alt={item.name} fill className="object-cover" />
+                    <SafeImage src={item.image} alt={item.name} fill className="object-cover" />
                   </div>
                   <div className="min-w-0 flex-1">
                     <p className="font-bold text-navy truncate">{item.name}</p>

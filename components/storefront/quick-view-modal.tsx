@@ -1,6 +1,6 @@
 "use client";
 
-import Image from "next/image";
+import { SafeImage } from "@/components/safe-image";
 import Link from "next/link";
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { createPortal } from "react-dom";
@@ -264,7 +264,7 @@ export function QuickViewModal({ product: initialProduct, onClose }: QuickViewMo
           {/* Gallery Side */}
           <div className="flex flex-col gap-3">
             <div className="relative aspect-square overflow-hidden rounded-2xl bg-cream-deep border border-line">
-              <Image
+              <SafeImage
                 src={activeImages[activeImage] ?? product.image}
                 alt={activeTitle}
                 fill
@@ -299,7 +299,7 @@ export function QuickViewModal({ product: initialProduct, onClose }: QuickViewMo
                       index === activeImage ? "border-orange shadow-xs" : "border-line/60 hover:border-orange/50"
                     }`}
                   >
-                    <Image src={img} alt="" fill sizes="56px" className="object-cover" />
+                    <SafeImage src={img} alt="" fill sizes="56px" className="object-cover" />
                   </button>
                 ))}
               </div>

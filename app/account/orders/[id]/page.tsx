@@ -1,5 +1,5 @@
 import Link from "next/link";
-import Image from "next/image";
+import { SafeImage } from "@/components/safe-image";
 import { notFound, redirect } from "next/navigation";
 import { ArrowLeft, Check, Clock, MapPin, Package, ShieldCheck, Star, Truck } from "lucide-react";
 import { formatPKR } from "@/lib/catalog";
@@ -114,7 +114,7 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
                   >
                     <div className="flex gap-4 items-center min-w-0">
                       <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-xl bg-cream-deep border border-line">
-                        <Image
+                        <SafeImage
                           src={item.image_path || "/placeholder-bake.svg"}
                           alt={item.product_name}
                           fill

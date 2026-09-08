@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import Image from "next/image";
+import { SafeImage } from "@/components/safe-image";
 import { useRouter } from "next/navigation";
 import {
   ArrowLeft, Calendar, CheckCircle2, Clock, Copy, Layers,
@@ -295,7 +295,7 @@ export function DealDetailClient({ initialDeal, initialAnalytics }: DealDetailCl
                           <td className="p-3">
                             <div className="flex items-center gap-3">
                               <div className="relative h-9 w-9 flex-shrink-0 rounded-lg overflow-hidden border border-admin-border bg-admin-bg">
-                                <Image
+                                <SafeImage
                                   src={prod?.featured_image ? publicStorageUrl(prod.featured_image) : "/placeholder-bake.svg"}
                                   alt={prod?.name || "Product"}
                                   fill
