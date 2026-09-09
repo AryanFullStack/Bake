@@ -2,6 +2,7 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { mapProduct } from "@/lib/catalog";
 import type { Category, Product } from "@/lib/types";
 import { getActiveDeals, getStorefrontDeals, getFeaturedDeal, attachDealPricingToProduct } from "@/lib/deals";
+import { resolveMediaUrl } from "@/lib/media-url";
 
 function configured() {
   return Boolean(process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
@@ -31,7 +32,9 @@ export async function getCategories(): Promise<Category[]> {
 
   const dbCategories = (data ?? []).map((row: any) => {
     let img = row.image_path;
-    if (!img || img === "/placeholder-bake.svg" || img.includes("unsplash.com")) {
+    if (img && img !== "/placeholder-bake.svg" && !img.includes("unsplash.com")) {
+      img = resolveMediaUrl(img);
+    } else if (!img || img === "/placeholder-bake.svg" || img.includes("unsplash.com")) {
       img = defaultImageMap[row.slug] || defaultImageMap[row.name?.toLowerCase()] || "/bakery.png";
     }
 
@@ -252,7 +255,7 @@ export async function getBanners() {
   if (!configured()) return [];
   const supabase = await createSupabaseServerClient();
   const { data } = await supabase.from("banners").select("id,title,body,image_path,cta_label,cta_href").eq("is_active", true).order("sort_order").limit(10);
-  return (data ?? []).map((row: any) => ({ ...row, image_path: row.image_path ?? "/placeholder-bake.svg" }));
+  return (data ?? []).map((row: any) => ({ ...row, image_path: row.image_path ? resolveMediaUrl(row.image_path) : "/placeholder-bake.svg" }));
 }
 
 export async function getFaqs() {

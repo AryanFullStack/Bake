@@ -202,6 +202,9 @@ export class MediaService {
     const cleanPath = this.normalizeStoragePath(urlOrPath);
     if (!cleanPath) return { count: 0, usages: [] };
 
+    const filename = cleanPath.split("/").pop() || cleanPath;
+    if (!filename) return { count: 0, usages: [] };
+
     const adminClient = createSupabaseAdminClient();
     if (!adminClient) return { count: 0, usages: [] };
 
@@ -212,7 +215,7 @@ export class MediaService {
       const { data: mainProducts } = await adminClient
         .from("products")
         .select("id, name, slug")
-        .eq("featured_image", cleanPath);
+        .ilike("featured_image", `%${filename}%`);
 
       if (mainProducts) {
         for (const p of mainProducts) {
@@ -231,7 +234,7 @@ export class MediaService {
       const { data: galleryImages } = await adminClient
         .from("product_images")
         .select("id, product_id, products(id, name, slug)")
-        .eq("storage_path", cleanPath);
+        .ilike("storage_path", `%${filename}%`);
 
       if (galleryImages) {
         for (const g of galleryImages) {
@@ -253,7 +256,7 @@ export class MediaService {
       const { data: variantMains } = await adminClient
         .from("product_variations")
         .select("id, title, product_id, products(id, name)")
-        .eq("image_url", cleanPath);
+        .ilike("image_url", `%${filename}%`);
 
       if (variantMains) {
         for (const v of variantMains) {
@@ -273,7 +276,7 @@ export class MediaService {
       const { data: variantGallery } = await adminClient
         .from("product_variation_images")
         .select("id, variation_id, product_variations(id, title, product_id, products(id, name))")
-        .eq("storage_path", cleanPath);
+        .ilike("storage_path", `%${filename}%`);
 
       if (variantGallery) {
         for (const vg of variantGallery) {
@@ -296,7 +299,7 @@ export class MediaService {
       const { data: swatchValues } = await adminClient
         .from("product_attribute_values")
         .select("id, label, attribute_id, product_attributes(id, name, product_id, products(id, name))")
-        .eq("swatch_image", cleanPath);
+        .ilike("swatch_image", `%${filename}%`);
 
       if (swatchValues) {
         for (const sv of swatchValues) {
@@ -317,7 +320,7 @@ export class MediaService {
       const { data: attrLinkedImages } = await adminClient
         .from("product_attribute_images")
         .select("id, attribute_value_id, product_attribute_values(id, label, attribute_id, product_attributes(id, name, product_id, products(id, name)))")
-        .eq("storage_path", cleanPath);
+        .ilike("storage_path", `%${filename}%`);
 
       if (attrLinkedImages) {
         for (const ali of attrLinkedImages) {
@@ -339,7 +342,7 @@ export class MediaService {
       const { data: categories } = await adminClient
         .from("categories")
         .select("id, name, slug")
-        .eq("image_path", cleanPath);
+        .ilike("image_path", `%${filename}%`);
 
       if (categories) {
         for (const c of categories) {
@@ -357,7 +360,7 @@ export class MediaService {
       const { data: brands } = await adminClient
         .from("brands")
         .select("id, name, slug")
-        .eq("logo_url", cleanPath);
+        .ilike("logo_url", `%${filename}%`);
 
       if (brands) {
         for (const b of brands) {
@@ -375,7 +378,7 @@ export class MediaService {
       const { data: banners } = await adminClient
         .from("banners")
         .select("id, title")
-        .eq("image_path", cleanPath);
+        .ilike("image_path", `%${filename}%`);
 
       if (banners) {
         for (const bn of banners) {
@@ -393,7 +396,7 @@ export class MediaService {
       const { data: cakeImages } = await adminClient
         .from("custom_cake_images")
         .select("id, request_id, custom_cake_requests(id, request_number, customer_name)")
-        .eq("storage_path", cleanPath);
+        .ilike("storage_path", `%${filename}%`);
 
       if (cakeImages) {
         for (const ci of cakeImages) {

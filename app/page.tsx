@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import { getHomeContent } from "@/lib/storefront";
 import { calculateProductDealPrice } from "@/lib/deals";
+import { publicStorageUrl } from "@/lib/catalog";
 import { ProductCard } from "@/components/storefront/product-card";
 import { MultiCategoryHero } from "@/components/storefront/multi-category-hero";
 import { HomeKitchenShowcase } from "@/components/storefront/home-kitchen-showcase";
@@ -76,6 +77,8 @@ export default async function HomePage() {
               ? Number(dp.custom_deal_price)
               : null;
 
+            const rawImg = varObj?.featured_image || prodObj.featured_image;
+
             dealProductsMap.set(prodObj.id, {
               id: prodObj.id,
               name: varObj ? `${prodObj.name} (${varObj.name || Object.values(varObj.attributes || {}).join(" / ")})` : prodObj.name,
@@ -84,7 +87,7 @@ export default async function HomePage() {
               description: prodObj.description || deal.short_description || "Special Deal Offer",
               price: actualRegPrice,
               salePrice: effectiveSaleP,
-              image: varObj?.featured_image || prodObj.featured_image || "/placeholder-bake.svg",
+              image: rawImg ? publicStorageUrl(rawImg) : "/placeholder-bake.svg",
               stock: varObj?.stock_quantity ?? prodObj.stock_quantity ?? 10,
               isPublished: true,
               productType: prodObj.product_type || "simple",

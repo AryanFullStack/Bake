@@ -88,13 +88,48 @@ export class LocalStorageProvider implements IStorageProvider {
 
   private resolveAbsolutePath(relativePathOrUrl: string): string {
     const relative = this.normalizePath(relativePathOrUrl);
-    const absolute = path.resolve(this.baseDir, relative);
-    
-    // Path traversal check: ensuring absolute path starts with baseDir
-    if (!absolute.startsWith(this.baseDir)) {
-      throw new Error("Invalid or forbidden path traversal detected");
+
+    // Candidate upload base directories on VPS / local system
+    const candidateBaseDirs = [
+      this.baseDir,
+      path.resolve(process.cwd(), "public", "uploads"),
+      path.resolve(process.cwd(), "uploads"),
+      path.resolve(process.cwd(), "..", "uploads"),
+    ];
+
+    const uniqueBaseDirs = Array.from(new Set(candidateBaseDirs));
+
+    for (const base of uniqueBaseDirs) {
+      if (!fs.existsSync(base)) continue;
+
+      const absolute = path.resolve(base, relative);
+      if (absolute.startsWith(base) && fs.existsSync(absolute)) {
+        return absolute;
+      }
+
+      // Smart Fallback 1: check if filename exists directly inside any allowed folder under this base
+      const filename = path.basename(relative);
+      for (const folder of ALLOWED_FOLDERS) {
+        const candidate = path.resolve(base, folder, filename);
+        if (candidate.startsWith(base) && fs.existsSync(candidate)) {
+          return candidate;
+        }
+      }
+
+      // Smart Fallback 2: strip leading folder component if relative was e.g. "unknown/foo.webp"
+      const relativeParts = relative.split("/");
+      if (relativeParts.length > 1) {
+        const subRelative = relativeParts.slice(1).join("/");
+        for (const folder of ALLOWED_FOLDERS) {
+          const candidate = path.resolve(base, folder, subRelative);
+          if (candidate.startsWith(base) && fs.existsSync(candidate)) {
+            return candidate;
+          }
+        }
+      }
     }
-    return absolute;
+
+    return path.resolve(this.baseDir, relative);
   }
 
   public async saveFile(folder: string, filename: string, buffer: Buffer): Promise<SaveFileResult> {

@@ -1,9 +1,4 @@
-/**
- * Centralized Media URL Resolver Utility
- * 
- * Normalizes image paths and URLs across the application so that VPS-hosted
- * product media is consistently served via the dedicated media API route (`/api/media/serve/...`).
- */
+import { ALLOWED_FOLDERS } from "./media/constants";
 
 export const DEFAULT_FALLBACK_IMAGE = "/placeholder-bake.svg";
 
@@ -12,6 +7,7 @@ export const DEFAULT_FALLBACK_IMAGE = "/placeholder-bake.svg";
  * 
  * Examples:
  * - "/uploads/products/product_1788856725_9a177d.webp" -> "/api/media/serve/products/product_1788856725_9a177d.webp"
+ * - "/products/product_1788856725_9a177d.webp"         -> "/api/media/serve/products/product_1788856725_9a177d.webp"
  * - "uploads/products/product_1788856725_9a177d.webp"  -> "/api/media/serve/products/product_1788856725_9a177d.webp"
  * - "products/product_1788856725_9a177d.webp"          -> "/api/media/serve/products/product_1788856725_9a177d.webp"
  * - "/api/media/serve/products/product_...webp"       -> "/api/media/serve/products/product_...webp"
@@ -41,12 +37,15 @@ export function resolveMediaUrl(
   if (/^https?:\/\//i.test(clean)) {
     try {
       const parsed = new URL(clean);
-      // If it contains /uploads/ or /api/media/serve/, extract the pathname to normalize
       if (parsed.pathname.includes("/api/media/serve/") || parsed.pathname.includes("/uploads/")) {
         clean = parsed.pathname;
       } else {
-        // Third-party external URL (e.g. Unsplash, CDN)
-        return clean;
+        const firstSeg = parsed.pathname.replace(/^\/+/, "").split("/")[0];
+        if (ALLOWED_FOLDERS.includes(firstSeg as any)) {
+          clean = parsed.pathname;
+        } else {
+          return clean; // External third-party URL (e.g. Unsplash, CDN)
+        }
       }
     } catch {
       // Invalid URL format fallback
@@ -68,22 +67,24 @@ export function resolveMediaUrl(
     clean = clean.substring("uploads/".length);
   }
 
-  // Check if this is a static public root file (e.g. /bakery.png, /placeholder-bake.svg, /WD.jpeg)
-  // If clean started with '/' and was NOT /uploads/ or /api/media/serve/, it's a public static file
-  if (path.startsWith("/") && !path.startsWith("/uploads/") && !path.startsWith("/api/media/serve/")) {
+  const relativeNoSlash = clean.replace(/^\/+/, "");
+  const firstSegment = relativeNoSlash.split("/")[0];
+  const isUploadFolder = ALLOWED_FOLDERS.includes(firstSegment as any);
+
+  // If path starts with '/' and is NOT an upload folder, it's a static public file (e.g. /bakery.png, /WD.jpeg)
+  if (path.startsWith("/") && !isUploadFolder && !path.startsWith("/uploads/") && !path.startsWith("/api/media/serve/")) {
     return path;
   }
 
-  // Remove leading slashes after cleaning
-  clean = clean.replace(/^\/+/, "");
+  clean = relativeNoSlash;
 
   if (!clean) {
     return fallback;
   }
 
-  // If clean is already an SVG/PNG/JPG/etc placeholder filename at root
-  if (clean === "placeholder-bake.svg" || clean === "bakery.png" || clean === "logobake-01.png") {
-    return `/${clean}`;
+  // If clean has no folder component (e.g. "product_1788856725_9a177d.webp"), default to products folder
+  if (!clean.includes("/")) {
+    clean = `products/${clean}`;
   }
 
   // Otherwise, construct canonical VPS media API URL
@@ -118,5 +119,12 @@ export function resolveMediaUrls(
 export function isVpsMediaUrl(url: string | null | undefined): boolean {
   if (!url || typeof url !== "string") return false;
   const clean = url.trim();
-  return clean.startsWith("/api/media/serve/") || clean.startsWith("/uploads/") || clean.includes("/api/media/serve/");
+  return (
+    clean.startsWith("/api/media/serve/") ||
+    clean.startsWith("api/media/serve/") ||
+    clean.startsWith("/uploads/") ||
+    clean.startsWith("uploads/") ||
+    clean.includes("/api/media/serve/")
+  );
 }
+

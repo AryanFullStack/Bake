@@ -1,4 +1,5 @@
 import type { Product, ProductAttribute, ProductVariation } from "./types";
+import { resolveMediaUrl } from "./media-url";
 
 function variationMatches(selection: Record<string, string>, variation: ProductVariation) {
   return Object.entries(selection).every(([key, value]) => variation.attributes?.[key] === value);
@@ -18,7 +19,7 @@ export function resolveProductGallery(
   selectedOptions: Record<string, string> = {}
 ): string[] {
   const generalGallery = Array.from(
-    new Set([product.image, ...(product.images ?? [])].filter(Boolean))
+    new Set([product.image, ...(product.images ?? [])].filter(Boolean).map((img) => resolveMediaUrl(img)))
   );
 
   const variations = (product.variations ?? []).filter((v) => v.status === "active");
@@ -30,7 +31,9 @@ export function resolveProductGallery(
     if (activeVariation) {
       const varImages = Array.from(
         new Set(
-          [activeVariation.featuredImage, ...(activeVariation.galleryImages ?? [])].filter(Boolean) as string[]
+          [activeVariation.featuredImage, ...(activeVariation.galleryImages ?? [])]
+            .filter(Boolean)
+            .map((img) => resolveMediaUrl(img as string))
         )
       );
       if (varImages.length > 0) {
@@ -56,7 +59,7 @@ export function resolveProductGallery(
     );
 
     if (valObj && valObj.images && valObj.images.length > 0) {
-      const cleaned = valObj.images.filter(Boolean);
+      const cleaned = valObj.images.filter(Boolean).map((img) => resolveMediaUrl(img));
       if (cleaned.length > 0) {
         matchedAttributeGalleries.push(cleaned);
       }

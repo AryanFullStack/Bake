@@ -19,11 +19,15 @@ export function SafeImage({
 }: SafeImageProps) {
   const resolvedSrc = resolveMediaUrl(src, fallbackSrc);
   const [imgSrc, setImgSrc] = useState<string>(resolvedSrc);
+  const [hasFailed, setHasFailed] = useState<boolean>(false);
 
   useEffect(() => {
-    setImgSrc(resolveMediaUrl(src, fallbackSrc));
+    const updated = resolveMediaUrl(src, fallbackSrc);
+    setImgSrc(updated);
+    setHasFailed(false);
   }, [src, fallbackSrc]);
 
+  // Always force unoptimized mode for VPS media / API serve URLs to prevent Next.js /_next/image 400 errors
   const shouldBeUnoptimized = unoptimized ?? isVpsMediaUrl(imgSrc);
 
   return (
@@ -33,7 +37,8 @@ export function SafeImage({
       alt={alt}
       unoptimized={shouldBeUnoptimized}
       onError={(e) => {
-        if (imgSrc !== fallbackSrc) {
+        if (imgSrc !== fallbackSrc && !hasFailed) {
+          setHasFailed(true);
           setImgSrc(fallbackSrc);
         }
         if (onError) {
