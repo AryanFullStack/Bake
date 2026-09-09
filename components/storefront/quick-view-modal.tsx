@@ -55,8 +55,6 @@ export function QuickViewModal({ product: initialProduct, onClose }: QuickViewMo
   const [activeImage, setActiveImage] = useState(0);
   const [mounted, setMounted] = useState(false);
 
-  const hasPreselectedRef = useRef<string | null>(null);
-
   // Sync initial product and fetch full details if attributes/variations are missing
   useEffect(() => {
     setMounted(true);
@@ -65,7 +63,6 @@ export function QuickViewModal({ product: initialProduct, onClose }: QuickViewMo
     setValidationError(null);
     setQuantity(1);
     setActiveImage(0);
-    hasPreselectedRef.current = null;
 
     if (initialProduct && initialProduct.productType === "variable") {
       if (!initialProduct.attributes?.length || !initialProduct.variations?.length) {
@@ -133,27 +130,7 @@ export function QuickViewModal({ product: initialProduct, onClose }: QuickViewMo
     });
   }, [product, variations]);
 
-  // Pre-select first active variation options on load once per product
-  useEffect(() => {
-    if (product?.id && hasPreselectedRef.current !== product.id && variations.length > 0 && attributes.length > 0) {
-      const firstActive = variations.find((v) => v.status === "active" && v.attributes);
-      if (firstActive && firstActive.attributes) {
-        hasPreselectedRef.current = product.id;
-        const initialSel: Record<string, string> = {};
-        for (const attr of attributes) {
-          const matchingKey = Object.keys(firstActive.attributes).find(
-            (k) => normalizeKey(k) === normalizeKey(attr.slug) || normalizeKey(k) === normalizeKey(attr.name)
-          );
-          if (matchingKey) {
-            initialSel[attr.slug] = normalizeKey(String(firstActive.attributes[matchingKey]));
-          }
-        }
-        if (Object.keys(initialSel).length > 0) {
-          setSelection(initialSel);
-        }
-      }
-    }
-  }, [product?.id, variations, attributes]);
+
 
   const activeVariation = useMemo(() => {
     if (!variations.length || Object.keys(selection).length !== attributes.length) return null;

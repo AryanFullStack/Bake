@@ -88,35 +88,30 @@ export function ProductDetailClient({ product, reviews, faqs = [] }: { product: 
   const [addedToast, setAddedToast] = useState(false);
   const [validationError, setValidationError] = useState<string | null>(null);
   const [activeImage, setActiveImage] = useState(0);
-  const [zoomOpen, setZoomOpen] = useState(false);
   const [touchStartX, setTouchStartX] = useState<number | null>(null);
   const thumbsRef = useRef<HTMLDivElement>(null);
+  const [isZoomed, setIsZoomed] = useState(false);
+  const [zoomPos, setZoomPos] = useState({ x: 50, y: 50 });
+  const imgContainerRef = useRef<HTMLDivElement>(null);
 
-  const hasPreselectedRef = useRef<string | null>(null);
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!imgContainerRef.current) return;
+    const rect = imgContainerRef.current.getBoundingClientRect();
+    const x = Math.max(0, Math.min(100, ((e.clientX - rect.left) / rect.width) * 100));
+    const y = Math.max(0, Math.min(100, ((e.clientY - rect.top) / rect.height) * 100));
+    setZoomPos({ x, y });
+  };
 
-  // Pre-select first active variation on load (only once per product)
-  useEffect(() => {
-    if (product?.id && hasPreselectedRef.current !== product.id) {
-      if (variations.length > 0 && attributes.length > 0) {
-        hasPreselectedRef.current = product.id;
-        const firstActive = variations.find((v) => v.status === "active" && v.attributes);
-        if (firstActive && firstActive.attributes) {
-          const initialSel: Record<string, string> = {};
-          for (const attr of attributes) {
-            const matchingKey = Object.keys(firstActive.attributes).find(
-              (k) => normalizeKey(k) === normalizeKey(attr.slug) || normalizeKey(k) === normalizeKey(attr.name)
-            );
-            if (matchingKey) {
-              initialSel[attr.slug] = normalizeKey(String(firstActive.attributes[matchingKey]));
-            }
-          }
-          if (Object.keys(initialSel).length > 0) {
-            setSelection(initialSel);
-          }
-        }
-      }
-    }
-  }, [product?.id, variations, attributes]);
+  const handleTouchMove = (e: React.TouchEvent<HTMLDivElement>) => {
+    if (!imgContainerRef.current || e.touches.length === 0) return;
+    const touch = e.touches[0];
+    const rect = imgContainerRef.current.getBoundingClientRect();
+    const x = Math.max(0, Math.min(100, ((touch.clientX - rect.left) / rect.width) * 100));
+    const y = Math.max(0, Math.min(100, ((touch.clientY - rect.top) / rect.height) * 100));
+    setZoomPos({ x, y });
+  };
+
+
 
   const activeVariation = useMemo(() => {
     if (!variations.length || Object.keys(selection).length !== attributes.length) return null;
@@ -159,6 +154,8 @@ export function ProductDetailClient({ product, reviews, faqs = [] }: { product: 
 
   const prevImage = useCallback(() => setActiveImage((index) => (index - 1 + activeImages.length) % activeImages.length), [activeImages.length]);
   const nextImage = useCallback(() => setActiveImage((index) => (index + 1) % activeImages.length), [activeImages.length]);
+
+
 
   async function toggleWishlist() {
     try {
@@ -231,11 +228,86 @@ export function ProductDetailClient({ product, reviews, faqs = [] }: { product: 
     <div className="mt-8 md:mt-12">
       <div className="grid items-start gap-10 lg:grid-cols-[minmax(0,1.05fr)_minmax(380px,.95fr)] lg:gap-16">
         <div className="flex flex-col gap-4 lg:sticky lg:top-24">
-          <div className="group relative aspect-square overflow-hidden rounded-[28px] border border-line/60 bg-cream-deep shadow-md" onTouchStart={(event) => setTouchStartX(event.touches[0].clientX)} onTouchEnd={(event) => { if (touchStartX == null) return; const delta = event.changedTouches[0].clientX - touchStartX; if (Math.abs(delta) > 40) delta < 0 ? nextImage() : prevImage(); setTouchStartX(null); }} onClick={() => setZoomOpen(true)}>
-            <SafeImage src={activeImages[activeImage] ?? product.image} alt={activeTitle} fill sizes="(max-width: 1024px) 100vw, 52vw" priority className="object-cover transition-opacity duration-300" />
-            {discountPercent ? <span className="badge badge-sale absolute left-4 top-4 px-3 py-1.5 text-sm">{discountPercent}% OFF</span> : null}
-            <div className="glass absolute bottom-4 right-4 flex items-center gap-1.5 rounded-xl px-2.5 py-1.5 text-xs font-bold text-navy opacity-0 transition-opacity group-hover:opacity-100"><ZoomIn size={13} /> Zoom</div>
-            {activeImages.length > 1 ? <><button aria-label="Previous image" onClick={(event) => { event.stopPropagation(); prevImage(); }} className="glass absolute left-3 top-1/2 -translate-y-1/2 rounded-full p-2.5 text-navy opacity-0 shadow-sm transition-opacity group-hover:opacity-100"><ChevronLeft size={18} /></button><button aria-label="Next image" onClick={(event) => { event.stopPropagation(); nextImage(); }} className="glass absolute right-3 top-1/2 -translate-y-1/2 rounded-full p-2.5 text-navy opacity-0 shadow-sm transition-opacity group-hover:opacity-100"><ChevronRight size={18} /></button></> : null}
+          <div
+            ref={imgContainerRef}
+            className="group relative aspect-square overflow-hidden rounded-[28px] border border-line/60 bg-cream-deep shadow-md cursor-crosshair touch-none select-none"
+            onMouseEnter={() => setIsZoomed(true)}
+            onMouseLeave={() => setIsZoomed(false)}
+            onMouseMove={handleMouseMove}
+            onTouchStart={(event) => {
+              setIsZoomed(true);
+              handleTouchMove(event);
+              setTouchStartX(event.touches[0].clientX);
+            }}
+            onTouchMove={handleTouchMove}
+            onTouchEnd={(event) => {
+              setIsZoomed(false);
+              if (touchStartX == null) return;
+              const delta = event.changedTouches[0].clientX - touchStartX;
+              if (Math.abs(delta) > 40) delta < 0 ? nextImage() : prevImage();
+              setTouchStartX(null);
+            }}
+            onClick={() => setIsZoomed((prev) => !prev)}
+          >
+            <div
+              className="relative h-full w-full transition-transform duration-150 ease-out pointer-events-none"
+              style={{
+                transform: isZoomed ? "scale(2.3)" : "scale(1)",
+                transformOrigin: `${zoomPos.x}% ${zoomPos.y}%`,
+              }}
+            >
+              <SafeImage
+                src={activeImages[activeImage] ?? product.image}
+                alt={activeTitle}
+                fill
+                sizes="(max-width: 1024px) 100vw, 52vw"
+                priority
+                className="object-cover transition-opacity duration-300"
+              />
+            </div>
+
+            {discountPercent ? (
+              <span className="badge badge-sale absolute left-4 top-4 px-3 py-1.5 text-sm pointer-events-none z-10">
+                {discountPercent}% OFF
+              </span>
+            ) : null}
+
+            {/* Interactive Zoom Indicator */}
+            <div
+              className={`glass absolute bottom-4 right-4 flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-bold shadow-xs pointer-events-none z-10 transition-all duration-200 ${
+                isZoomed
+                  ? "bg-orange text-white border-orange shadow-md scale-105"
+                  : "text-navy opacity-90 group-hover:opacity-100"
+              }`}
+            >
+              <ZoomIn size={14} className={isZoomed ? "text-white" : "text-orange"} />
+              <span>{isZoomed ? "Move to pan detail" : "Hover / Touch to zoom"}</span>
+            </div>
+
+            {activeImages.length > 1 ? (
+              <>
+                <button
+                  aria-label="Previous image"
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    prevImage();
+                  }}
+                  className="glass absolute left-3 top-1/2 -translate-y-1/2 rounded-full p-2.5 text-navy opacity-0 shadow-sm transition-opacity group-hover:opacity-100 z-20"
+                >
+                  <ChevronLeft size={18} />
+                </button>
+                <button
+                  aria-label="Next image"
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    nextImage();
+                  }}
+                  className="glass absolute right-3 top-1/2 -translate-y-1/2 rounded-full p-2.5 text-navy opacity-0 shadow-sm transition-opacity group-hover:opacity-100 z-20"
+                >
+                  <ChevronRight size={18} />
+                </button>
+              </>
+            ) : null}
           </div>
           {activeImages.length > 1 ? <div ref={thumbsRef} className="flex gap-2.5 overflow-x-auto pb-1">{activeImages.map((image, index) => <button key={`${image}-${index}`} aria-label={`View image ${index + 1}`} onClick={() => setActiveImage(index)} className={`relative h-[72px] w-[72px] flex-shrink-0 overflow-hidden rounded-xl border-2 transition ${index === activeImage ? "border-orange shadow-md" : "border-line/60 hover:border-orange/50"}`}><SafeImage src={image} alt={`${activeTitle} view ${index + 1}`} width={150} height={150} quality={70} sizes="72px" className="object-cover" /></button>)}</div> : null}
         </div>
@@ -447,8 +519,6 @@ export function ProductDetailClient({ product, reviews, faqs = [] }: { product: 
 
       <section className="mt-16 rounded-3xl border border-line/60 bg-white p-5 shadow-xs sm:p-8"><div className="flex gap-6 overflow-x-auto border-b border-line">{tabs.map((tab) => <button key={tab.id} onClick={() => setActiveTab(tab.id)} className={`relative whitespace-nowrap pb-4 text-sm font-bold ${activeTab === tab.id ? "text-orange after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:rounded-full after:bg-orange" : "text-muted hover:text-navy"}`}>{tab.label}</button>)}</div><div className="mt-7 max-w-3xl text-sm font-medium leading-relaxed text-muted">{activeTab === "description" && <p>{activeDescription}</p>}{activeTab === "specifications" && <div className="grid gap-2">{Object.entries(activeVariation?.specifications ?? product.specifications ?? {}).map(([key, value]) => <div key={key} className="flex justify-between gap-6 border-b border-line/60 py-2"><span className="font-bold text-navy">{key}</span><span>{String(value)}</span></div>)}</div>}{activeTab === "ingredients" && <p>{product.ingredients || "Ingredients information will be available soon."}</p>}{activeTab === "care" && <p>{product.careInstructions || "Care instructions will be available soon."}</p>}{activeTab === "delivery" && <p>{product.deliveryInformation || "Same-day delivery is available across Lahore for orders placed before 1:00 PM."}</p>}{activeTab === "returns" && <p>{product.returnPolicy || "Contact our support team within 24 hours of delivery for return assistance."}</p>}{activeTab === "reviews" && <ProductReviewsSection product={product} reviews={reviews} />}{activeTab === "faqs" && <div className="grid gap-3">{faqs.length ? faqs.map((faq) => <details key={faq.id} className="rounded-xl border border-line/70 p-4"><summary className="cursor-pointer font-bold text-navy">{faq.question}</summary><p className="mt-3">{faq.answer}</p></details>) : <p>Frequently asked questions will be available soon.</p>}</div>}</div></section>
 
-      {zoomOpen ? <div className="modal-overlay" onClick={() => setZoomOpen(false)}><div className="relative w-full max-w-4xl" onClick={(event) => event.stopPropagation()}><button onClick={() => setZoomOpen(false)} className="absolute -top-12 right-0 rounded-full bg-white/20 p-2 text-white" aria-label="Close zoom"><X size={20} /></button><div className="relative aspect-square w-full overflow-hidden rounded-3xl"><SafeImage src={activeImages[activeImage] ?? product.image} alt={activeTitle} fill sizes="90vw" className="object-contain" /></div></div></div> : null}
     </div>
   );
-
 }
