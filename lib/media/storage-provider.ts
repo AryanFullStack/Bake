@@ -69,6 +69,7 @@ export class LocalStorageProvider implements IStorageProvider {
   }
 
   public normalizePath(relativePathOrUrl: string): string {
+    if (!relativePathOrUrl) return "";
     let clean = relativePathOrUrl.trim();
     // Remove query params if any
     clean = clean.split("?")[0];
@@ -87,7 +88,23 @@ export class LocalStorageProvider implements IStorageProvider {
   }
 
   private resolveAbsolutePath(relativePathOrUrl: string): string {
-    const relative = this.normalizePath(relativePathOrUrl);
+    const rawClean = this.normalizePath(relativePathOrUrl);
+
+    let decodedClean = rawClean;
+    try {
+      decodedClean = decodeURIComponent(rawClean);
+    } catch {
+      // keep raw if decode fails
+    }
+
+    const cleanVariants = Array.from(
+      new Set([
+        rawClean,
+        decodedClean,
+        rawClean.replace(/\+/g, " "),
+        decodedClean.replace(/\+/g, " "),
+      ])
+    ).filter(Boolean);
 
     // Candidate upload base directories on VPS / local system
     const candidateBaseDirs = [
@@ -95,6 +112,14 @@ export class LocalStorageProvider implements IStorageProvider {
       path.resolve(process.cwd(), "public", "uploads"),
       path.resolve(process.cwd(), "uploads"),
       path.resolve(process.cwd(), "..", "uploads"),
+      path.resolve(process.cwd(), "public"),
+      path.resolve(process.cwd(), "public", "products"),
+      path.resolve(process.cwd(), "uploads", "products"),
+      path.resolve(process.cwd(), "..", "uploads", "products"),
+      path.resolve(process.cwd(), "..", "products"),
+      path.resolve(process.cwd(), "products"),
+      path.resolve(process.cwd(), ".."),
+      process.cwd(),
     ];
 
     const uniqueBaseDirs = Array.from(new Set(candidateBaseDirs));
@@ -102,34 +127,37 @@ export class LocalStorageProvider implements IStorageProvider {
     for (const base of uniqueBaseDirs) {
       if (!fs.existsSync(base)) continue;
 
-      const absolute = path.resolve(base, relative);
-      if (absolute.startsWith(base) && fs.existsSync(absolute)) {
-        return absolute;
-      }
-
-      // Smart Fallback 1: check if filename exists directly inside any allowed folder under this base
-      const filename = path.basename(relative);
-      for (const folder of ALLOWED_FOLDERS) {
-        const candidate = path.resolve(base, folder, filename);
-        if (candidate.startsWith(base) && fs.existsSync(candidate)) {
-          return candidate;
+      for (const rel of cleanVariants) {
+        // Direct relative path
+        const absolute = path.resolve(base, rel);
+        if (absolute.startsWith(base) && fs.existsSync(absolute) && fs.statSync(absolute).isFile()) {
+          return absolute;
         }
-      }
 
-      // Smart Fallback 2: strip leading folder component if relative was e.g. "unknown/foo.webp"
-      const relativeParts = relative.split("/");
-      if (relativeParts.length > 1) {
-        const subRelative = relativeParts.slice(1).join("/");
+        // Smart Fallback 1: check if filename exists directly inside any allowed folder under this base
+        const filename = path.basename(rel);
         for (const folder of ALLOWED_FOLDERS) {
-          const candidate = path.resolve(base, folder, subRelative);
-          if (candidate.startsWith(base) && fs.existsSync(candidate)) {
+          const candidate = path.resolve(base, folder, filename);
+          if (candidate.startsWith(base) && fs.existsSync(candidate) && fs.statSync(candidate).isFile()) {
             return candidate;
+          }
+        }
+
+        // Smart Fallback 2: strip leading folder component if relative was e.g. "unknown/foo.webp"
+        const relativeParts = rel.split("/");
+        if (relativeParts.length > 1) {
+          const subRelative = relativeParts.slice(1).join("/");
+          for (const folder of ALLOWED_FOLDERS) {
+            const candidate = path.resolve(base, folder, subRelative);
+            if (candidate.startsWith(base) && fs.existsSync(candidate) && fs.statSync(candidate).isFile()) {
+              return candidate;
+            }
           }
         }
       }
     }
 
-    return path.resolve(this.baseDir, relative);
+    return path.resolve(this.baseDir, decodedClean || rawClean);
   }
 
   public async saveFile(folder: string, filename: string, buffer: Buffer): Promise<SaveFileResult> {

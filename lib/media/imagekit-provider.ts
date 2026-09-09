@@ -48,42 +48,45 @@ export class ImageKitStorageProvider {
   }
 
   public isConfigured(): boolean {
-    return Boolean(
-      (this.publicKey || process.env.NEXT_PUBLIC_IMAGEKIT_PUBLIC_KEY) &&
-        this.privateKey &&
-        (this.urlEndpoint || process.env.NEXT_PUBLIC_IMAGEKIT_URL_ENDPOINT)
-    );
+    const pub = process.env.IMAGEKIT_PUBLIC_KEY || process.env.NEXT_PUBLIC_IMAGEKIT_PUBLIC_KEY || this.publicKey;
+    const priv = process.env.IMAGEKIT_PRIVATE_KEY || this.privateKey;
+    const endpoint = process.env.IMAGEKIT_URL_ENDPOINT || process.env.NEXT_PUBLIC_IMAGEKIT_URL_ENDPOINT || this.urlEndpoint;
+    return Boolean(pub && priv && endpoint);
   }
 
   public getUrlEndpoint(): string {
-    return this.urlEndpoint;
+    return process.env.IMAGEKIT_URL_ENDPOINT || process.env.NEXT_PUBLIC_IMAGEKIT_URL_ENDPOINT || this.urlEndpoint;
+  }
+
+  private getClient(): ImageKit | null {
+    const pub = process.env.IMAGEKIT_PUBLIC_KEY || process.env.NEXT_PUBLIC_IMAGEKIT_PUBLIC_KEY || this.publicKey;
+    const priv = process.env.IMAGEKIT_PRIVATE_KEY || this.privateKey;
+    const endpoint = process.env.IMAGEKIT_URL_ENDPOINT || process.env.NEXT_PUBLIC_IMAGEKIT_URL_ENDPOINT || this.urlEndpoint;
+
+    if (!pub || !priv || !endpoint) return null;
+
+    if (!this.client) {
+      try {
+        this.client = new ImageKit({
+          publicKey: pub,
+          privateKey: priv,
+          urlEndpoint: endpoint,
+        });
+      } catch (err) {
+        console.error("[ImageKitStorageProvider] Initialization error:", err);
+      }
+    }
+    return this.client;
   }
 
   public async uploadFile(
     options: ImageKitUploadOptions
   ): Promise<ImageKitUploadResult> {
-    if (!this.client) {
-      // Re-try initialization if keys were loaded late
-      if (this.isConfigured()) {
-        this.client = new ImageKit({
-          publicKey:
-            this.publicKey ||
-            process.env.IMAGEKIT_PUBLIC_KEY ||
-            process.env.NEXT_PUBLIC_IMAGEKIT_PUBLIC_KEY ||
-            "",
-          privateKey: this.privateKey || process.env.IMAGEKIT_PRIVATE_KEY || "",
-          urlEndpoint:
-            this.urlEndpoint ||
-            process.env.IMAGEKIT_URL_ENDPOINT ||
-            process.env.NEXT_PUBLIC_IMAGEKIT_URL_ENDPOINT ||
-            "",
-        });
-      }
-    }
+    const client = this.getClient();
 
-    if (!this.client) {
+    if (!client) {
       throw new Error(
-        "ImageKit credentials are not configured in environment variables."
+        "ImageKit credentials (IMAGEKIT_PUBLIC_KEY, IMAGEKIT_PRIVATE_KEY, IMAGEKIT_URL_ENDPOINT) are missing or incomplete in environment variables."
       );
     }
 
@@ -94,7 +97,7 @@ export class ImageKitStorageProvider {
       : "products";
     const folderPath = `/${sanitizedFolder}`;
 
-    const response = await this.client.upload({
+    const response = await client.upload({
       file: options.buffer,
       fileName: options.filename,
       folder: folderPath,
@@ -119,7 +122,8 @@ export class ImageKitStorageProvider {
   }
 
   public async deleteFile(fileIdOrUrl: string): Promise<boolean> {
-    if (!this.client) return false;
+    const client = this.getClient();
+    if (!client) return false;
 
     try {
       let fileId = fileIdOrUrl.trim();
@@ -131,7 +135,7 @@ export class ImageKitStorageProvider {
         const name = pathName.split("/").pop();
 
         if (name) {
-          const searchResult = await this.client.listFiles({
+          const searchResult = await client.listFiles({
             searchQuery: `name = "${name}"`,
             limit: 1,
           });
@@ -149,7 +153,7 @@ export class ImageKitStorageProvider {
         }
       }
 
-      await this.client.deleteFile(fileId);
+      await client.deleteFile(fileId);
       return true;
     } catch (err) {
       console.warn(`[ImageKitStorageProvider] Delete error for ${fileIdOrUrl}:`, err);
@@ -158,9 +162,10 @@ export class ImageKitStorageProvider {
   }
 
   public async getStorageUsage(): Promise<{ totalFiles: number; totalSizeBytes: number }> {
-    if (!this.client) return { totalFiles: 0, totalSizeBytes: 0 };
+    const client = this.getClient();
+    if (!client) return { totalFiles: 0, totalSizeBytes: 0 };
     try {
-      const files = await this.client.listFiles({ limit: 1000 });
+      const files = await client.listFiles({ limit: 1000 });
       if (Array.isArray(files)) {
         let totalSizeBytes = 0;
         files.forEach((f: any) => {

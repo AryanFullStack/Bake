@@ -1,8 +1,25 @@
 import type { Product, ProductAttribute, ProductVariation } from "./types";
 import { resolveMediaUrl } from "./media-url";
 
+function normalizeKey(str: string) {
+  return str ? str.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)+/g, "") : "";
+}
+
 function variationMatches(selection: Record<string, string>, variation: ProductVariation) {
-  return Object.entries(selection).every(([key, value]) => variation.attributes?.[key] === value);
+  if (!variation.attributes) return false;
+  const varAttrs = variation.attributes;
+  const varKeys = Object.keys(varAttrs);
+
+  return Object.entries(selection).every(([selKey, selVal]) => {
+    const normSelKey = normalizeKey(selKey);
+    const normSelVal = normalizeKey(selVal);
+
+    const matchingKey = varKeys.find((k) => normalizeKey(k) === normSelKey);
+    if (!matchingKey) return false;
+
+    const varVal = String(varAttrs[matchingKey]);
+    return normalizeKey(varVal) === normSelVal || varVal === selVal;
+  });
 }
 
 /**

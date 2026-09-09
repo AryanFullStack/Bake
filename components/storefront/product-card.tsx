@@ -103,7 +103,11 @@ export function ProductCard({ product }: { product: Product }) {
           <SafeImage
             src={allImages[0]}
             alt={product.name}
-            width={800} height={860}
+            width={600}
+            height={650}
+            sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+            quality={75}
+            loading="lazy"
             className={`absolute inset-0 h-full w-full object-cover transition-all duration-700 ${
               hovering && hasMultiple ? "opacity-0 scale-[1.05]" : "opacity-100 scale-100"
             }`}
@@ -113,7 +117,11 @@ export function ProductCard({ product }: { product: Product }) {
             <SafeImage
               src={allImages[1]}
               alt={`${product.name} – alternate view`}
-              width={800} height={860}
+              width={600}
+              height={650}
+              sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+              quality={75}
+              loading="lazy"
               className={`absolute inset-0 h-full w-full object-cover transition-all duration-700 ${
                 hovering ? "opacity-100 scale-[1.04]" : "opacity-0 scale-100"
               }`}

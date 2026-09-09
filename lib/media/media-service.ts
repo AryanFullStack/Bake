@@ -703,8 +703,8 @@ export class MediaService {
       // Helper to process and upload a single VPS file
       const migratePathToImageKit = async (rawPath: string, folderHint: string = "products"): Promise<string | null> => {
         if (!rawPath || typeof rawPath !== "string") return null;
-        // Ignore external URLs (e.g. Unsplash) and already migrated ImageKit URLs
-        if (rawPath.includes("imagekit.io") || rawPath.startsWith("http://") || rawPath.startsWith("https://")) return null;
+        // Ignore external CDN/ImageKit/Unsplash URLs that are already external
+        if (rawPath.includes("imagekit.io") || rawPath.includes("ik.imagekit.io") || rawPath.includes("unsplash.com")) return null;
 
         const cleanRelPath = this.normalizeStoragePath(rawPath);
         if (!cleanRelPath) return null;
@@ -717,7 +717,12 @@ export class MediaService {
         }
 
         const folder = cleanRelPath.includes("/") ? cleanRelPath.split("/")[0] : folderHint;
-        const filename = cleanRelPath.split("/").pop() || "image.webp";
+        let filename = cleanRelPath.split("/").pop() || "image.webp";
+        try {
+          filename = decodeURIComponent(filename);
+        } catch {
+          // Keep raw filename if decode fails
+        }
 
         // Optimize image before uploading to ImageKit
         let processedBuffer = fileData.buffer;

@@ -75,7 +75,7 @@ async function syncVariationMedia(supabase: any, variationId: string, variation:
   }
 }
 
-async function syncProductVariations(supabase: any, productId: string, product: any, variations: any[]) {
+async function syncProductVariations(supabase: any, productId: string, product: any, variations: any[], productType: string = "variable") {
   const { data: existing, error: existingError } = await supabase.from("product_variations").select("id,combination_key").eq("product_id", productId);
   if (existingError) throw existingError;
   const incomingKeys = new Set<string>();
@@ -120,8 +120,10 @@ async function syncProductVariations(supabase: any, productId: string, product: 
     await supabase.from("product_variation_images").delete().in("variation_id", removed);
     await supabase.from("product_variations").delete().in("id", removed);
   }
-  const { data: totals } = await supabase.from("product_variations").select("stock_quantity").eq("product_id", productId).eq("status", "active");
-  await supabase.from("products").update({ stock_quantity: (totals ?? []).reduce((sum: number, row: any) => sum + Number(row.stock_quantity || 0), 0) }).eq("id", productId);
+  if (productType === "variable") {
+    const { data: totals } = await supabase.from("product_variations").select("stock_quantity").eq("product_id", productId).eq("status", "active");
+    await supabase.from("products").update({ stock_quantity: (totals ?? []).reduce((sum: number, row: any) => sum + Number(row.stock_quantity || 0), 0) }).eq("id", productId);
+  }
 }
 
 export async function GET(req: NextRequest) {
@@ -309,7 +311,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Insert Variations for Variable Products
-    if (product_type === "variable" && Array.isArray(variations)) await syncProductVariations(supabase, productId, { name, sku, price }, variations);
+    if (product_type === "variable" && Array.isArray(variations)) await syncProductVariations(supabase, productId, { name, sku, price }, variations, product_type);
     if (product_type === "variable" && Array.isArray(attributes)) await syncProductAttributes(supabase, productId, attributes);
 
     return NextResponse.json({
@@ -370,7 +372,13 @@ export async function PATCH(req: NextRequest) {
     }
 
     // Sync Variations if provided
-    if (Array.isArray(variations)) await syncProductVariations(supabase, id, { name: updates.name, sku: updates.sku, price: updates.price }, variations);
+    let targetProductType = updates.product_type;
+    if (!targetProductType && Array.isArray(variations)) {
+      const { data: currentProd } = await supabase.from("products").select("product_type").eq("id", id).single();
+      targetProductType = currentProd?.product_type || "simple";
+    }
+
+    if (Array.isArray(variations)) await syncProductVariations(supabase, id, { name: updates.name, sku: updates.sku, price: updates.price }, variations, targetProductType || "simple");
     if (Array.isArray(attributes)) await syncProductAttributes(supabase, id, attributes);
 
     return NextResponse.json({ success: true, message: "Product updated successfully." });

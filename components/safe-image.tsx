@@ -20,15 +20,22 @@ export function SafeImage({
   blurDataURL,
   ...props
 }: SafeImageProps) {
-  const resolvedSrc = resolveMediaUrl(src, fallbackSrc);
+  const transformOpts = {
+    width: typeof props.width === "number" ? props.width : undefined,
+    height: typeof props.height === "number" ? props.height : undefined,
+    quality: typeof props.quality === "number" ? props.quality : 80,
+    format: "auto" as const,
+  };
+
+  const resolvedSrc = resolveMediaUrl(src, fallbackSrc, transformOpts);
   const [imgSrc, setImgSrc] = useState<string>(resolvedSrc);
   const [hasFailed, setHasFailed] = useState<boolean>(false);
 
   useEffect(() => {
-    const updated = resolveMediaUrl(src, fallbackSrc);
+    const updated = resolveMediaUrl(src, fallbackSrc, transformOpts);
     setImgSrc(updated);
     setHasFailed(false);
-  }, [src, fallbackSrc]);
+  }, [src, fallbackSrc, props.width, props.height, props.quality]);
 
   // Always force unoptimized mode for VPS media / API serve URLs to prevent Next.js /_next/image 400 errors
   const shouldBeUnoptimized = unoptimized ?? isVpsMediaUrl(imgSrc);

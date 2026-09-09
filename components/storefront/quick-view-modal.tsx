@@ -55,6 +55,8 @@ export function QuickViewModal({ product: initialProduct, onClose }: QuickViewMo
   const [activeImage, setActiveImage] = useState(0);
   const [mounted, setMounted] = useState(false);
 
+  const hasPreselectedRef = useRef<string | null>(null);
+
   // Sync initial product and fetch full details if attributes/variations are missing
   useEffect(() => {
     setMounted(true);
@@ -63,6 +65,7 @@ export function QuickViewModal({ product: initialProduct, onClose }: QuickViewMo
     setValidationError(null);
     setQuantity(1);
     setActiveImage(0);
+    hasPreselectedRef.current = null;
 
     if (initialProduct && initialProduct.productType === "variable") {
       if (!initialProduct.attributes?.length || !initialProduct.variations?.length) {
@@ -130,11 +133,12 @@ export function QuickViewModal({ product: initialProduct, onClose }: QuickViewMo
     });
   }, [product, variations]);
 
-  // Pre-select first active variation options on load if none selected
+  // Pre-select first active variation options on load once per product
   useEffect(() => {
-    if (variations.length > 0 && attributes.length > 0 && Object.keys(selection).length === 0) {
+    if (product?.id && hasPreselectedRef.current !== product.id && variations.length > 0 && attributes.length > 0) {
       const firstActive = variations.find((v) => v.status === "active" && v.attributes);
       if (firstActive && firstActive.attributes) {
+        hasPreselectedRef.current = product.id;
         const initialSel: Record<string, string> = {};
         for (const attr of attributes) {
           const matchingKey = Object.keys(firstActive.attributes).find(
@@ -149,7 +153,7 @@ export function QuickViewModal({ product: initialProduct, onClose }: QuickViewMo
         }
       }
     }
-  }, [variations, attributes, selection]);
+  }, [product?.id, variations, attributes]);
 
   const activeVariation = useMemo(() => {
     if (!variations.length || Object.keys(selection).length !== attributes.length) return null;
@@ -379,9 +383,25 @@ export function QuickViewModal({ product: initialProduct, onClose }: QuickViewMo
                     <div className="mb-2 flex items-center justify-between">
                       <span className="text-xs font-bold text-navy">{attribute.name}</span>
                       {selection[attribute.slug] ? (
-                        <span className="text-xs font-extrabold text-orange">
-                          {attributeLabel(attribute, selection[attribute.slug])}
-                        </span>
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs font-extrabold text-orange">
+                            {attributeLabel(attribute, selection[attribute.slug])}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setSelection((current) => {
+                                const next = { ...current };
+                                delete next[attribute.slug];
+                                return next;
+                              });
+                              setValidationError(null);
+                            }}
+                            className="text-[10px] font-semibold text-muted hover:text-red-500"
+                          >
+                            (Deselect)
+                          </button>
+                        </div>
                       ) : (
                         <span className="text-[11px] font-semibold text-amber-600">Choose option *</span>
                       )}

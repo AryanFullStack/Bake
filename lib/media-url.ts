@@ -2,22 +2,83 @@ import { ALLOWED_FOLDERS } from "./media/constants";
 
 export const DEFAULT_FALLBACK_IMAGE = "/placeholder-bake.svg";
 
+const KNOWN_STATIC_ASSETS = new Set([
+  "/bakery.png",
+  "/bakery.webp",
+  "/baskets.webp",
+  "/WD.webp",
+  "/kicthens.webp",
+  "/homeDisktop.webp",
+  "/celebration-cakes.webp",
+  "/homeItems.webp",
+  "/placeholder-bake.svg",
+  "/logobake-01.png",
+  "/logomainficonocns-01.png",
+  "/favicon.ico",
+  "/icon.png",
+  "/apple-icon.png",
+  "/manifest.json",
+  "/robots.txt",
+  "/sitemap.xml",
+]);
+
+export interface ImageTransformOptions {
+  width?: number;
+  height?: number;
+  quality?: number;
+  format?: "auto" | "webp" | "avif" | "jpg" | "png";
+  crop?: "maintain_ratio" | "force" | "pad_extract" | "extract";
+}
+
+/**
+ * Appends or updates ImageKit URL transformation parameters for dynamic CDN optimization.
+ */
+export function getImageKitTransformedUrl(
+  url: string,
+  options: ImageTransformOptions = {}
+): string {
+  if (!url || typeof url !== "string") return url;
+  if (!url.includes("imagekit.io") && !url.includes("ik.imagekit.io")) {
+    return url;
+  }
+
+  const { width, height, quality = 80, format = "auto", crop } = options;
+
+  const trParts: string[] = [];
+  if (width && width > 0) trParts.push(`w-${Math.round(width)}`);
+  if (height && height > 0) trParts.push(`h-${Math.round(height)}`);
+  if (quality && quality > 0) trParts.push(`q-${Math.round(quality)}`);
+  if (format) trParts.push(`f-${format}`);
+  if (crop) trParts.push(`c-${crop}`);
+
+  if (trParts.length === 0) return url;
+
+  const trParam = trParts.join(",");
+
+  try {
+    const urlObj = new URL(url);
+    const existingTr = urlObj.searchParams.get("tr");
+    if (existingTr) {
+      if (!existingTr.includes(trParam)) {
+        urlObj.searchParams.set("tr", `${existingTr},${trParam}`);
+      }
+    } else {
+      urlObj.searchParams.set("tr", trParam);
+    }
+    return urlObj.toString();
+  } catch {
+    const joinChar = url.includes("?") ? "&" : "?";
+    return `${url}${joinChar}tr=${trParam}`;
+  }
+}
+
 /**
  * Resolves any image path, relative storage reference, or full URL to a canonical display URL.
- * 
- * Examples:
- * - "/uploads/products/product_1788856725_9a177d.webp" -> "/api/media/serve/products/product_1788856725_9a177d.webp"
- * - "/products/product_1788856725_9a177d.webp"         -> "/api/media/serve/products/product_1788856725_9a177d.webp"
- * - "uploads/products/product_1788856725_9a177d.webp"  -> "/api/media/serve/products/product_1788856725_9a177d.webp"
- * - "products/product_1788856725_9a177d.webp"          -> "/api/media/serve/products/product_1788856725_9a177d.webp"
- * - "/api/media/serve/products/product_...webp"       -> "/api/media/serve/products/product_...webp"
- * - "https://images.unsplash.com/photo-..."           -> "https://images.unsplash.com/photo-..."
- * - "/bakery.png" (static public asset)                -> "/bakery.png"
- * - null / undefined / ""                              -> "/placeholder-bake.svg"
  */
 export function resolveMediaUrl(
   path: string | null | undefined,
-  fallback: string = DEFAULT_FALLBACK_IMAGE
+  fallback: string = DEFAULT_FALLBACK_IMAGE,
+  transformOptions?: ImageTransformOptions
 ): string {
   if (!path || typeof path !== "string") {
     return fallback;
@@ -33,13 +94,18 @@ export function resolveMediaUrl(
     return clean;
   }
 
+  // Handle ImageKit CDN URLs directly with optional transformations
+  if (clean.includes("imagekit.io") || clean.includes("ik.imagekit.io")) {
+    return transformOptions ? getImageKitTransformedUrl(clean, transformOptions) : clean;
+  }
+
+  // Known static public assets (e.g. /bakery.png, /WD.webp)
+  if (KNOWN_STATIC_ASSETS.has(clean) || KNOWN_STATIC_ASSETS.has(`/${clean.replace(/^\/+/, "")}`)) {
+    return clean.startsWith("/") ? clean : `/${clean}`;
+  }
+
   // Handle absolute HTTP/HTTPS URLs
   if (/^https?:\/\//i.test(clean)) {
-    // Preserve ImageKit URLs directly as external CDN assets
-    if (clean.includes("imagekit.io") || clean.includes("ik.imagekit.io")) {
-      return clean;
-    }
-
     try {
       const parsed = new URL(clean);
       if (parsed.pathname.includes("/api/media/serve/") || parsed.pathname.includes("/uploads/")) {
@@ -48,8 +114,10 @@ export function resolveMediaUrl(
         const firstSeg = parsed.pathname.replace(/^\/+/, "").split("/")[0];
         if (ALLOWED_FOLDERS.includes(firstSeg as any)) {
           clean = parsed.pathname;
+        } else if (/\.(webp|jpg|jpeg|png|gif|avif|svg)$/i.test(parsed.pathname) && !clean.includes("unsplash.com")) {
+          clean = parsed.pathname;
         } else {
-          return clean; // External third-party URL (e.g. Unsplash, CDN)
+          return clean; // External third-party URL (e.g. Unsplash, external CDN)
         }
       }
     } catch {
@@ -73,21 +141,13 @@ export function resolveMediaUrl(
   }
 
   const relativeNoSlash = clean.replace(/^\/+/, "");
-  const firstSegment = relativeNoSlash.split("/")[0];
-  const isUploadFolder = ALLOWED_FOLDERS.includes(firstSegment as any);
-
-  // If path starts with '/' and is NOT an upload folder, it's a static public file (e.g. /bakery.png, /WD.jpeg)
-  if (path.startsWith("/") && !isUploadFolder && !path.startsWith("/uploads/") && !path.startsWith("/api/media/serve/")) {
-    return path;
+  if (!relativeNoSlash) {
+    return fallback;
   }
 
   clean = relativeNoSlash;
 
-  if (!clean) {
-    return fallback;
-  }
-
-  // If clean has no folder component (e.g. "product_1788856725_9a177d.webp"), default to products folder
+  // If clean has no folder component (e.g. "2_Pcs_Set...webp" or "product_17888.webp"), default to products folder
   if (!clean.includes("/")) {
     clean = `products/${clean}`;
   }

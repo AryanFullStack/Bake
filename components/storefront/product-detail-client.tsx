@@ -92,26 +92,31 @@ export function ProductDetailClient({ product, reviews, faqs = [] }: { product: 
   const [touchStartX, setTouchStartX] = useState<number | null>(null);
   const thumbsRef = useRef<HTMLDivElement>(null);
 
-  // Pre-select first active variation on load
+  const hasPreselectedRef = useRef<string | null>(null);
+
+  // Pre-select first active variation on load (only once per product)
   useEffect(() => {
-    if (variations.length > 0 && attributes.length > 0 && Object.keys(selection).length === 0) {
-      const firstActive = variations.find((v) => v.status === "active" && v.attributes);
-      if (firstActive && firstActive.attributes) {
-        const initialSel: Record<string, string> = {};
-        for (const attr of attributes) {
-          const matchingKey = Object.keys(firstActive.attributes).find(
-            (k) => normalizeKey(k) === normalizeKey(attr.slug) || normalizeKey(k) === normalizeKey(attr.name)
-          );
-          if (matchingKey) {
-            initialSel[attr.slug] = normalizeKey(String(firstActive.attributes[matchingKey]));
+    if (product?.id && hasPreselectedRef.current !== product.id) {
+      if (variations.length > 0 && attributes.length > 0) {
+        hasPreselectedRef.current = product.id;
+        const firstActive = variations.find((v) => v.status === "active" && v.attributes);
+        if (firstActive && firstActive.attributes) {
+          const initialSel: Record<string, string> = {};
+          for (const attr of attributes) {
+            const matchingKey = Object.keys(firstActive.attributes).find(
+              (k) => normalizeKey(k) === normalizeKey(attr.slug) || normalizeKey(k) === normalizeKey(attr.name)
+            );
+            if (matchingKey) {
+              initialSel[attr.slug] = normalizeKey(String(firstActive.attributes[matchingKey]));
+            }
           }
-        }
-        if (Object.keys(initialSel).length > 0) {
-          setSelection(initialSel);
+          if (Object.keys(initialSel).length > 0) {
+            setSelection(initialSel);
+          }
         }
       }
     }
-  }, [variations, attributes, selection]);
+  }, [product?.id, variations, attributes]);
 
   const activeVariation = useMemo(() => {
     if (!variations.length || Object.keys(selection).length !== attributes.length) return null;
@@ -232,7 +237,7 @@ export function ProductDetailClient({ product, reviews, faqs = [] }: { product: 
             <div className="glass absolute bottom-4 right-4 flex items-center gap-1.5 rounded-xl px-2.5 py-1.5 text-xs font-bold text-navy opacity-0 transition-opacity group-hover:opacity-100"><ZoomIn size={13} /> Zoom</div>
             {activeImages.length > 1 ? <><button aria-label="Previous image" onClick={(event) => { event.stopPropagation(); prevImage(); }} className="glass absolute left-3 top-1/2 -translate-y-1/2 rounded-full p-2.5 text-navy opacity-0 shadow-sm transition-opacity group-hover:opacity-100"><ChevronLeft size={18} /></button><button aria-label="Next image" onClick={(event) => { event.stopPropagation(); nextImage(); }} className="glass absolute right-3 top-1/2 -translate-y-1/2 rounded-full p-2.5 text-navy opacity-0 shadow-sm transition-opacity group-hover:opacity-100"><ChevronRight size={18} /></button></> : null}
           </div>
-          {activeImages.length > 1 ? <div ref={thumbsRef} className="flex gap-2.5 overflow-x-auto pb-1">{activeImages.map((image, index) => <button key={`${image}-${index}`} aria-label={`View image ${index + 1}`} onClick={() => setActiveImage(index)} className={`relative h-[72px] w-[72px] flex-shrink-0 overflow-hidden rounded-xl border-2 transition ${index === activeImage ? "border-orange shadow-md" : "border-line/60 hover:border-orange/50"}`}><SafeImage src={image} alt={`${activeTitle} view ${index + 1}`} fill sizes="72px" className="object-cover" /></button>)}</div> : null}
+          {activeImages.length > 1 ? <div ref={thumbsRef} className="flex gap-2.5 overflow-x-auto pb-1">{activeImages.map((image, index) => <button key={`${image}-${index}`} aria-label={`View image ${index + 1}`} onClick={() => setActiveImage(index)} className={`relative h-[72px] w-[72px] flex-shrink-0 overflow-hidden rounded-xl border-2 transition ${index === activeImage ? "border-orange shadow-md" : "border-line/60 hover:border-orange/50"}`}><SafeImage src={image} alt={`${activeTitle} view ${index + 1}`} width={150} height={150} quality={70} sizes="72px" className="object-cover" /></button>)}</div> : null}
         </div>
 
         <div>

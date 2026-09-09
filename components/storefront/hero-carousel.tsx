@@ -3,6 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { resolveMediaUrl } from "@/lib/media-url";
 import {
   ArrowRight, Cake, ChevronLeft, ChevronRight,
   Home, ShoppingBag, Sparkles, Star, UtensilsCrossed, Watch,
@@ -35,7 +36,7 @@ export function HeroCarousel({ banners }: { banners: any[] }) {
   const body      = current?.body      ?? "Quality bakery, home décor, kitchen & everyday essentials — all in one place. Delivered fresh across Lahore.";
   const ctaHref   = current?.cta_href  ?? "/shop";
   const ctaLabel  = current?.cta_label ?? "Shop All Products";
-  const imgSrc    = current?.image_path ?? "/bakery.png";
+  const imgSrc    = resolveMediaUrl(current?.image_path, "/bakery.png");
 
   return (
     <section className="relative overflow-hidden bg-navy">
