@@ -390,6 +390,26 @@ export function MediaLibrary() {
     }
   };
 
+  const [isMigratingIk, setIsMigratingIk] = useState(false);
+  const handleMigrateToImageKit = async () => {
+    if (!confirm("Do you want to migrate all existing VPS images to ImageKit CDN?")) return;
+    setIsMigratingIk(true);
+    try {
+      const res = await fetch("/api/admin/media/migrate-imagekit", { method: "POST" });
+      const json = await res.json();
+      if (json.success) {
+        alert(json.message || "VPS to ImageKit migration completed successfully!");
+        fetchMedia();
+      } else {
+        alert(json.error || "Migration failed. Make sure ImageKit environment variables are configured.");
+      }
+    } catch (err: any) {
+      alert("Error starting migration: " + (err?.message || err));
+    } finally {
+      setIsMigratingIk(false);
+    }
+  };
+
   return (
     <div className="space-y-6 p-4 sm:p-6 md:p-8 min-w-0 overflow-x-hidden">
       {/* Header & Metrics */}
@@ -401,7 +421,17 @@ export function MediaLibrary() {
           </p>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
+          <button
+            onClick={handleMigrateToImageKit}
+            disabled={isMigratingIk}
+            className="flex items-center gap-2 rounded-xl border border-purple-200 bg-purple-50 px-3.5 py-2 text-sm font-semibold text-purple-700 shadow-xs transition hover:bg-purple-600 hover:text-white disabled:opacity-50"
+            title="Upload existing VPS images to ImageKit CDN"
+          >
+            <ExternalLink className={`h-4 w-4 ${isMigratingIk ? "animate-spin" : ""}`} />
+            {isMigratingIk ? "Migrating to ImageKit…" : "Migrate VPS to ImageKit"}
+          </button>
+
           <button
             onClick={() => {
               setIsHealthOpen(true);
