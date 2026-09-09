@@ -139,6 +139,14 @@ export class MediaService {
     });
 
     const ikProvider = getImageKitStorageProvider();
+
+    // Dual-storage persistence: 1. Always save a local copy to VPS disk as backup/mirror
+    const localRes = await this.storage.saveFile(
+      sanitizedFolder,
+      processed.filename,
+      processed.buffer
+    );
+
     let saveResult: {
       folder: string;
       filename: string;
@@ -146,9 +154,12 @@ export class MediaService {
       url: string;
       size: number;
       provider: "imagekit" | "vps";
+    } = {
+      ...localRes,
+      provider: "vps",
     };
 
-    // Requirement 3: All new product images must be uploaded to ImageKit
+    // 2. Upload to ImageKit CDN if configured
     if (ikProvider.isConfigured()) {
       try {
         const ikRes = await ikProvider.uploadFile({
@@ -167,20 +178,12 @@ export class MediaService {
           provider: "imagekit",
         };
       } catch (ikErr: any) {
-        console.error("[MediaService] ImageKit upload error:", ikErr);
-        throw new Error(`ImageKit upload failed: ${ikErr?.message || ikErr}`);
+        console.error("[MediaService] ImageKit upload warning/error:", ikErr?.message || ikErr);
+        // Fall back to local VPS saved copy without failing the upload operation completely
+        console.warn("[MediaService] Using local VPS disk copy as fallback for:", localRes.relativePath);
       }
     } else {
-      console.warn("[MediaService] ImageKit credentials missing. Falling back to local VPS storage.");
-      const localRes = await this.storage.saveFile(
-        sanitizedFolder,
-        processed.filename,
-        processed.buffer
-      );
-      saveResult = {
-        ...localRes,
-        provider: "vps",
-      };
+      console.warn("[MediaService] ImageKit credentials not configured. Image saved to local VPS disk only.");
     }
 
     // Save metadata to Supabase DB

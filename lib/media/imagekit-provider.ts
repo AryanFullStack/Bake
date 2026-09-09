@@ -28,7 +28,10 @@ export class ImageKitStorageProvider {
       process.env.IMAGEKIT_PUBLIC_KEY ||
       process.env.NEXT_PUBLIC_IMAGEKIT_PUBLIC_KEY ||
       "";
-    this.privateKey = process.env.IMAGEKIT_PRIVATE_KEY || "";
+    this.privateKey =
+      process.env.IMAGEKIT_PRIVATE_KEY ||
+      process.env.NEXT_PUBLIC_IMAGEKIT_PRIVATE_KEY ||
+      "";
     this.urlEndpoint =
       process.env.IMAGEKIT_URL_ENDPOINT ||
       process.env.NEXT_PUBLIC_IMAGEKIT_URL_ENDPOINT ||
@@ -49,7 +52,7 @@ export class ImageKitStorageProvider {
 
   public isConfigured(): boolean {
     const pub = process.env.IMAGEKIT_PUBLIC_KEY || process.env.NEXT_PUBLIC_IMAGEKIT_PUBLIC_KEY || this.publicKey;
-    const priv = process.env.IMAGEKIT_PRIVATE_KEY || this.privateKey;
+    const priv = process.env.IMAGEKIT_PRIVATE_KEY || process.env.NEXT_PUBLIC_IMAGEKIT_PRIVATE_KEY || this.privateKey;
     const endpoint = process.env.IMAGEKIT_URL_ENDPOINT || process.env.NEXT_PUBLIC_IMAGEKIT_URL_ENDPOINT || this.urlEndpoint;
     return Boolean(pub && priv && endpoint);
   }
@@ -60,7 +63,7 @@ export class ImageKitStorageProvider {
 
   private getClient(): ImageKit | null {
     const pub = process.env.IMAGEKIT_PUBLIC_KEY || process.env.NEXT_PUBLIC_IMAGEKIT_PUBLIC_KEY || this.publicKey;
-    const priv = process.env.IMAGEKIT_PRIVATE_KEY || this.privateKey;
+    const priv = process.env.IMAGEKIT_PRIVATE_KEY || process.env.NEXT_PUBLIC_IMAGEKIT_PRIVATE_KEY || this.privateKey;
     const endpoint = process.env.IMAGEKIT_URL_ENDPOINT || process.env.NEXT_PUBLIC_IMAGEKIT_URL_ENDPOINT || this.urlEndpoint;
 
     if (!pub || !priv || !endpoint) return null;

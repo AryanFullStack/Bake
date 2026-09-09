@@ -3,6 +3,7 @@ import { z } from "zod";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { createClient } from "@supabase/supabase-js";
 import { findUnifiedTrackOrder } from "@/lib/tracking";
+import { mediaService } from "@/lib/media/media-service";
 
 const schema = z.object({
   full_name: z.string().min(2),
