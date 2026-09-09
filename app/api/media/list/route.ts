@@ -3,6 +3,7 @@ import { assertAdminApi } from "@/lib/auth";
 import { mediaService } from "@/lib/media/media-service";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { ensureMediaSchema } from "@/lib/supabase/schema-runner";
+import { getImageKitStorageProvider } from "@/lib/media/imagekit-provider";
 
 export async function GET(req: NextRequest) {
   try {
@@ -16,12 +17,14 @@ export async function GET(req: NextRequest) {
 
     await ensureMediaSchema();
     const adminClient = createSupabaseAdminClient();
+    const ikProvider = getImageKitStorageProvider();
 
     const { searchParams } = new URL(req.url);
     const folder = searchParams.get("folder") || "all";
     const mediaType = searchParams.get("mediaType") || "all";
     const search = searchParams.get("search")?.trim() || "";
     const usageFilter = searchParams.get("usageFilter") || "all"; // 'all' | 'used' | 'unused'
+    const providerFilter = searchParams.get("providerFilter") || "all"; // 'all' | 'imagekit' | 'vps'
     const sort = searchParams.get("sort") || "newest"; // 'newest' | 'oldest' | 'largest' | 'smallest' | 'name_asc' | 'name_desc'
     const page = Math.max(1, parseInt(searchParams.get("page") || "1", 10));
     const limit = Math.max(1, Math.min(200, parseInt(searchParams.get("limit") || "40", 10)));
@@ -100,12 +103,32 @@ export async function GET(req: NextRequest) {
       total = items.length;
     }
 
-    // Enrich items with live usage info
+    // Enrich items with live usage info & storage provider tag
+    let imagekitFilesCount = 0;
+    let imagekitSizeBytes = 0;
+    let vpsFilesCount = 0;
+    let vpsSizeBytes = 0;
+
     const enrichedItems = await Promise.all(
       items.map(async (item) => {
-        const usage = await mediaService.getMediaUsage(item.storage_path);
+        const usage = await mediaService.getMediaUsage(item.storage_path || item.public_url);
+        const isIk = Boolean(
+          (item.public_url && item.public_url.includes("imagekit.io")) ||
+          (item.storage_path && item.storage_path.includes("imagekit.io"))
+        );
+
+        const fileSize = item.file_size || 0;
+        if (isIk) {
+          imagekitFilesCount++;
+          imagekitSizeBytes += fileSize;
+        } else {
+          vpsFilesCount++;
+          vpsSizeBytes += fileSize;
+        }
+
         return {
           ...item,
+          storage_provider: isIk ? "imagekit" : "vps",
           usage_count: usage.count,
           usages: usage.usages,
         };
@@ -115,9 +138,16 @@ export async function GET(req: NextRequest) {
     // Apply Usage filter (used / unused)
     let filteredItems = enrichedItems;
     if (usageFilter === "used") {
-      filteredItems = enrichedItems.filter((i) => i.usage_count > 0);
+      filteredItems = filteredItems.filter((i) => i.usage_count > 0);
     } else if (usageFilter === "unused") {
-      filteredItems = enrichedItems.filter((i) => i.usage_count === 0);
+      filteredItems = filteredItems.filter((i) => i.usage_count === 0);
+    }
+
+    // Apply Storage Provider Filter (imagekit / vps)
+    if (providerFilter === "imagekit") {
+      filteredItems = filteredItems.filter((i) => i.storage_provider === "imagekit");
+    } else if (providerFilter === "vps") {
+      filteredItems = filteredItems.filter((i) => i.storage_provider === "vps");
     }
 
     // Pagination
@@ -152,8 +182,13 @@ export async function GET(req: NextRequest) {
         totalPages: Math.ceil(filteredItems.length / limit) || 1,
       },
       stats: {
-        totalFiles: diskStats.totalFiles,
-        totalSizeBytes: diskStats.totalSizeBytes,
+        totalFiles: enrichedItems.length,
+        totalSizeBytes: diskStats.totalSizeBytes + imagekitSizeBytes,
+        imagekitConfigured: ikProvider.isConfigured(),
+        imagekitFilesCount,
+        imagekitSizeBytes,
+        vpsFilesCount,
+        vpsSizeBytes,
         folders: diskStats.folders,
         counts: {
           products: productImagesCount,

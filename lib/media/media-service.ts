@@ -3,6 +3,7 @@ import { processAndOptimizeImage, validateImageMagicBytes, getImageMetadata } fr
 import { isForbiddenExtension, sanitizeFilename } from "./security";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { ensureMediaSchema } from "@/lib/supabase/schema-runner";
+import { getImageKitStorageProvider } from "./imagekit-provider";
 
 export interface UploadMediaOptions {
   folder: string;
@@ -28,6 +29,7 @@ export interface UploadMediaResult {
   size: number;
   originalSize: number;
   mimeType: string;
+  storageProvider?: "imagekit" | "vps";
 }
 
 export interface MediaUsageItem {
@@ -128,7 +130,7 @@ export class MediaService {
       throw new Error(validation.error || "Invalid image buffer.");
     }
 
-    // Sharp optimization & conversion to WebP
+    // Sharp optimization & conversion to WebP format
     const processed = await processAndOptimizeImage(buffer, {
       folder: sanitizedFolder,
       customWidth,
@@ -136,12 +138,50 @@ export class MediaService {
       quality,
     });
 
-    // Save to persistent storage directory
-    const saveResult = await this.storage.saveFile(
-      sanitizedFolder,
-      processed.filename,
-      processed.buffer
-    );
+    const ikProvider = getImageKitStorageProvider();
+    let saveResult: {
+      folder: string;
+      filename: string;
+      relativePath: string;
+      url: string;
+      size: number;
+      provider: "imagekit" | "vps";
+    };
+
+    // Requirement 3: All new product images must be uploaded to ImageKit
+    if (ikProvider.isConfigured()) {
+      try {
+        const ikRes = await ikProvider.uploadFile({
+          folder: sanitizedFolder,
+          filename: processed.filename,
+          buffer: processed.buffer,
+          mimeType: "image/webp",
+        });
+
+        saveResult = {
+          folder: ikRes.folder,
+          filename: ikRes.filename,
+          relativePath: ikRes.relativePath,
+          url: ikRes.url,
+          size: ikRes.size,
+          provider: "imagekit",
+        };
+      } catch (ikErr: any) {
+        console.error("[MediaService] ImageKit upload error:", ikErr);
+        throw new Error(`ImageKit upload failed: ${ikErr?.message || ikErr}`);
+      }
+    } else {
+      console.warn("[MediaService] ImageKit credentials missing. Falling back to local VPS storage.");
+      const localRes = await this.storage.saveFile(
+        sanitizedFolder,
+        processed.filename,
+        processed.buffer
+      );
+      saveResult = {
+        ...localRes,
+        provider: "vps",
+      };
+    }
 
     // Save metadata to Supabase DB
     const adminClient = createSupabaseAdminClient();
@@ -195,6 +235,7 @@ export class MediaService {
       size: processed.size,
       originalSize: processed.originalSize,
       mimeType: "image/webp",
+      storageProvider: saveResult.provider,
     };
   }
 
@@ -443,14 +484,23 @@ export class MediaService {
     if (usageResult.count > 0 && forceRemoveReferences && adminClient) {
       try {
         await Promise.all([
+          adminClient.from("products").update({ featured_image: null }).eq("featured_image", urlOrPath),
           adminClient.from("products").update({ featured_image: null }).eq("featured_image", cleanPath),
+          adminClient.from("product_images").delete().eq("storage_path", urlOrPath),
           adminClient.from("product_images").delete().eq("storage_path", cleanPath),
+          adminClient.from("product_variations").update({ image_url: null }).eq("image_url", urlOrPath),
           adminClient.from("product_variations").update({ image_url: null }).eq("image_url", cleanPath),
+          adminClient.from("product_variation_images").delete().eq("storage_path", urlOrPath),
           adminClient.from("product_variation_images").delete().eq("storage_path", cleanPath),
+          adminClient.from("product_attribute_values").update({ swatch_image: null }).eq("swatch_image", urlOrPath),
           adminClient.from("product_attribute_values").update({ swatch_image: null }).eq("swatch_image", cleanPath),
+          adminClient.from("product_attribute_images").delete().eq("storage_path", urlOrPath),
           adminClient.from("product_attribute_images").delete().eq("storage_path", cleanPath),
+          adminClient.from("categories").update({ image_path: null }).eq("image_path", urlOrPath),
           adminClient.from("categories").update({ image_path: null }).eq("image_path", cleanPath),
+          adminClient.from("banners").update({ image_path: null }).eq("image_path", urlOrPath),
           adminClient.from("banners").update({ image_path: null }).eq("image_path", cleanPath),
+          adminClient.from("custom_cake_images").delete().eq("storage_path", urlOrPath),
           adminClient.from("custom_cake_images").delete().eq("storage_path", cleanPath),
         ]);
       } catch (err) {
@@ -458,13 +508,22 @@ export class MediaService {
       }
     }
 
-    // Delete physical file from VPS disk
-    await this.storage.deleteFile(cleanPath);
+    // Delete from ImageKit if it's an ImageKit URL
+    if (urlOrPath.includes("imagekit.io")) {
+      const ikProvider = getImageKitStorageProvider();
+      await ikProvider.deleteFile(urlOrPath);
+    } else {
+      // Delete physical file from local VPS disk
+      await this.storage.deleteFile(cleanPath);
+    }
 
     // Delete DB metadata record
     if (adminClient) {
       try {
-        await adminClient.from("media").delete().eq("storage_path", cleanPath);
+        await adminClient
+          .from("media")
+          .delete()
+          .or(`public_url.eq.${urlOrPath},storage_path.eq.${cleanPath}`);
       } catch (err) {
         console.error("[MediaService] Error deleting media DB record:", err);
       }
@@ -561,7 +620,7 @@ export class MediaService {
     // Determine missing physical files (DB records whose physical file is missing from VPS disk)
     const missingPhysicalFiles: string[] = [];
     for (const dbPath of Array.from(dbPathSet)) {
-      if (!diskPathSet.has(dbPath)) {
+      if (!diskPathSet.has(dbPath) && !dbPath.includes("imagekit.io")) {
         missingPhysicalFiles.push(dbPath);
       }
     }
@@ -576,6 +635,264 @@ export class MediaService {
       missingPhysicalFiles,
       stats,
     };
+  }
+
+  /**
+   * Migrates existing local VPS product images to ImageKit if practical and safe.
+   * Requirement 2: Uploads VPS images to ImageKit and updates product image URLs in Supabase.
+   */
+  public async migrateExistingVpsImagesToImageKit(): Promise<{
+    success: boolean;
+    migratedCount: number;
+    failedCount: number;
+    skippedCount: number;
+    details: string[];
+    error?: string;
+  }> {
+    const ikProvider = getImageKitStorageProvider();
+    if (!ikProvider.isConfigured()) {
+      return {
+        success: false,
+        migratedCount: 0,
+        failedCount: 0,
+        skippedCount: 0,
+        details: ["ImageKit credentials not configured in environment."],
+        error: "ImageKit credentials not configured in environment variables.",
+      };
+    }
+
+    const adminClient = createSupabaseAdminClient();
+    if (!adminClient) {
+      return {
+        success: false,
+        migratedCount: 0,
+        failedCount: 0,
+        skippedCount: 0,
+        details: ["Supabase admin client unavailable."],
+        error: "Supabase admin client unavailable.",
+      };
+    }
+
+    const details: string[] = [];
+    let migratedCount = 0;
+    let failedCount = 0;
+    let skippedCount = 0;
+
+    try {
+      // 1. Collect all local VPS image paths from products table
+      const { data: products } = await adminClient
+        .from("products")
+        .select("id, name, featured_image");
+
+      const { data: productImages } = await adminClient
+        .from("product_images")
+        .select("id, product_id, storage_path");
+
+      const { data: variations } = await adminClient
+        .from("product_variations")
+        .select("id, product_id, image_url");
+
+      const { data: categories } = await adminClient
+        .from("categories")
+        .select("id, name, image_path");
+
+      const { data: banners } = await adminClient
+        .from("banners")
+        .select("id, title, image_path");
+
+      // Helper to process and upload a single VPS file
+      const migratePathToImageKit = async (rawPath: string, folderHint: string = "products"): Promise<string | null> => {
+        if (!rawPath || typeof rawPath !== "string") return null;
+        // Ignore external URLs (e.g. Unsplash) and already migrated ImageKit URLs
+        if (rawPath.includes("imagekit.io") || rawPath.startsWith("http://") || rawPath.startsWith("https://")) return null;
+
+        const cleanRelPath = this.normalizeStoragePath(rawPath);
+        if (!cleanRelPath) return null;
+
+        const fileData = await this.storage.getFileBuffer(cleanRelPath);
+        if (!fileData) {
+          details.push(`Physical file missing on VPS disk for path: ${rawPath}`);
+          skippedCount++;
+          return null;
+        }
+
+        const folder = cleanRelPath.includes("/") ? cleanRelPath.split("/")[0] : folderHint;
+        const filename = cleanRelPath.split("/").pop() || "image.webp";
+
+        // Optimize image before uploading to ImageKit
+        let processedBuffer = fileData.buffer;
+        try {
+          const processed = await processAndOptimizeImage(fileData.buffer, { folder });
+          processedBuffer = processed.buffer;
+        } catch {
+          // Keep original buffer if Sharp optimization fails
+        }
+
+        const ikResult = await ikProvider.uploadFile({
+          folder,
+          filename,
+          buffer: processedBuffer,
+          mimeType: "image/webp",
+        });
+
+        return ikResult.url;
+      };
+
+      // Map to keep track of already uploaded URLs to prevent duplicate uploads
+      const urlCache = new Map<string, string>();
+
+      const getOrMigrateUrl = async (rawPath: string, folderHint: string): Promise<string | null> => {
+        const clean = this.normalizeStoragePath(rawPath);
+        if (urlCache.has(clean)) {
+          return urlCache.get(clean)!;
+        }
+        const newUrl = await migratePathToImageKit(rawPath, folderHint);
+        if (newUrl) {
+          urlCache.set(clean, newUrl);
+        }
+        return newUrl;
+      };
+
+      // Migrate products featured_image
+      if (products) {
+        for (const p of products) {
+          if (p.featured_image && !p.featured_image.includes("imagekit.io")) {
+            try {
+              const newUrl = await getOrMigrateUrl(p.featured_image, "products");
+              if (newUrl) {
+                await adminClient
+                  .from("products")
+                  .update({ featured_image: newUrl })
+                  .eq("id", p.id);
+                details.push(`Migrated product '${p.name}' featured_image -> ${newUrl}`);
+                migratedCount++;
+              }
+            } catch (err: any) {
+              details.push(`Failed product '${p.name}' migration: ${err?.message}`);
+              failedCount++;
+            }
+          }
+        }
+      }
+
+      // Migrate product_images gallery
+      if (productImages) {
+        for (const pi of productImages) {
+          if (pi.storage_path && !pi.storage_path.includes("imagekit.io")) {
+            try {
+              const newUrl = await getOrMigrateUrl(pi.storage_path, "products");
+              if (newUrl) {
+                await adminClient
+                  .from("product_images")
+                  .update({ storage_path: newUrl })
+                  .eq("id", pi.id);
+                details.push(`Migrated gallery image (id: ${pi.id}) -> ${newUrl}`);
+                migratedCount++;
+              }
+            } catch (err: any) {
+              details.push(`Failed gallery image ${pi.id}: ${err?.message}`);
+              failedCount++;
+            }
+          }
+        }
+      }
+
+      // Migrate product_variations image_url
+      if (variations) {
+        for (const v of variations) {
+          if (v.image_url && !v.image_url.includes("imagekit.io")) {
+            try {
+              const newUrl = await getOrMigrateUrl(v.image_url, "products");
+              if (newUrl) {
+                await adminClient
+                  .from("product_variations")
+                  .update({ image_url: newUrl })
+                  .eq("id", v.id);
+                details.push(`Migrated variation (id: ${v.id}) image_url -> ${newUrl}`);
+                migratedCount++;
+              }
+            } catch (err: any) {
+              details.push(`Failed variation ${v.id}: ${err?.message}`);
+              failedCount++;
+            }
+          }
+        }
+      }
+
+      // Migrate categories image_path
+      if (categories) {
+        for (const c of categories) {
+          if (c.image_path && !c.image_path.includes("imagekit.io")) {
+            try {
+              const newUrl = await getOrMigrateUrl(c.image_path, "categories");
+              if (newUrl) {
+                await adminClient
+                  .from("categories")
+                  .update({ image_path: newUrl })
+                  .eq("id", c.id);
+                details.push(`Migrated category '${c.name}' -> ${newUrl}`);
+                migratedCount++;
+              }
+            } catch (err: any) {
+              details.push(`Failed category '${c.name}': ${err?.message}`);
+              failedCount++;
+            }
+          }
+        }
+      }
+
+      // Migrate banners image_path
+      if (banners) {
+        for (const b of banners) {
+          if (b.image_path && !b.image_path.includes("imagekit.io")) {
+            try {
+              const newUrl = await getOrMigrateUrl(b.image_path, "banners");
+              if (newUrl) {
+                await adminClient
+                  .from("banners")
+                  .update({ image_path: newUrl })
+                  .eq("id", b.id);
+                details.push(`Migrated banner '${b.title}' -> ${newUrl}`);
+                migratedCount++;
+              }
+            } catch (err: any) {
+              details.push(`Failed banner '${b.title}': ${err?.message}`);
+              failedCount++;
+            }
+          }
+        }
+      }
+
+      // Update media metadata records in Supabase
+      for (const [vpsRelPath, ikUrl] of Array.from(urlCache.entries())) {
+        try {
+          await adminClient
+            .from("media")
+            .update({ public_url: ikUrl, storage_path: ikUrl, updated_at: new Date().toISOString() })
+            .or(`storage_path.eq.${vpsRelPath},public_url.eq.${vpsRelPath}`);
+        } catch {
+          // Non-critical metadata update
+        }
+      }
+
+      return {
+        success: true,
+        migratedCount,
+        failedCount,
+        skippedCount,
+        details,
+      };
+    } catch (err: any) {
+      console.error("[MediaService] VPS to ImageKit migration error:", err);
+      return {
+        success: false,
+        migratedCount,
+        failedCount,
+        skippedCount,
+        details,
+        error: err?.message || "Migration process encountered an error.",
+      };
+    }
   }
 
   public async replaceImage(

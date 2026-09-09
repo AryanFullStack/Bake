@@ -35,6 +35,11 @@ export function resolveMediaUrl(
 
   // Handle absolute HTTP/HTTPS URLs
   if (/^https?:\/\//i.test(clean)) {
+    // Preserve ImageKit URLs directly as external CDN assets
+    if (clean.includes("imagekit.io") || clean.includes("ik.imagekit.io")) {
+      return clean;
+    }
+
     try {
       const parsed = new URL(clean);
       if (parsed.pathname.includes("/api/media/serve/") || parsed.pathname.includes("/uploads/")) {
@@ -119,6 +124,9 @@ export function resolveMediaUrls(
 export function isVpsMediaUrl(url: string | null | undefined): boolean {
   if (!url || typeof url !== "string") return false;
   const clean = url.trim();
+  if (clean.includes("imagekit.io") || clean.includes("ik.imagekit.io")) {
+    return false;
+  }
   return (
     clean.startsWith("/api/media/serve/") ||
     clean.startsWith("api/media/serve/") ||

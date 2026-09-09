@@ -48,6 +48,7 @@ interface MediaItem {
   created_at: string;
   updated_at: string;
   usage_count: number;
+  storage_provider?: "imagekit" | "vps";
   usages: {
     entityType: string;
     title: string;
@@ -61,6 +62,11 @@ interface MediaItem {
 interface StatsData {
   totalFiles: number;
   totalSizeBytes: number;
+  imagekitConfigured?: boolean;
+  imagekitFilesCount?: number;
+  imagekitSizeBytes?: number;
+  vpsFilesCount?: number;
+  vpsSizeBytes?: number;
   folders: Record<string, number>;
   counts: {
     products: number;
@@ -80,6 +86,7 @@ export function MediaLibrary() {
   const [selectedFolder, setSelectedFolder] = useState<string>("all");
   const [selectedMediaType, setSelectedMediaType] = useState<string>("all");
   const [usageFilter, setUsageFilter] = useState<string>("all"); // 'all' | 'used' | 'unused'
+  const [providerFilter, setProviderFilter] = useState<string>("all"); // 'all' | 'imagekit' | 'vps'
   const [sortOrder, setSortOrder] = useState<string>("newest");
   const [searchQuery, setSearchQuery] = useState("");
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
@@ -121,11 +128,12 @@ export function MediaLibrary() {
       const folderParam = selectedFolder !== "all" ? `&folder=${selectedFolder}` : "";
       const mediaTypeParam = selectedMediaType !== "all" ? `&mediaType=${selectedMediaType}` : "";
       const usageParam = usageFilter !== "all" ? `&usageFilter=${usageFilter}` : "";
+      const providerParam = providerFilter !== "all" ? `&providerFilter=${providerFilter}` : "";
       const sortParam = `&sort=${sortOrder}`;
       const searchParam = searchQuery ? `&search=${encodeURIComponent(searchQuery)}` : "";
 
       const res = await fetch(
-        `/api/media/list?limit=100${folderParam}${mediaTypeParam}${usageParam}${sortParam}${searchParam}`
+        `/api/media/list?limit=100${folderParam}${mediaTypeParam}${usageParam}${providerParam}${sortParam}${searchParam}`
       );
       const json = await res.json();
       if (json.success) {
@@ -137,7 +145,7 @@ export function MediaLibrary() {
     } finally {
       setLoading(false);
     }
-  }, [selectedFolder, selectedMediaType, usageFilter, sortOrder, searchQuery]);
+  }, [selectedFolder, selectedMediaType, usageFilter, providerFilter, sortOrder, searchQuery]);
 
   useEffect(() => {
     fetchMedia();
@@ -351,7 +359,7 @@ export function MediaLibrary() {
 
       {/* Storage Dashboard Bar */}
       {stats && (
-        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-5 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
           <div className="rounded-xl border border-line bg-white p-3.5 shadow-xs flex items-center gap-3">
             <div className="rounded-lg bg-orange-light p-2.5 text-orange shrink-0">
               <FileImage className="h-5 w-5" />
@@ -363,12 +371,24 @@ export function MediaLibrary() {
           </div>
 
           <div className="rounded-xl border border-line bg-white p-3.5 shadow-xs flex items-center gap-3">
+            <div className="rounded-lg bg-purple-100 p-2.5 text-purple-700 shrink-0">
+              <ExternalLink className="h-5 w-5" />
+            </div>
+            <div>
+              <p className="text-[10px] font-bold uppercase tracking-wider text-admin-muted">ImageKit CDN</p>
+              <p className="text-lg font-extrabold text-navy">{stats.imagekitFilesCount || 0} Files</p>
+              <p className="text-[10px] text-purple-700 font-semibold">{formatBytes(stats.imagekitSizeBytes || 0)}</p>
+            </div>
+          </div>
+
+          <div className="rounded-xl border border-line bg-white p-3.5 shadow-xs flex items-center gap-3">
             <div className="rounded-lg bg-green-light p-2.5 text-green shrink-0">
               <HardDrive className="h-5 w-5" />
             </div>
             <div>
-              <p className="text-[10px] font-bold uppercase tracking-wider text-admin-muted">VPS Disk Storage</p>
-              <p className="text-lg font-extrabold text-navy">{formatBytes(stats.totalSizeBytes)}</p>
+              <p className="text-[10px] font-bold uppercase tracking-wider text-admin-muted">VPS Disk</p>
+              <p className="text-lg font-extrabold text-navy">{stats.vpsFilesCount || 0} Files</p>
+              <p className="text-[10px] text-green font-semibold">{formatBytes(stats.vpsSizeBytes || 0)}</p>
             </div>
           </div>
 
@@ -469,7 +489,7 @@ export function MediaLibrary() {
         </div>
 
         {/* Bottom filter row */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 pt-2 border-t border-line/60">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-3 pt-2 border-t border-line/60">
           {/* Search */}
           <div className="relative">
             <Search className="absolute left-3 top-2.5 h-4 w-4 text-admin-muted pointer-events-none" />
@@ -510,6 +530,17 @@ export function MediaLibrary() {
             <option value="unused">Unused Images Only</option>
           </select>
 
+          {/* Storage Provider Filter */}
+          <select
+            value={providerFilter}
+            onChange={(e) => setProviderFilter(e.target.value)}
+            className="field-shell text-xs py-1.5 font-semibold"
+          >
+            <option value="all">All Storage Providers</option>
+            <option value="imagekit">ImageKit CDN</option>
+            <option value="vps">VPS Local Disk</option>
+          </select>
+
           {/* Sorting */}
           <select
             value={sortOrder}
@@ -537,9 +568,9 @@ export function MediaLibrary() {
           <FileImage className="h-12 w-12 text-admin-muted/40 mb-2" />
           <h3 className="text-base font-bold text-navy">No media found</h3>
           <p className="text-xs text-admin-muted max-w-sm mt-1">
-            {searchQuery || selectedFolder !== "all" || usageFilter !== "all"
+            {searchQuery || selectedFolder !== "all" || usageFilter !== "all" || providerFilter !== "all"
               ? "No images matched your active search or filter criteria. Try clearing filters."
-              : "Upload images to populate your persistent Hostinger VPS media library."}
+              : "Upload images to populate your media library."}
           </p>
           <button onClick={() => setIsUploadOpen(true)} className="button-primary mt-4 text-xs py-2 px-4">
             <Plus className="h-4 w-4" />
@@ -595,6 +626,17 @@ export function MediaLibrary() {
                   </button>
                 </div>
 
+                {/* Storage Provider Badge */}
+                {item.storage_provider === "imagekit" || item.public_url?.includes("imagekit.io") ? (
+                  <div className="absolute top-2 left-2 rounded-md bg-gradient-to-r from-purple-600 to-indigo-600 px-2 py-0.5 text-[9.5px] font-extrabold text-white shadow-xs">
+                    ImageKit
+                  </div>
+                ) : (
+                  <div className="absolute top-2 left-2 rounded-md bg-slate-800/80 px-2 py-0.5 text-[9.5px] font-bold text-white shadow-xs backdrop-blur-xs">
+                    VPS Disk
+                  </div>
+                )}
+
                 {/* Usage Badge */}
                 {item.usage_count > 0 ? (
                   <div className="absolute top-2 right-2 rounded-full bg-orange px-2 py-0.5 text-[9.5px] font-extrabold text-white shadow-xs">
@@ -633,7 +675,7 @@ export function MediaLibrary() {
               <tr>
                 <th className="p-3">Preview</th>
                 <th className="p-3">Filename / Title</th>
-                <th className="p-3">Folder</th>
+                <th className="p-3">Folder / Provider</th>
                 <th className="p-3">Dimensions</th>
                 <th className="p-3">Size</th>
                 <th className="p-3">Database Usage</th>
@@ -663,6 +705,15 @@ export function MediaLibrary() {
                     <span className="rounded-md bg-orange-light px-2 py-0.5 text-[11px] font-bold text-orange capitalize">
                       {item.folder}
                     </span>
+                    {item.storage_provider === "imagekit" || item.public_url?.includes("imagekit.io") ? (
+                      <span className="ml-1.5 rounded-md bg-purple-100 px-2 py-0.5 text-[10px] font-extrabold text-purple-700">
+                        ImageKit
+                      </span>
+                    ) : (
+                      <span className="ml-1.5 rounded-md bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-700">
+                        VPS
+                      </span>
+                    )}
                   </td>
                   <td className="p-3 text-admin-muted font-semibold">
                     {item.width && item.height ? `${item.width} × ${item.height}` : "Optimized"}
@@ -905,8 +956,16 @@ export function MediaLibrary() {
                       <p className="font-bold text-navy">{formatBytes(selectedItem.file_size)}</p>
                     </div>
                     <div>
-                      <span className="font-semibold text-admin-muted">Format:</span>
-                      <p className="font-bold text-green">WebP (Optimized)</p>
+                      <span className="font-semibold text-admin-muted">Storage Provider:</span>
+                      {selectedItem.storage_provider === "imagekit" || selectedItem.public_url?.includes("imagekit.io") ? (
+                        <p className="font-bold text-purple-700 flex items-center gap-1">
+                          <span className="h-2 w-2 rounded-full bg-purple-600 animate-pulse"></span> ImageKit CDN
+                        </p>
+                      ) : (
+                        <p className="font-bold text-slate-700 flex items-center gap-1">
+                          <span className="h-2 w-2 rounded-full bg-slate-600"></span> Hostinger VPS
+                        </p>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -1105,6 +1164,29 @@ export function MediaLibrary() {
                     <p className="text-[10px] text-admin-muted mt-0.5">DB records with missing disk file</p>
                   </div>
                 </div>
+
+                {healthData.imagekit && (
+                  <div className="p-3.5 rounded-xl border border-purple-200 bg-purple-50/60 text-xs">
+                    <div className="flex justify-between items-center mb-2">
+                      <span className="font-bold text-purple-950 flex items-center gap-1.5">
+                        <ExternalLink className="h-4 w-4 text-purple-700" /> ImageKit CDN Storage
+                      </span>
+                      <span className="rounded-full bg-purple-200 px-2 py-0.5 text-[10px] font-extrabold text-purple-800">
+                        {healthData.imagekit.configured ? "Configured & Active" : "Not Configured"}
+                      </span>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3 mt-1">
+                      <div>
+                        <p className="text-admin-muted font-semibold text-[11px]">Total Files Stored</p>
+                        <p className="text-base font-extrabold text-navy">{healthData.imagekit.filesCount || 0} Files</p>
+                      </div>
+                      <div>
+                        <p className="text-admin-muted font-semibold text-[11px]">CDN Space Consumed</p>
+                        <p className="text-base font-extrabold text-navy">{formatBytes(healthData.imagekit.totalSizeBytes || 0)}</p>
+                      </div>
+                    </div>
+                  </div>
+                )}
 
                 {healthData.orphanFiles?.length > 0 && (
                   <div className="rounded-xl border border-line p-3 bg-cream/40 max-h-36 overflow-y-auto">
