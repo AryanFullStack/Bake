@@ -326,7 +326,7 @@ export function MediaLibrary() {
         <div>
           <h1 className="text-2xl font-bold text-navy">Central Media Library</h1>
           <p className="text-sm text-admin-muted">
-            Hostinger VPS persistent WebP image manager with database reference resolution.
+            ImageKit CDN & Persistent Media Library manager with database reference resolution.
           </p>
         </div>
 
@@ -775,7 +775,7 @@ export function MediaLibrary() {
         <div className="modal-overlay">
           <div className="w-full max-w-lg rounded-2xl bg-white p-6 shadow-2xl border border-line animate-scale-in">
             <div className="flex items-center justify-between border-b border-line pb-4">
-              <h2 className="text-lg font-bold text-navy">Upload Media to Hostinger VPS</h2>
+              <h2 className="text-lg font-bold text-navy">Upload Media to ImageKit CDN</h2>
               <button
                 onClick={() => {
                   setIsUploadOpen(false);
@@ -824,7 +824,7 @@ export function MediaLibrary() {
                 <Upload className="h-10 w-10 text-orange mb-2" />
                 <p className="text-xs font-bold text-navy">Drag & drop images here, or click to browse</p>
                 <p className="mt-1 text-[11px] text-admin-muted font-medium">
-                  JPG, PNG, WEBP allowed (Max size: 5 MB). Converted to WebP on external VPS storage.
+                  JPG, PNG, WEBP allowed (Max size: 5 MB). Converted to WebP and stored on ImageKit CDN.
                 </p>
                 <input
                   ref={fileInputRef}
@@ -963,7 +963,7 @@ export function MediaLibrary() {
                         </p>
                       ) : (
                         <p className="font-bold text-slate-700 flex items-center gap-1">
-                          <span className="h-2 w-2 rounded-full bg-slate-600"></span> Hostinger VPS
+                          <span className="h-2 w-2 rounded-full bg-slate-600"></span> VPS Local Disk
                         </p>
                       )}
                     </div>
@@ -1120,7 +1120,7 @@ export function MediaLibrary() {
             <div className="flex items-center justify-between border-b border-line pb-4">
               <div className="flex items-center gap-2 text-navy">
                 <Activity className="h-5 w-5 text-orange" />
-                <h2 className="text-lg font-bold">Hostinger VPS Storage Health</h2>
+                <h2 className="text-lg font-bold">Media & Storage Health Diagnostics</h2>
               </div>
               <button onClick={() => setIsHealthOpen(false)} className="rounded-lg p-1 text-admin-muted hover:bg-admin-bg">
                 <X className="h-5 w-5" />

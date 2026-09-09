@@ -174,7 +174,7 @@ export function MediaPickerModal({
           <div>
             <h2 className="text-lg font-bold text-navy">{title}</h2>
             <p className="text-xs text-admin-muted">
-              Select existing images from persistent VPS storage or upload new ones.
+              Select existing images from ImageKit CDN / Media Library or upload new ones.
             </p>
           </div>
           <button
@@ -357,7 +357,7 @@ export function MediaPickerModal({
                 <Upload className="h-10 w-10 text-orange mb-2" />
                 <p className="text-xs font-bold text-navy">Click or drag images to upload</p>
                 <p className="mt-1 text-[10px] text-admin-muted font-medium">
-                  Max 5MB. Automatically optimized & converted to WebP on Hostinger VPS.
+                  Max 5MB. Automatically compressed to WebP and stored on ImageKit CDN.
                 </p>
                 <input
                   ref={fileInputRef}

@@ -34,6 +34,7 @@ import {
 import { formatPKR, generateSKU, publicStorageUrl, slugify } from "@/lib/catalog";
 import { resolveProductGallery } from "@/lib/gallery-resolver";
 import { MediaPickerModal } from "@/components/admin/media-picker-modal";
+import { formatBytes } from "@/lib/media-url";
 
 
 type Category = { id: string; name: string; slug: string; parent_id?: string | null };
@@ -232,6 +233,7 @@ export function ProductWizard({ initialProduct, product, categories, brands, onC
   >([]);
   const [showAutoMatchModal, setShowAutoMatchModal] = useState(false);
   const [previewSelections, setPreviewSelections] = useState<Record<string, string>>({});
+  const [imageSizeMap, setImageSizeMap] = useState<Record<string, { size?: number; originalSize?: number }>>({});
 
   function toggleControlsImages(attrIndex: number) {
     setAttributes(prev =>
@@ -365,8 +367,16 @@ export function ProductWizard({ initialProduct, product, categories, brands, onC
         form.append("folder", "products");
         const res = await fetch("/api/media/upload", { method: "POST", body: form });
         const json = await res.json();
-        if (json.success) urls.push(json.data.url);
-        else showToastMsg(json.error || "Upload failed", "error");
+        if (json.success && json.data) {
+          const url = json.data.url;
+          urls.push(url);
+          if (json.data.size) {
+            setImageSizeMap(prev => ({
+              ...prev,
+              [url]: { size: json.data.size, originalSize: json.data.originalSize }
+            }));
+          }
+        } else showToastMsg(json.error || "Upload failed", "error");
       }
       if (urls.length > 0) onUploaded(urls);
     } catch {
@@ -910,7 +920,7 @@ export function ProductWizard({ initialProduct, product, categories, brands, onC
               <div>
                 <h3 className="text-xl font-bold text-navy">Product Media & Gallery</h3>
                 <p className="mt-1 text-xs text-admin-muted">
-                  Upload high-resolution square images. First image automatically becomes the main image. Stored persistently on Hostinger VPS.
+                  Upload high-resolution square images. First image automatically becomes the main image. Auto-compressed to WebP and stored on ImageKit CDN.
                 </p>
               </div>
 
@@ -936,7 +946,7 @@ export function ProductWizard({ initialProduct, product, categories, brands, onC
                     <ImageIcon size={22} />
                   </div>
                   <p className="font-bold text-sm">Choose From Media Library</p>
-                  <p className="mt-1 text-xs opacity-80">Select existing VPS images without uploading duplicates.</p>
+                  <p className="mt-1 text-xs opacity-80">Select existing media library images without uploading duplicates.</p>
                 </button>
 
                 <div
@@ -947,10 +957,10 @@ export function ProductWizard({ initialProduct, product, categories, brands, onC
                     <Upload size={22} />
                   </div>
                   <p className="font-bold text-navy text-sm">
-                    {uploading ? "Uploading to VPS…" : "Upload New Images"}
+                    {uploading ? "Compressing & Uploading to ImageKit…" : "Upload New Images"}
                   </p>
                   <p className="mt-1 text-xs text-admin-muted">
-                    Supports PNG, JPG, WebP up to 5 MB. WebP optimized.
+                    Supports PNG, JPG, WebP up to 5 MB. Auto-compressed WebP format stored on ImageKit.
                   </p>
                 </div>
               </div>
@@ -960,6 +970,8 @@ export function ProductWizard({ initialProduct, product, categories, brands, onC
                 <div className="grid grid-cols-2 gap-4 sm:grid-cols-4 md:grid-cols-5">
                   {galleryImages.map((img, idx) => {
                     const isMain = featuredImage === img || (!featuredImage && idx === 0);
+                    const isIk = img.includes("imagekit.io");
+                    const sizeInfo = imageSizeMap[img];
                     return (
                       <div
                         key={`${img}-${idx}`}
@@ -970,6 +982,7 @@ export function ProductWizard({ initialProduct, product, categories, brands, onC
                         {/* Overlay Controls */}
                         <div className="absolute inset-0 bg-navy/40 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-between p-2">
                           <button
+                            type="button"
                             onClick={() => {
                               setGalleryImages(prev => prev.filter((_, i) => i !== idx));
                               if (featuredImage === img) setFeaturedImage(galleryImages.find(g => g !== img) || "");
@@ -982,12 +995,36 @@ export function ProductWizard({ initialProduct, product, categories, brands, onC
 
                           {!isMain && (
                             <button
+                              type="button"
                               onClick={() => setFeaturedImage(img)}
                               className="rounded-lg bg-orange px-2 py-1 text-[10px] font-bold text-white shadow"
                             >
                               Set Main
                             </button>
                           )}
+                        </div>
+
+                        {/* Top Left Badges (Provider & Size) */}
+                        <div className="absolute top-2 left-2 flex flex-col gap-1 items-start pointer-events-none">
+                          {isIk ? (
+                            <span className="rounded-md bg-gradient-to-r from-purple-600 to-indigo-600 px-1.5 py-0.5 text-[8.5px] font-extrabold text-white shadow">
+                              ImageKit CDN
+                            </span>
+                          ) : (
+                            <span className="rounded-md bg-slate-800/80 px-1.5 py-0.5 text-[8.5px] font-bold text-white shadow backdrop-blur-xs">
+                              VPS Local
+                            </span>
+                          )}
+
+                          {sizeInfo?.size ? (
+                            <span className="rounded-md bg-navy/80 px-1.5 py-0.5 text-[8px] font-bold text-white shadow">
+                              {formatBytes(sizeInfo.size)} {sizeInfo.originalSize && sizeInfo.originalSize > sizeInfo.size ? `(-${Math.round((1 - sizeInfo.size / sizeInfo.originalSize) * 100)}%)` : "WebP"}
+                            </span>
+                          ) : isIk ? (
+                            <span className="rounded-md bg-emerald-600/90 px-1.5 py-0.5 text-[8px] font-bold text-white shadow">
+                              WebP Optimized
+                            </span>
+                          ) : null}
                         </div>
 
                         {isMain && (
@@ -2133,10 +2170,21 @@ export function ProductWizard({ initialProduct, product, categories, brands, onC
       <MediaPickerModal
         isOpen={isMediaPickerOpen}
         onClose={() => setIsMediaPickerOpen(false)}
-        onSelect={(urls) => {
+        onSelect={(urls, items) => {
           if (urls.length > 0) {
             setGalleryImages((prev) => [...prev, ...urls]);
             if (!featuredImage) setFeaturedImage(urls[0]);
+            if (items && items.length > 0) {
+              setImageSizeMap((prev) => {
+                const next = { ...prev };
+                items.forEach((it) => {
+                  if (it.public_url && it.file_size) {
+                    next[it.public_url] = { size: it.file_size };
+                  }
+                });
+                return next;
+              });
+            }
           }
         }}
         multiSelect={true}
