@@ -3,6 +3,7 @@
 import Image, { ImageProps } from "next/image";
 import { useState, useEffect } from "react";
 import { resolveMediaUrl, isVpsMediaUrl, DEFAULT_FALLBACK_IMAGE } from "@/lib/media-url";
+import { DEFAULT_BLUR_PLACEHOLDER } from "@/lib/image-placeholders";
 
 export interface SafeImageProps extends Omit<ImageProps, "src"> {
   src: string | null | undefined;
@@ -15,6 +16,8 @@ export function SafeImage({
   alt = "",
   unoptimized,
   onError,
+  placeholder,
+  blurDataURL,
   ...props
 }: SafeImageProps) {
   const resolvedSrc = resolveMediaUrl(src, fallbackSrc);
@@ -30,12 +33,17 @@ export function SafeImage({
   // Always force unoptimized mode for VPS media / API serve URLs to prevent Next.js /_next/image 400 errors
   const shouldBeUnoptimized = unoptimized ?? isVpsMediaUrl(imgSrc);
 
+  const activePlaceholder = placeholder ?? (blurDataURL ? "blur" : undefined);
+  const activeBlurDataURL = blurDataURL ?? (activePlaceholder === "blur" ? DEFAULT_BLUR_PLACEHOLDER : undefined);
+
   return (
     <Image
       {...props}
       src={imgSrc}
       alt={alt}
       unoptimized={shouldBeUnoptimized}
+      placeholder={activePlaceholder}
+      blurDataURL={activeBlurDataURL}
       onError={(e) => {
         if (imgSrc !== fallbackSrc && !hasFailed) {
           setHasFailed(true);

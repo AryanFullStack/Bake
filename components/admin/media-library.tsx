@@ -29,6 +29,7 @@ import {
 } from "lucide-react";
 import { ALLOWED_FOLDERS } from "@/lib/media/constants";
 import Link from "next/link";
+import { PaginationControls } from "@/components/pagination";
 
 interface MediaItem {
   id: string;
@@ -82,6 +83,11 @@ export function MediaLibrary() {
   const [stats, setStats] = useState<StatsData | null>(null);
   const [loading, setLoading] = useState(true);
 
+  // Pagination state
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(24);
+  const [totalItems, setTotalItems] = useState(0);
+
   // Filters & Search
   const [selectedFolder, setSelectedFolder] = useState<string>("all");
   const [selectedMediaType, setSelectedMediaType] = useState<string>("all");
@@ -122,6 +128,66 @@ export function MediaLibrary() {
   const replaceInputRef = useRef<HTMLInputElement>(null);
   const [isReplacing, setIsReplacing] = useState(false);
 
+  // Multi-Selection State for Batch Deletion
+  const [selectedPaths, setSelectedPaths] = useState<Set<string>>(new Set());
+  const [isBulkDeleteModalOpen, setIsBulkDeleteModalOpen] = useState(false);
+  const [isBulkDeleting, setIsBulkDeleting] = useState(false);
+  const [bulkDeleteError, setBulkDeleteError] = useState<string | null>(null);
+
+  const toggleSelectItem = (path: string) => {
+    setSelectedPaths((prev) => {
+      const next = new Set(prev);
+      if (next.has(path)) next.delete(path);
+      else next.add(path);
+      return next;
+    });
+  };
+
+  const toggleSelectAllPage = () => {
+    const pagePaths = items.map((i) => i.storage_path);
+    const allSelected = pagePaths.length > 0 && pagePaths.every((p) => selectedPaths.has(p));
+    setSelectedPaths((prev) => {
+      const next = new Set(prev);
+      if (allSelected) {
+        pagePaths.forEach((p) => next.delete(p));
+      } else {
+        pagePaths.forEach((p) => next.add(p));
+      }
+      return next;
+    });
+  };
+
+  const clearSelection = () => setSelectedPaths(new Set());
+
+  const handleBulkDelete = async (force: boolean = false) => {
+    if (selectedPaths.size === 0) return;
+    setIsBulkDeleting(true);
+    setBulkDeleteError(null);
+    try {
+      const targets = Array.from(selectedPaths);
+      const res = await fetch("/api/media/delete", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          urls: targets,
+          forceRemoveReferences: force,
+        }),
+      });
+      const json = await res.json();
+      if (json.success) {
+        clearSelection();
+        setIsBulkDeleteModalOpen(false);
+        fetchMedia();
+      } else {
+        setBulkDeleteError(json.error || "Failed to delete selected images.");
+      }
+    } catch (err) {
+      setBulkDeleteError("Error communicating with server for bulk deletion.");
+    } finally {
+      setIsBulkDeleting(false);
+    }
+  };
+
   const fetchMedia = useCallback(async () => {
     setLoading(true);
     try {
@@ -133,11 +199,12 @@ export function MediaLibrary() {
       const searchParam = searchQuery ? `&search=${encodeURIComponent(searchQuery)}` : "";
 
       const res = await fetch(
-        `/api/media/list?limit=100${folderParam}${mediaTypeParam}${usageParam}${providerParam}${sortParam}${searchParam}`
+        `/api/media/list?page=${page}&limit=${limit}${folderParam}${mediaTypeParam}${usageParam}${providerParam}${sortParam}${searchParam}`
       );
       const json = await res.json();
       if (json.success) {
         setItems(json.data || []);
+        setTotalItems(json.pagination?.total ?? (json.data || []).length);
         setStats(json.stats || null);
       }
     } catch (err) {
@@ -145,11 +212,15 @@ export function MediaLibrary() {
     } finally {
       setLoading(false);
     }
-  }, [selectedFolder, selectedMediaType, usageFilter, providerFilter, sortOrder, searchQuery]);
+  }, [page, limit, selectedFolder, selectedMediaType, usageFilter, providerFilter, sortOrder, searchQuery]);
 
   useEffect(() => {
     fetchMedia();
   }, [fetchMedia]);
+
+  useEffect(() => {
+    setPage(1);
+  }, [selectedFolder, selectedMediaType, usageFilter, providerFilter, sortOrder, searchQuery]);
 
   const openInspector = (item: MediaItem) => {
     setSelectedItem(item);
@@ -555,6 +626,45 @@ export function MediaLibrary() {
             <option value="name_desc">Sort: Name (Z-A)</option>
           </select>
         </div>
+
+        {/* Multi-Selection Control Bar */}
+        <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-line/60">
+          <div className="flex items-center gap-3">
+            <label className="flex items-center gap-2 rounded-lg border border-line bg-admin-bg px-3 py-1.5 text-xs font-bold text-navy hover:bg-cream cursor-pointer transition">
+              <input
+                type="checkbox"
+                checked={items.length > 0 && items.every((i) => selectedPaths.has(i.storage_path))}
+                onChange={toggleSelectAllPage}
+                className="h-4 w-4 rounded border-slate-300 text-orange focus:ring-orange accent-orange cursor-pointer"
+              />
+              <span>Select All on Page ({items.length})</span>
+            </label>
+
+            {selectedPaths.size > 0 && (
+              <button
+                onClick={clearSelection}
+                className="text-xs font-bold text-admin-muted hover:text-navy transition underline"
+              >
+                Clear selection ({selectedPaths.size})
+              </button>
+            )}
+          </div>
+
+          {selectedPaths.size > 0 && (
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-extrabold text-orange bg-orange-light px-3 py-1.5 rounded-xl border border-orange/20">
+                {selectedPaths.size} Image{selectedPaths.size > 1 ? "s" : ""} Selected
+              </span>
+              <button
+                onClick={() => setIsBulkDeleteModalOpen(true)}
+                className="flex items-center gap-1.5 rounded-xl bg-red-600 px-4 py-1.5 text-xs font-bold text-white shadow-xs hover:bg-red-700 transition cursor-pointer"
+              >
+                <Trash2 className="h-4 w-4" />
+                Delete Selected ({selectedPaths.size})
+              </button>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Main Content Area */}
@@ -580,92 +690,109 @@ export function MediaLibrary() {
       ) : viewMode === "grid" ? (
         /* GRID VIEW */
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
-          {items.map((item) => (
-            <div
-              key={item.storage_path}
-              className="group relative flex flex-col rounded-2xl border border-line bg-white shadow-xs transition hover:shadow-md hover:border-orange/40 overflow-hidden"
-            >
-              {/* Thumbnail */}
-              <div className="relative aspect-square w-full bg-cream-deep overflow-hidden">
-                <img
-                  src={item.public_url}
-                  alt={item.title || item.filename}
-                  className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
-                  loading="lazy"
-                />
+          {items.map((item) => {
+            const isSelected = selectedPaths.has(item.storage_path);
+            return (
+              <div
+                key={item.storage_path}
+                className={`group relative flex flex-col rounded-2xl border bg-white shadow-xs transition overflow-hidden ${
+                  isSelected
+                    ? "border-orange ring-2 ring-orange/40 shadow-md"
+                    : "border-line hover:shadow-md hover:border-orange/40"
+                }`}
+              >
+                {/* Thumbnail */}
+                <div className="relative aspect-square w-full bg-cream-deep overflow-hidden">
+                  <img
+                    src={item.public_url}
+                    alt={item.title || item.filename}
+                    className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                    loading="lazy"
+                  />
 
-                {/* Overlays & Quick Actions */}
-                <div className="absolute inset-0 bg-navy/60 opacity-0 transition-opacity duration-200 group-hover:opacity-100 flex items-center justify-center gap-2 p-2 backdrop-blur-xs">
-                  <button
-                    onClick={() => openInspector(item)}
-                    className="rounded-lg bg-white p-2 text-navy hover:bg-orange hover:text-white transition-colors"
-                    title="Inspect & View Usages"
-                  >
-                    <Eye className="h-4 w-4" />
-                  </button>
-                  <button
-                    onClick={() => handleCopyUrl(item.public_url)}
-                    className="rounded-lg bg-white p-2 text-navy hover:bg-orange hover:text-white transition-colors"
-                    title="Copy URL"
-                  >
-                    {copiedUrl === item.public_url ? (
-                      <Check className="h-4 w-4 text-green" />
-                    ) : (
-                      <Copy className="h-4 w-4" />
-                    )}
-                  </button>
-                  <button
-                    onClick={() => {
-                      setDeleteConfirmItem(item);
-                      setDeleteError(null);
-                    }}
-                    className="rounded-lg bg-red-600 p-2 text-white hover:bg-red-700 transition-colors"
-                    title="Delete Image"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </button>
+                  {/* Multi-Select Checkbox */}
+                  <div className="absolute top-2.5 left-2.5 z-20">
+                    <input
+                      type="checkbox"
+                      checked={isSelected}
+                      onChange={() => toggleSelectItem(item.storage_path)}
+                      className="h-5 w-5 rounded border-2 border-white bg-white/90 text-orange focus:ring-orange accent-orange shadow-md cursor-pointer transition-transform hover:scale-110"
+                    />
+                  </div>
+
+                  {/* Overlays & Quick Actions */}
+                  <div className="absolute inset-0 bg-navy/60 opacity-0 transition-opacity duration-200 group-hover:opacity-100 flex items-center justify-center gap-2 p-2 backdrop-blur-xs">
+                    <button
+                      onClick={() => openInspector(item)}
+                      className="rounded-lg bg-white p-2 text-navy hover:bg-orange hover:text-white transition-colors"
+                      title="Inspect & View Usages"
+                    >
+                      <Eye className="h-4 w-4" />
+                    </button>
+                    <button
+                      onClick={() => handleCopyUrl(item.public_url)}
+                      className="rounded-lg bg-white p-2 text-navy hover:bg-orange hover:text-white transition-colors"
+                      title="Copy URL"
+                    >
+                      {copiedUrl === item.public_url ? (
+                        <Check className="h-4 w-4 text-green" />
+                      ) : (
+                        <Copy className="h-4 w-4" />
+                      )}
+                    </button>
+                    <button
+                      onClick={() => {
+                        setDeleteConfirmItem(item);
+                        setDeleteError(null);
+                      }}
+                      className="rounded-lg bg-red-600 p-2 text-white hover:bg-red-700 transition-colors"
+                      title="Delete Image"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </div>
+
+                  {/* Storage Provider Badge */}
+                  {item.storage_provider === "imagekit" || item.public_url?.includes("imagekit.io") ? (
+                    <div className="absolute top-2 right-2 rounded-md bg-gradient-to-r from-purple-600 to-indigo-600 px-2 py-0.5 text-[9.5px] font-extrabold text-white shadow-xs">
+                      ImageKit
+                    </div>
+                  ) : (
+                    <div className="absolute top-2 right-2 rounded-md bg-slate-800/80 px-2 py-0.5 text-[9.5px] font-bold text-white shadow-xs backdrop-blur-xs">
+                      VPS Disk
+                    </div>
+                  )}
+
+                  {/* Usage Badge */}
+                  {item.usage_count > 0 ? (
+                    <div className="absolute bottom-2 right-2 rounded-full bg-orange px-2 py-0.5 text-[9.5px] font-extrabold text-white shadow-xs">
+                      Used ({item.usage_count})
+                    </div>
+                  ) : (
+                    <div className="absolute bottom-2 right-2 rounded-full bg-black/50 px-2 py-0.5 text-[9.5px] font-bold text-white/80 shadow-xs">
+                      Unused
+                    </div>
+                  )}
+
+                  {/* Format Badge */}
+                  <div className="absolute bottom-1.5 left-1.5 rounded bg-navy/80 px-1.5 py-0.5 text-[9px] font-extrabold text-white uppercase backdrop-blur-xs">
+                    WebP
+                  </div>
                 </div>
 
-                {/* Storage Provider Badge */}
-                {item.storage_provider === "imagekit" || item.public_url?.includes("imagekit.io") ? (
-                  <div className="absolute top-2 left-2 rounded-md bg-gradient-to-r from-purple-600 to-indigo-600 px-2 py-0.5 text-[9.5px] font-extrabold text-white shadow-xs">
-                    ImageKit
+                {/* Card Meta */}
+                <div className="p-3 flex flex-col justify-between flex-1">
+                  <p className="text-xs font-bold text-navy truncate" title={item.title || item.filename}>
+                    {item.title || item.filename}
+                  </p>
+                  <div className="mt-1 flex items-center justify-between text-[10px] font-semibold text-admin-muted">
+                    <span className="capitalize">{item.folder}</span>
+                    <span>{formatBytes(item.file_size)}</span>
                   </div>
-                ) : (
-                  <div className="absolute top-2 left-2 rounded-md bg-slate-800/80 px-2 py-0.5 text-[9.5px] font-bold text-white shadow-xs backdrop-blur-xs">
-                    VPS Disk
-                  </div>
-                )}
-
-                {/* Usage Badge */}
-                {item.usage_count > 0 ? (
-                  <div className="absolute top-2 right-2 rounded-full bg-orange px-2 py-0.5 text-[9.5px] font-extrabold text-white shadow-xs">
-                    Used ({item.usage_count})
-                  </div>
-                ) : (
-                  <div className="absolute top-2 right-2 rounded-full bg-black/50 px-2 py-0.5 text-[9.5px] font-bold text-white/80 shadow-xs">
-                    Unused
-                  </div>
-                )}
-
-                {/* Format Badge */}
-                <div className="absolute bottom-1.5 left-1.5 rounded bg-navy/80 px-1.5 py-0.5 text-[9px] font-extrabold text-white uppercase backdrop-blur-xs">
-                  WebP
                 </div>
               </div>
-
-              {/* Card Meta */}
-              <div className="p-3 flex flex-col justify-between flex-1">
-                <p className="text-xs font-bold text-navy truncate" title={item.title || item.filename}>
-                  {item.title || item.filename}
-                </p>
-                <div className="mt-1 flex items-center justify-between text-[10px] font-semibold text-admin-muted">
-                  <span className="capitalize">{item.folder}</span>
-                  <span>{formatBytes(item.file_size)}</span>
-                </div>
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       ) : (
         /* LIST VIEW */
@@ -673,6 +800,14 @@ export function MediaLibrary() {
           <table className="w-full text-left text-xs">
             <thead className="border-b border-line bg-admin-bg text-admin-muted font-bold uppercase tracking-wider">
               <tr>
+                <th className="p-3 w-10 text-center">
+                  <input
+                    type="checkbox"
+                    checked={items.length > 0 && items.every((i) => selectedPaths.has(i.storage_path))}
+                    onChange={toggleSelectAllPage}
+                    className="h-4 w-4 rounded border-slate-300 text-orange focus:ring-orange accent-orange cursor-pointer"
+                  />
+                </th>
                 <th className="p-3">Preview</th>
                 <th className="p-3">Filename / Title</th>
                 <th className="p-3">Folder / Provider</th>
@@ -684,90 +819,123 @@ export function MediaLibrary() {
               </tr>
             </thead>
             <tbody className="divide-y divide-line/60">
-              {items.map((item) => (
-                <tr key={item.storage_path} className="hover:bg-admin-bg/60 transition-colors">
-                  <td className="p-2">
-                    <img
-                      src={item.public_url}
-                      alt={item.filename}
-                      className="h-10 w-10 rounded-xl object-cover bg-cream-deep border border-line"
-                    />
-                  </td>
-                  <td className="p-3 font-bold text-navy truncate max-w-xs">
-                    <div>{item.title || item.filename}</div>
-                    {item.alt_text && (
-                      <span className="text-[10px] text-admin-muted font-normal italic">
-                        Alt: {item.alt_text}
+              {items.map((item) => {
+                const isSelected = selectedPaths.has(item.storage_path);
+                return (
+                  <tr
+                    key={item.storage_path}
+                    className={`transition-colors ${
+                      isSelected ? "bg-orange-light/30 font-medium" : "hover:bg-admin-bg/60"
+                    }`}
+                  >
+                    <td className="p-3 text-center">
+                      <input
+                        type="checkbox"
+                        checked={isSelected}
+                        onChange={() => toggleSelectItem(item.storage_path)}
+                        className="h-4 w-4 rounded border-slate-300 text-orange focus:ring-orange accent-orange cursor-pointer"
+                      />
+                    </td>
+                    <td className="p-2">
+                      <img
+                        src={item.public_url}
+                        alt={item.filename}
+                        className="h-10 w-10 rounded-xl object-cover bg-cream-deep border border-line"
+                      />
+                    </td>
+                    <td className="p-3 font-bold text-navy truncate max-w-xs">
+                      <div>{item.title || item.filename}</div>
+                      {item.alt_text && (
+                        <span className="text-[10px] text-admin-muted font-normal italic">
+                          Alt: {item.alt_text}
+                        </span>
+                      )}
+                    </td>
+                    <td className="p-3">
+                      <span className="rounded-md bg-orange-light px-2 py-0.5 text-[11px] font-bold text-orange capitalize">
+                        {item.folder}
                       </span>
-                    )}
-                  </td>
-                  <td className="p-3">
-                    <span className="rounded-md bg-orange-light px-2 py-0.5 text-[11px] font-bold text-orange capitalize">
-                      {item.folder}
-                    </span>
-                    {item.storage_provider === "imagekit" || item.public_url?.includes("imagekit.io") ? (
-                      <span className="ml-1.5 rounded-md bg-purple-100 px-2 py-0.5 text-[10px] font-extrabold text-purple-700">
-                        ImageKit
-                      </span>
-                    ) : (
-                      <span className="ml-1.5 rounded-md bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-700">
-                        VPS
-                      </span>
-                    )}
-                  </td>
-                  <td className="p-3 text-admin-muted font-semibold">
-                    {item.width && item.height ? `${item.width} × ${item.height}` : "Optimized"}
-                  </td>
-                  <td className="p-3 text-admin-muted font-semibold">{formatBytes(item.file_size)}</td>
-                  <td className="p-3 font-extrabold">
-                    {item.usage_count > 0 ? (
-                      <span className="inline-flex items-center gap-1 rounded-full bg-green-light px-2.5 py-0.5 text-[11px] text-green">
-                        <Check className="h-3 w-3" /> Used in {item.usage_count} place(s)
-                      </span>
-                    ) : (
-                      <span className="inline-flex items-center gap-1 rounded-full bg-black/5 px-2.5 py-0.5 text-[11px] text-admin-muted">
-                        Unused
-                      </span>
-                    )}
-                  </td>
-                  <td className="p-3 text-admin-muted font-medium">{formatDate(item.created_at)}</td>
-                  <td className="p-3 text-right">
-                    <div className="flex items-center justify-end gap-2">
-                      <button
-                        onClick={() => openInspector(item)}
-                        className="p-1.5 text-admin-muted hover:text-navy transition-colors"
-                        title="View Details"
-                      >
-                        <Eye className="h-4 w-4" />
-                      </button>
-                      <button
-                        onClick={() => handleCopyUrl(item.public_url)}
-                        className="p-1.5 text-admin-muted hover:text-orange transition-colors"
-                        title="Copy URL"
-                      >
-                        {copiedUrl === item.public_url ? (
-                          <Check className="h-4 w-4 text-green" />
-                        ) : (
-                          <Copy className="h-4 w-4" />
-                        )}
-                      </button>
-                      <button
-                        onClick={() => {
-                          setDeleteConfirmItem(item);
-                          setDeleteError(null);
-                        }}
-                        className="p-1.5 text-red-600 hover:text-red-700 transition-colors"
-                        title="Delete"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
+                      {item.storage_provider === "imagekit" || item.public_url?.includes("imagekit.io") ? (
+                        <span className="ml-1.5 rounded-md bg-purple-100 px-2 py-0.5 text-[10px] font-extrabold text-purple-700">
+                          ImageKit
+                        </span>
+                      ) : (
+                        <span className="ml-1.5 rounded-md bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-700">
+                          VPS
+                        </span>
+                      )}
+                    </td>
+                    <td className="p-3 text-admin-muted font-semibold">
+                      {item.width && item.height ? `${item.width} × ${item.height}` : "Optimized"}
+                    </td>
+                    <td className="p-3 text-admin-muted font-semibold">{formatBytes(item.file_size)}</td>
+                    <td className="p-3 font-extrabold">
+                      {item.usage_count > 0 ? (
+                        <span className="inline-flex items-center gap-1 rounded-full bg-green-light px-2.5 py-0.5 text-[11px] text-green">
+                          <Check className="h-3 w-3" /> Used in {item.usage_count} place(s)
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 rounded-full bg-black/5 px-2.5 py-0.5 text-[11px] text-admin-muted">
+                          Unused
+                        </span>
+                      )}
+                    </td>
+                    <td className="p-3 text-admin-muted font-medium">{formatDate(item.created_at)}</td>
+                    <td className="p-3 text-right">
+                      <div className="flex items-center justify-end gap-2">
+                        <button
+                          onClick={() => openInspector(item)}
+                          className="p-1.5 text-admin-muted hover:text-navy transition-colors"
+                          title="View Details"
+                        >
+                          <Eye className="h-4 w-4" />
+                        </button>
+                        <button
+                          onClick={() => handleCopyUrl(item.public_url)}
+                          className="p-1.5 text-admin-muted hover:text-orange transition-colors"
+                          title="Copy URL"
+                        >
+                          {copiedUrl === item.public_url ? (
+                            <Check className="h-4 w-4 text-green" />
+                          ) : (
+                            <Copy className="h-4 w-4" />
+                          )}
+                        </button>
+                        <button
+                          onClick={() => {
+                            setDeleteConfirmItem(item);
+                            setDeleteError(null);
+                          }}
+                          className="p-1.5 text-red-600 hover:text-red-700 transition-colors"
+                          title="Delete"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
+      )}
+
+      {items.length > 0 && (
+        <PaginationControls
+          currentPage={page}
+          pageSize={limit}
+          totalItems={totalItems}
+          itemLabel="media items"
+          onPageChange={setPage}
+          onPageSizeChange={(newLimit) => {
+            setLimit(newLimit);
+            setPage(1);
+          }}
+          pageSizeOptions={[12, 24, 48, 96]}
+          variant="glass"
+          className="mt-4"
+        />
       )}
 
       {/* UPLOAD MODAL */}
@@ -1109,6 +1277,75 @@ export function MediaLibrary() {
                 </button>
               )}
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* BULK DELETE SAFETY CONFIRMATION MODAL */}
+      {isBulkDeleteModalOpen && (
+        <div className="modal-overlay z-50">
+          <div className="w-full max-w-lg rounded-2xl bg-white p-6 shadow-2xl border border-line animate-scale-in">
+            <div className="flex items-center gap-3 text-red-600 mb-3">
+              <ShieldAlert className="h-7 w-7 shrink-0" />
+              <div>
+                <h3 className="text-base font-bold text-navy">Bulk Delete Safety Confirmation</h3>
+                <p className="text-xs text-admin-muted font-medium">
+                  You are about to delete <span className="font-bold text-navy">{selectedPaths.size}</span> selected image(s).
+                </p>
+              </div>
+            </div>
+
+            {(() => {
+              const selectedItemsList = items.filter((i) => selectedPaths.has(i.storage_path));
+              const usedCount = selectedItemsList.filter((i) => i.usage_count > 0).length;
+              return (
+                <>
+                  {usedCount > 0 && (
+                    <div className="mt-3 rounded-xl bg-red-50 p-3.5 border border-red-200">
+                      <p className="text-xs font-bold text-red-800">
+                        Warning: {usedCount} of the selected images are currently linked to database entities.
+                      </p>
+                      <p className="mt-1 text-[11px] text-red-700 font-medium">
+                        Deleting them will automatically clean image references from products, categories, and banners.
+                      </p>
+                    </div>
+                  )}
+
+                  {bulkDeleteError && (
+                    <div className="mt-3 rounded-xl bg-red-100 p-2.5 text-xs font-bold text-red-800">
+                      {bulkDeleteError}
+                    </div>
+                  )}
+
+                  <div className="mt-6 flex flex-col sm:flex-row justify-end gap-2">
+                    <button
+                      disabled={isBulkDeleting}
+                      onClick={() => {
+                        setIsBulkDeleteModalOpen(false);
+                        setBulkDeleteError(null);
+                      }}
+                      className="button-secondary text-xs px-4 py-2"
+                    >
+                      Cancel
+                    </button>
+
+                    <button
+                      disabled={isBulkDeleting}
+                      onClick={() => handleBulkDelete(usedCount > 0)}
+                      className="rounded-xl bg-red-600 px-4 py-2 text-xs font-bold text-white hover:bg-red-700 transition-colors flex items-center justify-center gap-2"
+                    >
+                      {isBulkDeleting ? (
+                        <>
+                          <RefreshCw className="h-4 w-4 animate-spin" /> Deleting {selectedPaths.size} Images...
+                        </>
+                      ) : (
+                        `Delete ${selectedPaths.size} Selected Images`
+                      )}
+                    </button>
+                  </div>
+                </>
+              );
+            })()}
           </div>
         </div>
       )}

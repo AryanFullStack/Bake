@@ -19,8 +19,10 @@ import {
   Sparkles,
   PackagePlus,
   ShoppingBag,
+  Search,
 } from "lucide-react";
 import { MediaPickerModal } from "@/components/admin/media-picker-modal";
+import { PaginationControls } from "@/components/pagination";
 
 
 interface Category {
@@ -40,6 +42,10 @@ interface Category {
 export function AdminCategoriesManager() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(15);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [totalCategories, setTotalCategories] = useState(0);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingCategory, setEditingCategory] = useState<Partial<Category> | null>(null);
   
@@ -59,14 +65,19 @@ export function AdminCategoriesManager() {
     setPickerTarget(null);
   };
 
-
   const fetchCategories = async () => {
     setLoading(true);
     try {
-      const res = await fetch("/api/admin/categories");
+      const params = new URLSearchParams({
+        page: page.toString(),
+        limit: limit.toString(),
+        search: searchQuery,
+      });
+      const res = await fetch(`/api/admin/categories?${params}`);
       const json = await res.json();
       if (json.success) {
         setCategories(json.categories || []);
+        setTotalCategories(json.pagination?.total ?? json.categories.length);
       }
     } catch (err) {
       console.error("Failed to fetch categories:", err);
@@ -77,7 +88,7 @@ export function AdminCategoriesManager() {
 
   useEffect(() => {
     fetchCategories();
-  }, []);
+  }, [page, limit, searchQuery]);
 
   const openCreateModal = (parentId: string | null = null) => {
     setEditingCategory({
@@ -258,6 +269,22 @@ export function AdminCategoriesManager() {
         </div>
       </div>
 
+      {/* Search Toolbar */}
+      <div className="rounded-2xl bg-white p-4 border border-line shadow-xs">
+        <div className="relative max-w-sm">
+          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted pointer-events-none" />
+          <input
+            value={searchQuery}
+            onChange={(e) => {
+              setSearchQuery(e.target.value);
+              setPage(1);
+            }}
+            placeholder="Search categories by name or description..."
+            className="w-full pl-9 pr-4 py-2 text-xs font-medium rounded-xl border border-line bg-cream/40 outline-none focus:border-orange focus:bg-white transition-colors"
+          />
+        </div>
+      </div>
+
       {/* Category List */}
       {loading ? (
         <div className="flex h-64 items-center justify-center rounded-2xl border border-dashed border-line bg-cream/40">
@@ -348,24 +375,25 @@ export function AdminCategoriesManager() {
                         className="flex items-center justify-between rounded-xl bg-cream/40 p-2.5 hover:bg-orange-light/30 transition-colors"
                       >
                         <div className="flex items-center gap-2.5">
-                          <ChevronRight className="h-4 w-4 text-orange" />
                           {sub.icon_path ? (
-                            <img src={sub.icon_path} alt="" className="h-7 w-7 rounded object-cover" />
+                            <img src={sub.icon_path} alt="" className="h-6 w-6 rounded object-cover" />
                           ) : (
-                            <Folder className="h-4 w-4 text-navy" />
+                            <ChevronRight className="h-4 w-4 text-orange" />
                           )}
-                          <span className="text-xs font-bold text-navy">{sub.name}</span>
-                          <span className="text-[10px] text-muted font-mono font-medium">/{sub.slug}</span>
+                          <div>
+                            <span className="font-bold text-navy text-xs">{sub.name}</span>
+                            <span className="ml-2 text-[11px] text-admin-muted font-mono">/{sub.slug}</span>
+                          </div>
                         </div>
 
-                        <div className="flex items-center gap-2">
-                          <Link
-                            href={`/admin/products?category_id=${sub.id}`}
-                            className="flex items-center gap-1 rounded-md border border-navy/15 bg-white px-2 py-1 text-[11px] font-bold text-navy hover:text-orange transition-colors"
+                        <div className="flex items-center gap-1.5">
+                          <button
+                            onClick={() => toggleStatus(sub)}
+                            className="p-1 text-navy hover:text-orange transition-colors"
+                            title={sub.is_published ? "Hide Subcategory" : "Publish Subcategory"}
                           >
-                            <ShoppingBag className="h-3 w-3 text-orange" />
-                            Products
-                          </Link>
+                            {sub.is_published ? <Eye className="h-3.5 w-3.5 text-green" /> : <EyeOff className="h-3.5 w-3.5 text-gray-400" />}
+                          </button>
                           <button
                             onClick={() => openEditModal(sub)}
                             className="p-1 text-navy hover:text-orange transition-colors"
@@ -390,6 +418,20 @@ export function AdminCategoriesManager() {
           })}
         </div>
       )}
+
+      <PaginationControls
+        currentPage={page}
+        pageSize={limit}
+        totalItems={totalCategories}
+        itemLabel="categories"
+        onPageChange={setPage}
+        onPageSizeChange={(newLimit) => {
+          setLimit(newLimit);
+          setPage(1);
+        }}
+        pageSizeOptions={[10, 15, 25, 50, 100]}
+        className="mt-4"
+      />
 
       {/* CREATE / EDIT MODAL */}
       {isModalOpen && editingCategory && (

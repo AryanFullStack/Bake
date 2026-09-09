@@ -2,20 +2,54 @@ import { NextRequest, NextResponse } from "next/server";
 import { assertAdminApi } from "@/lib/auth";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   try {
     const admin = await assertAdminApi();
     if (!admin) {
       return NextResponse.json({ error: "Unauthorized access" }, { status: 401 });
     }
 
-    const supabase = await createSupabaseServerClient();
-    const { data: categories, error } = await supabase
-      .from("categories")
-      .select("*, parent:parent_id(id, name, slug)")
-      .order("sort_order", { ascending: true })
-      .order("name", { ascending: true });
+    const { searchParams } = new URL(req.url);
+    const pageParam = searchParams.get("page");
+    const limitParam = searchParams.get("limit");
+    const search = searchParams.get("search") || "";
 
+    const supabase = await createSupabaseServerClient();
+    let query = supabase
+      .from("categories")
+      .select("*, parent:parent_id(id, name, slug)", { count: "exact" });
+
+    if (search) {
+      query = query.or(`name.ilike.%${search}%,slug.ilike.%${search}%,description.ilike.%${search}%`);
+    }
+
+    query = query.order("sort_order", { ascending: true }).order("name", { ascending: true });
+
+    if (pageParam) {
+      const page = parseInt(pageParam, 10) || 1;
+      const limit = parseInt(limitParam || "15", 10);
+      const from = (page - 1) * limit;
+      const to = from + limit - 1;
+
+      const { data: categories, count, error } = await query.range(from, to);
+
+      if (error) {
+        return NextResponse.json({ error: error.message }, { status: 400 });
+      }
+
+      return NextResponse.json({
+        success: true,
+        categories: categories || [],
+        pagination: {
+          total: count || 0,
+          page,
+          limit,
+          totalPages: Math.ceil((count || 0) / limit) || 1,
+        },
+      });
+    }
+
+    const { data: categories, error } = await query;
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 400 });
     }

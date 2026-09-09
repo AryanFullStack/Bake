@@ -13,6 +13,7 @@ import { ProductCard } from "@/components/storefront/product-card";
 import { MultiCategoryHero } from "@/components/storefront/multi-category-hero";
 import { HomeKitchenShowcase } from "@/components/storefront/home-kitchen-showcase";
 import { DealsCountdown } from "@/components/storefront/deals-countdown";
+import { BAKERY_BLUR } from "@/lib/image-placeholders";
 import type { Product } from "@/lib/types";
 
 /* ── Stars helper ─────────────────────────────────────────── */
@@ -119,15 +120,15 @@ export default async function HomePage() {
   };
 
   const categoryDefaultImages: Record<string, string> = {
-    bakery: "/bakery.png",
-    cakes: "/celebration-cakes.png",
-    "celebration-cakes": "/celebration-cakes.png",
-    baskets: "/baskets.png",
-    "baskets-storage": "/baskets.png",
-    watches: "/WD.jpeg",
-    kitchen: "/kicthens.jpg",
-    "home-decor": "/homeDisktop.png",
-    "daily-essentials": "/homeItems.jfif",
+    bakery: "/bakery.webp",
+    cakes: "/celebration-cakes.webp",
+    "celebration-cakes": "/celebration-cakes.webp",
+    baskets: "/baskets.webp",
+    "baskets-storage": "/baskets.webp",
+    watches: "/WD.webp",
+    kitchen: "/kicthens.webp",
+    "home-decor": "/homeDisktop.webp",
+    "daily-essentials": "/homeItems.webp",
   };
 
   // Use only top-level (parent) categories from DB, max 6
@@ -217,10 +218,12 @@ export default async function HomePage() {
                 {/* Bakery Image Banner */}
                 <div className="relative aspect-[1.6] w-full overflow-hidden rounded-2xl mb-6 shadow-md bg-navy-dark">
                   <Image
-                    src="/cake.jpg"
+                    src="/cake.webp"
                     alt="Freshly baked cakes and pastries"
                     fill
                     sizes="(max-width: 768px) 100vw, 50vw"
+                    placeholder="blur"
+                    blurDataURL={BAKERY_BLUR}
                     className="object-cover transition-transform duration-700 hover:scale-105"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-navy/80 via-transparent to-transparent" />
@@ -262,25 +265,29 @@ export default async function HomePage() {
             {/* Right — Custom Cake Studio Card with Image */}
             <div className="flex flex-col justify-between rounded-3xl border border-orange/30 bg-orange/10 p-6 sm:p-8 backdrop-blur-md overflow-hidden shadow-xl hover:border-orange/50 transition-all">
               <div>
-                {/* Custom Cake Image Banner (Desktop: /custoemcake2.png, Mobile: /CakeM.png) */}
+                {/* Custom Cake Image Banner (Desktop: /custoemcake2.webp, Mobile: /CakeM.webp) */}
                 <div className="relative aspect-[1.6] w-full overflow-hidden rounded-2xl mb-6 shadow-md bg-navy-dark">
                   {/* Desktop Image (≥768px) */}
                   <div className="hidden md:block absolute inset-0 w-full h-full">
                     <Image
-                      src="/custoemcake2.png"
+                      src="/custoemcake2.webp"
                       alt="Custom celebration cake finished in frosting"
                       fill
                       sizes="50vw"
+                      placeholder="blur"
+                      blurDataURL={BAKERY_BLUR}
                       className="object-cover transition-transform duration-700 hover:scale-105"
                     />
                   </div>
-                  {/* Mobile Image (<768px) — /CakeM.png */}
+                  {/* Mobile Image (<768px) — /CakeM.webp */}
                   <div className="md:hidden absolute inset-0 w-full h-full">
                     <Image
-                      src="/CakeM.png"
+                      src="/CakeM.webp"
                       alt="Custom celebration cake mobile visual"
                       fill
                       sizes="100vw"
+                      placeholder="blur"
+                      blurDataURL={BAKERY_BLUR}
                       className="object-cover object-center transition-transform duration-700 hover:scale-105"
                     />
                   </div>
@@ -592,9 +599,11 @@ export default async function HomePage() {
             {/* Image */}
             <div className="relative aspect-[1.15] overflow-hidden rounded-[28px] shadow-lg">
               <Image
-                src="/cakechake.jpg"
+                src="/cakechake.webp"
                 alt="Bake Mart Bazaar — More than a bakery"
                 fill
+                placeholder="blur"
+                blurDataURL={BAKERY_BLUR}
                 sizes="(max-width: 768px) 100vw, 50vw"
                 className="object-cover"
               />

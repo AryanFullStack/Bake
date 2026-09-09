@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from "react";
-import { Cake, Clock, Phone, Sparkles, User, FileText, ArrowRight, CheckCircle2, Image as ImageIcon, MapPin, AlertCircle } from "lucide-react";
+import { useState, useEffect, useCallback } from "react";
+import { Cake, Clock, Phone, Sparkles, User, FileText, ArrowRight, CheckCircle2, Image as ImageIcon, MapPin, AlertCircle, Search } from "lucide-react";
 import { formatPKR } from "@/lib/catalog";
 import { CustomCakeStatus } from "@/lib/types";
+import { PaginationControls } from "@/components/pagination";
 
 const statuses: CustomCakeStatus[] = [
   "submitted",
@@ -37,8 +38,15 @@ const statusColors: Record<string, string> = {
   rejected: "bg-rose-50 text-rose-800 border-rose-200",
 };
 
-export function AdminCustomCakesManager({ initialRequests }: { initialRequests: any[] }) {
+export function AdminCustomCakesManager({ initialRequests = [] }: { initialRequests?: any[] }) {
   const [requests, setRequests] = useState(initialRequests);
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(15);
+  const [totalRequests, setTotalRequests] = useState(initialRequests.length);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedStatus, setSelectedStatus] = useState("all");
+  const [loading, setLoading] = useState(false);
+
   const [activeQuoteModal, setActiveQuoteModal] = useState<any | null>(null);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [convertingId, setConvertingId] = useState<string | null>(null);
@@ -46,9 +54,44 @@ export function AdminCustomCakesManager({ initialRequests }: { initialRequests: 
   // Quote Form State
   const [quoteAmount, setQuoteAmount] = useState("");
   const [depositAmount, setDepositAmount] = useState("");
-  const [deliveryFee, setDeliveryFee] = useState("250");
   const [quoteNote, setQuoteNote] = useState("");
   const [actionSuccess, setActionSuccess] = useState("");
+
+  const fetchRequests = useCallback(async () => {
+    setLoading(true);
+    try {
+      const params = new URLSearchParams({
+        page: page.toString(),
+        limit: limit.toString(),
+        search: searchQuery,
+        status: selectedStatus,
+      });
+      const res = await fetch(`/api/admin/custom-cakes?${params}`);
+      const json = await res.json();
+      if (json.success) {
+        setRequests(json.requests || []);
+        setTotalRequests(json.pagination?.total ?? json.requests.length);
+      }
+    } catch {
+      // ignore
+    } finally {
+      setLoading(false);
+    }
+  }, [page, limit, searchQuery, selectedStatus]);
+
+  useEffect(() => {
+    fetchRequests();
+  }, [fetchRequests]);
+
+  const handleSearchChange = (val: string) => {
+    setSearchQuery(val);
+    setPage(1);
+  };
+
+  const handleStatusChange = (val: string) => {
+    setSelectedStatus(val);
+    setPage(1);
+  };
 
   async function updateStatus(id: string, status: string, amount?: string) {
     setUpdatingId(id);
@@ -144,7 +187,7 @@ export function AdminCustomCakesManager({ initialRequests }: { initialRequests: 
         <p className="text-[11px] sm:text-xs font-bold uppercase tracking-wider text-orange">Cake Studio Operations</p>
         <h1 className="mt-1 font-display text-2xl sm:text-4xl font-bold text-navy">Custom Cake Consultation Requests</h1>
         <p className="mt-1 text-xs sm:text-sm text-muted font-medium">
-          {requests.length} custom cake consultations in database • Manage status, prepare formal quotations & convert to orders.
+          {totalRequests} custom cake consultations in database • Manage status, prepare formal quotations & convert to orders.
         </p>
       </div>
 
@@ -157,7 +200,36 @@ export function AdminCustomCakesManager({ initialRequests }: { initialRequests: 
         </div>
       )}
 
-      <div className="grid gap-5">
+      {/* Toolbar: Search & Filter */}
+      <div className="rounded-[24px] bg-white p-5 border border-line/80 shadow-xs flex flex-col sm:flex-row gap-4 justify-between items-stretch sm:items-center">
+        <div className="flex items-center gap-2 relative flex-1 max-w-md">
+          <Search size={16} className="absolute left-3.5 text-muted pointer-events-none" />
+          <input
+            value={searchQuery}
+            onChange={(e) => handleSearchChange(e.target.value)}
+            placeholder="Search request #, customer name, phone, city..."
+            className="w-full pl-9 pr-4 py-2.5 text-sm font-medium rounded-xl border border-line bg-cream/50 outline-none focus:border-orange focus:bg-white transition-colors"
+          />
+        </div>
+
+        <div className="flex items-center gap-2">
+          <span className="text-xs font-bold text-muted uppercase">Status:</span>
+          <select
+            value={selectedStatus}
+            onChange={(e) => handleStatusChange(e.target.value)}
+            className="rounded-xl border border-line bg-white px-3 py-2 text-xs font-bold text-navy outline-none focus:border-orange capitalize cursor-pointer"
+          >
+            <option value="all">All Statuses</option>
+            {statuses.map((s) => (
+              <option key={s} value={s}>
+                {s.replace(/_/g, " ")}
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
+
+      <div className={`grid gap-5 ${loading ? "opacity-50" : ""}`}>
         {requests.map((request: any) => {
           const quote = request.custom_cake_quotes?.[0];
 
@@ -280,12 +352,26 @@ export function AdminCustomCakesManager({ initialRequests }: { initialRequests: 
           );
         })}
 
-        {!requests.length && (
+        {!requests.length && !loading && (
           <div className="rounded-[28px] bg-white p-12 text-center border border-line/80 text-sm text-muted">
-            No custom cake consultation requests submitted yet.
+            No custom cake consultation requests match your criteria.
           </div>
         )}
       </div>
+
+      <PaginationControls
+        currentPage={page}
+        pageSize={limit}
+        totalItems={totalRequests}
+        itemLabel="custom cake requests"
+        onPageChange={setPage}
+        onPageSizeChange={(newLimit) => {
+          setLimit(newLimit);
+          setPage(1);
+        }}
+        pageSizeOptions={[10, 15, 25, 50, 100]}
+        className="mt-4"
+      />
 
       {/* Prepare Quotation Modal */}
       {activeQuoteModal && (

@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useRef, useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import {
   motion,
@@ -11,6 +12,7 @@ import {
   useReducedMotion,
 } from "framer-motion";
 import { ArrowRight, Sparkles, ChevronDown } from "lucide-react";
+import { HOME_DECOR_BLUR, BAKERY_BLUR, WATCH_BLUR } from "@/lib/image-placeholders";
 
 /* ─────────────────────────────────────────────────────────────
    Hero Scene Configuration
@@ -28,6 +30,7 @@ interface HeroScene {
   alt: string;
   mobileObjPos: string;
   desktopObjPos: string;
+  blurDataURL: string;
 }
 
 const SCENES: HeroScene[] = [
@@ -40,11 +43,12 @@ const SCENES: HeroScene[] = [
     subtitle: "Curated home accents & décor that bring warmth to every corner.",
     cta: "Explore Home",
     href: "/shop?category=home-decor",
-    mobileImg: "/HomeM.png",
-    desktopImg: "/homeDisktop.png",
+    mobileImg: "/HomeM.webp",
+    desktopImg: "/homeDisktop.webp",
     alt: "Warm cosy living room interior with wooden shelves and décor",
     mobileObjPos: "center center",
     desktopObjPos: "center center",
+    blurDataURL: HOME_DECOR_BLUR,
   },
 
   /* ── 2. CAKES & BAKERY ── */
@@ -56,11 +60,12 @@ const SCENES: HeroScene[] = [
     subtitle: "Artisan cakes & fresh treats handcrafted for every special moment.",
     cta: "Shop Cakes",
     href: "/shop?category=bakery",
-    mobileImg: "/CakeM.png",
-    desktopImg: "/CakeD.png",
+    mobileImg: "/CakeM.webp",
+    desktopImg: "/CakeD.webp",
     alt: "Beautiful white celebration cake framed on a red velvet stand",
     mobileObjPos: "center 65%",
     desktopObjPos: "right center",
+    blurDataURL: BAKERY_BLUR,
   },
 
   /* ── 3. WATCHES & ACCESSORIES ── */
@@ -72,11 +77,12 @@ const SCENES: HeroScene[] = [
     subtitle: "Precision timepieces designed with luxury and everyday elegance.",
     cta: "Shop Watches",
     href: "/shop?category=watches",
-    mobileImg: "/WM.jpeg",
-    desktopImg: "/WD.jpeg",
+    mobileImg: "/WM.webp",
+    desktopImg: "/WD.webp",
     alt: "Luxury watch surrounded by rich burgundy silk backdrop",
     mobileObjPos: "center center",
     desktopObjPos: "center center",
+    blurDataURL: WATCH_BLUR,
   },
 ];
 
@@ -209,12 +215,16 @@ export function MultiCategoryHero() {
                   style={{ scale: prefersReducedMotion ? 1 : imgScale }}
                   className="md:hidden absolute inset-0 w-full h-full"
                 >
-                  <img
+                  <Image
                     src={scene.mobileImg}
                     alt={scene.alt}
-                    loading={idx === 0 ? "eager" : "lazy"}
-                    decoding="async"
-                    className="w-full h-full object-cover select-none"
+                    fill
+                    sizes="100vw"
+                    priority={idx === 0}
+                    placeholder="blur"
+                    blurDataURL={scene.blurDataURL}
+                    quality={85}
+                    className="object-cover select-none"
                     style={{ objectPosition: scene.mobileObjPos }}
                   />
                 </motion.div>
@@ -224,12 +234,16 @@ export function MultiCategoryHero() {
                   style={{ scale: prefersReducedMotion ? 1 : imgScale }}
                   className="hidden md:block absolute inset-0 w-full h-full"
                 >
-                  <img
+                  <Image
                     src={scene.desktopImg}
                     alt={scene.alt}
-                    loading={idx === 0 ? "eager" : "lazy"}
-                    decoding="async"
-                    className="w-full h-full object-cover select-none"
+                    fill
+                    sizes="100vw"
+                    priority={idx === 0}
+                    placeholder="blur"
+                    blurDataURL={scene.blurDataURL}
+                    quality={85}
+                    className="object-cover select-none"
                     style={{ objectPosition: scene.desktopObjPos }}
                   />
                 </motion.div>

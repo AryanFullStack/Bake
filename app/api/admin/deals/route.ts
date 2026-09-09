@@ -24,6 +24,8 @@ export async function GET(req: NextRequest) {
     }
 
     const { searchParams } = new URL(req.url);
+    const pageParam = searchParams.get("page");
+    const limitParam = searchParams.get("limit");
     const search = searchParams.get("search") || "";
     const statusFilter = searchParams.get("status") || "";
     const dealTypeFilter = searchParams.get("deal_type") || "";
@@ -67,12 +69,33 @@ export async function GET(req: NextRequest) {
       deals = deals.filter((d: any) => d.status === statusFilter);
     }
 
+    const totalCount = deals.length;
     const summary = await getAdminDealsSummary();
+
+    if (pageParam) {
+      const page = parseInt(pageParam, 10) || 1;
+      const limit = parseInt(limitParam || "15", 10);
+      const from = (page - 1) * limit;
+      const paginatedDeals = deals.slice(from, from + limit);
+
+      return NextResponse.json({
+        success: true,
+        summary,
+        total: totalCount,
+        deals: paginatedDeals,
+        pagination: {
+          total: totalCount,
+          page,
+          limit,
+          totalPages: Math.ceil(totalCount / limit) || 1,
+        },
+      });
+    }
 
     return NextResponse.json({
       success: true,
       summary,
-      total: count || deals.length,
+      total: totalCount,
       deals,
     });
   } catch (error: any) {

@@ -13,6 +13,7 @@ import { CreateOrderModal } from "./create-order-modal";
 import { EditOrderModal } from "./edit-order-modal";
 import { OrderInvoice } from "./order-invoice";
 import { CourierManagerModal } from "./courier-manager-modal";
+import { PaginationControls } from "@/components/pagination";
 
 const statusColors: Record<string, string> = {
   placed: "bg-orange/10 text-orange border-orange/20",
@@ -100,7 +101,11 @@ export function AdminOrdersManager({ initialOrders }: { initialOrders: any[] }) 
   const [customerTypeFilter, setCustomerTypeFilter] = useState("all");
   const [sortOption, setSortOption] = useState("created_at_desc");
   const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(25);
+  const [pageSize, setPageSize] = useState(15);
+
+  useEffect(() => {
+    setPage(1);
+  }, [query, statusFilter, paymentStatusFilter, paymentMethodFilter, dateRangeFilter, customerTypeFilter, sortOption]);
 
   // Selection & Bulk actions
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
@@ -682,32 +687,19 @@ export function AdminOrdersManager({ initialOrders }: { initialOrders: any[] }) 
         )}
 
         {/* Pagination Bar */}
-        <div className="mt-4 pt-4 border-t border-line flex flex-col sm:flex-row items-center justify-between gap-4 text-xs font-semibold text-muted">
-          <span>
-            Showing {orders.length > 0 ? (page - 1) * pageSize + 1 : 0} to{" "}
-            {Math.min(page * pageSize, totalCount)} of {totalCount} orders
-          </span>
-
-          <div className="flex items-center gap-2">
-            <button
-              disabled={page <= 1}
-              onClick={() => setPage((p) => Math.max(1, p - 1))}
-              className="p-2 rounded-xl border border-line disabled:opacity-40 hover:bg-cream"
-            >
-              <ChevronLeft size={16} />
-            </button>
-            <span className="text-navy font-bold">
-              Page {page} of {totalPages || 1}
-            </span>
-            <button
-              disabled={page >= totalPages}
-              onClick={() => setPage((p) => p + 1)}
-              className="p-2 rounded-xl border border-line disabled:opacity-40 hover:bg-cream"
-            >
-              <ChevronRight size={16} />
-            </button>
-          </div>
-        </div>
+        <PaginationControls
+          currentPage={page}
+          pageSize={pageSize}
+          totalItems={totalCount}
+          itemLabel="orders"
+          onPageChange={setPage}
+          onPageSizeChange={(newSize) => {
+            setPageSize(newSize);
+            setPage(1);
+          }}
+          pageSizeOptions={[10, 15, 25, 50, 100]}
+          className="mt-4"
+        />
       </div>
 
       {/* Sub Modals */}

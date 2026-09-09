@@ -14,6 +14,7 @@ import {
   Plus,
 } from "lucide-react";
 import { ALLOWED_FOLDERS } from "@/lib/media/constants";
+import { PaginationControls } from "@/components/pagination";
 
 export interface MediaPickerModalProps {
   isOpen: boolean;
@@ -35,6 +36,9 @@ export function MediaPickerModal({
   const [activeTab, setActiveTab] = useState<"library" | "upload">("library");
   const [items, setItems] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(24);
+  const [totalItems, setTotalItems] = useState(0);
 
   // Filters
   const [selectedFolder, setSelectedFolder] = useState<string>(initialFolder);
@@ -56,16 +60,21 @@ export function MediaPickerModal({
     try {
       const folderParam = selectedFolder !== "all" ? `&folder=${selectedFolder}` : "";
       const searchParam = searchQuery ? `&search=${encodeURIComponent(searchQuery)}` : "";
-      const res = await fetch(`/api/media/list?limit=80${folderParam}${searchParam}`);
+      const res = await fetch(`/api/media/list?page=${page}&limit=${limit}${folderParam}${searchParam}`);
       const json = await res.json();
       if (json.success) {
         setItems(json.data || []);
+        setTotalItems(json.pagination?.total ?? (json.data || []).length);
       }
     } catch (err) {
       console.error("Failed to fetch media in picker:", err);
     } finally {
       setLoading(false);
     }
+  }, [page, limit, selectedFolder, searchQuery]);
+
+  useEffect(() => {
+    setPage(1);
   }, [selectedFolder, searchQuery]);
 
   useEffect(() => {
@@ -266,7 +275,8 @@ export function MediaPickerModal({
                 </button>
               </div>
             ) : (
-              <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6">
+              <>
+                <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6">
                 {items.map((item) => {
                   const url = item.public_url || item.url;
                   const isSelected = selectedItems.some((i) => (i.public_url || i.url) === url);
@@ -317,6 +327,20 @@ export function MediaPickerModal({
                   );
                 })}
               </div>
+              <PaginationControls
+                  currentPage={page}
+                  pageSize={limit}
+                  totalItems={totalItems}
+                  itemLabel="media items"
+                  onPageChange={setPage}
+                  onPageSizeChange={(newLimit) => {
+                    setLimit(newLimit);
+                    setPage(1);
+                  }}
+                  pageSizeOptions={[12, 24, 48, 96]}
+                  className="mt-3"
+                />
+              </>
             )
           ) : (
             /* UPLOAD TAB */

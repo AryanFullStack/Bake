@@ -27,10 +27,10 @@ export async function GET(req: NextRequest) {
     const providerFilter = searchParams.get("providerFilter") || "all"; // 'all' | 'imagekit' | 'vps'
     const sort = searchParams.get("sort") || "newest"; // 'newest' | 'oldest' | 'largest' | 'smallest' | 'name_asc' | 'name_desc'
     const page = Math.max(1, parseInt(searchParams.get("page") || "1", 10));
-    const limit = Math.max(1, Math.min(200, parseInt(searchParams.get("limit") || "40", 10)));
+    const limit = Math.max(1, Math.min(200, parseInt(searchParams.get("limit") || "24", 10)));
 
-    // Ensure filesystem and DB media table are synced
-    await mediaService.syncAndMigrateMedia();
+    // Do NOT run blocking filesystem sync on routine list GET calls.
+    // Sync can be explicitly triggered by user via /api/media/sync.
 
     let query = adminClient ? adminClient.from("media").select("*", { count: "exact" }) : null;
 
@@ -40,6 +40,11 @@ export async function GET(req: NextRequest) {
       }
       if (mediaType && mediaType !== "all") {
         query = query.eq("media_type", mediaType);
+      }
+      if (providerFilter === "imagekit") {
+        query = query.ilike("public_url", "%imagekit.io%");
+      } else if (providerFilter === "vps") {
+        query = query.not("public_url", "ilike", "%imagekit.io%");
       }
 
       if (search) {
@@ -72,21 +77,33 @@ export async function GET(req: NextRequest) {
       }
     }
 
-    let items: any[] = [];
-    let total = 0;
+    let rawItems: any[] = [];
+    let totalItemsCount = 0;
+
+    const startIndex = (page - 1) * limit;
 
     if (query) {
-      const { data, count, error } = await query;
-      if (!error && data) {
-        items = data;
-        total = count || data.length;
+      if (usageFilter === "all") {
+        // Fast path: paginate at DB level
+        const { data, count, error } = await query.range(startIndex, startIndex + limit - 1);
+        if (!error && data) {
+          rawItems = data;
+          totalItemsCount = count || data.length;
+        }
+      } else {
+        // Usage filter requires evaluating usage: fetch matching candidates
+        const { data, count, error } = await query;
+        if (!error && data) {
+          rawItems = data;
+          totalItemsCount = count || data.length;
+        }
       }
     }
 
     // Fallback if DB query returned nothing or client unavailable
-    if (items.length === 0 && !search && folder === "all" && mediaType === "all") {
+    if (rawItems.length === 0 && !search && folder === "all" && mediaType === "all" && usageFilter === "all") {
       const diskFiles = await mediaService.listMedia();
-      items = diskFiles.map((f) => ({
+      const mapped = diskFiles.map((f) => ({
         id: f.relativePath,
         filename: f.name,
         original_filename: f.name,
@@ -100,102 +117,111 @@ export async function GET(req: NextRequest) {
         created_at: f.createdAt.toISOString(),
         updated_at: f.updatedAt.toISOString(),
       }));
-      total = items.length;
+      totalItemsCount = mapped.length;
+      rawItems = mapped.slice(startIndex, startIndex + limit);
     }
 
-    // Enrich items with live usage info & storage provider tag
+    // Determine slice to enrich with usage
+    let itemsToProcess = rawItems;
+    let paginatedFinalItems: any[] = [];
+
+    if (usageFilter !== "all") {
+      // Evaluate usage across candidate items
+      const enrichedAll = await Promise.all(
+        rawItems.map(async (item) => {
+          const usage = await mediaService.getMediaUsage(item.storage_path || item.public_url);
+          const isIk = Boolean(
+            (item.public_url && item.public_url.includes("imagekit.io")) ||
+            (item.storage_path && item.storage_path.includes("imagekit.io"))
+          );
+          return {
+            ...item,
+            storage_provider: isIk ? "imagekit" : "vps",
+            usage_count: usage.count,
+            usages: usage.usages,
+          };
+        })
+      );
+
+      let filtered = enrichedAll;
+      if (usageFilter === "used") filtered = filtered.filter((i) => i.usage_count > 0);
+      else if (usageFilter === "unused") filtered = filtered.filter((i) => i.usage_count === 0);
+
+      totalItemsCount = filtered.length;
+      paginatedFinalItems = filtered.slice(startIndex, startIndex + limit);
+    } else {
+      // Fast path: items are already paginated by DB range, enrich ONLY these page items
+      paginatedFinalItems = await Promise.all(
+        itemsToProcess.map(async (item) => {
+          const usage = await mediaService.getMediaUsage(item.storage_path || item.public_url);
+          const isIk = Boolean(
+            (item.public_url && item.public_url.includes("imagekit.io")) ||
+            (item.storage_path && item.storage_path.includes("imagekit.io"))
+          );
+          return {
+            ...item,
+            storage_provider: isIk ? "imagekit" : "vps",
+            usage_count: usage.count,
+            usages: usage.usages,
+          };
+        })
+      );
+    }
+
+    // Get aggregated stats efficiently
+    let folderCounts: Record<string, number> = {};
+    let totalDbFiles = 0;
     let imagekitFilesCount = 0;
     let imagekitSizeBytes = 0;
     let vpsFilesCount = 0;
     let vpsSizeBytes = 0;
 
-    const enrichedItems = await Promise.all(
-      items.map(async (item) => {
-        const usage = await mediaService.getMediaUsage(item.storage_path || item.public_url);
-        const isIk = Boolean(
-          (item.public_url && item.public_url.includes("imagekit.io")) ||
-          (item.storage_path && item.storage_path.includes("imagekit.io"))
-        );
+    if (adminClient) {
+      const { data: allStats } = await adminClient
+        .from("media")
+        .select("folder, public_url, file_size");
 
-        const fileSize = item.file_size || 0;
-        if (isIk) {
-          imagekitFilesCount++;
-          imagekitSizeBytes += fileSize;
-        } else {
-          vpsFilesCount++;
-          vpsSizeBytes += fileSize;
-        }
-
-        return {
-          ...item,
-          storage_provider: isIk ? "imagekit" : "vps",
-          usage_count: usage.count,
-          usages: usage.usages,
-        };
-      })
-    );
-
-    // Apply Usage filter (used / unused)
-    let filteredItems = enrichedItems;
-    if (usageFilter === "used") {
-      filteredItems = filteredItems.filter((i) => i.usage_count > 0);
-    } else if (usageFilter === "unused") {
-      filteredItems = filteredItems.filter((i) => i.usage_count === 0);
+      if (allStats) {
+        totalDbFiles = allStats.length;
+        allStats.forEach((r) => {
+          folderCounts[r.folder] = (folderCounts[r.folder] || 0) + 1;
+          const isIk = Boolean(r.public_url && r.public_url.includes("imagekit.io"));
+          const size = r.file_size || 0;
+          if (isIk) {
+            imagekitFilesCount++;
+            imagekitSizeBytes += size;
+          } else {
+            vpsFilesCount++;
+            vpsSizeBytes += size;
+          }
+        });
+      }
     }
-
-    // Apply Storage Provider Filter (imagekit / vps)
-    if (providerFilter === "imagekit") {
-      filteredItems = filteredItems.filter((i) => i.storage_provider === "imagekit");
-    } else if (providerFilter === "vps") {
-      filteredItems = filteredItems.filter((i) => i.storage_provider === "vps");
-    }
-
-    // Pagination
-    const startIndex = (page - 1) * limit;
-    const paginatedItems = filteredItems.slice(startIndex, startIndex + limit);
-
-    // Calculate aggregated storage stats
-    const diskStats = await mediaService.getStats();
-
-    let productImagesCount = 0;
-    let categoryImagesCount = 0;
-    let brandImagesCount = 0;
-    let bannerImagesCount = 0;
-    let unusedCount = 0;
-
-    enrichedItems.forEach((i) => {
-      if (i.folder === "products" || i.folder === "product-gallery") productImagesCount++;
-      else if (i.folder === "categories") categoryImagesCount++;
-      else if (i.folder === "brands") brandImagesCount++;
-      else if (i.folder === "banners" || i.folder === "homepage") bannerImagesCount++;
-
-      if (i.usage_count === 0) unusedCount++;
-    });
 
     return NextResponse.json({
       success: true,
-      data: paginatedItems,
+      data: paginatedFinalItems,
       pagination: {
-        total: filteredItems.length,
+        total: totalItemsCount,
         page,
         limit,
-        totalPages: Math.ceil(filteredItems.length / limit) || 1,
+        totalPages: Math.ceil(totalItemsCount / limit) || 1,
       },
       stats: {
-        totalFiles: enrichedItems.length,
-        totalSizeBytes: diskStats.totalSizeBytes + imagekitSizeBytes,
+        totalFiles: totalDbFiles || totalItemsCount,
+        totalSizeBytes: imagekitSizeBytes + vpsSizeBytes,
         imagekitConfigured: ikProvider.isConfigured(),
         imagekitFilesCount,
         imagekitSizeBytes,
         vpsFilesCount,
         vpsSizeBytes,
-        folders: diskStats.folders,
+        folders: folderCounts,
         counts: {
-          products: productImagesCount,
-          categories: categoryImagesCount,
-          brands: brandImagesCount,
-          banners: bannerImagesCount,
-          unused: unusedCount,
+          products: (folderCounts["products"] || 0) + (folderCounts["product-gallery"] || 0),
+          categories: folderCounts["categories"] || 0,
+          brands: folderCounts["brands"] || 0,
+          banners: (folderCounts["banners"] || 0) + (folderCounts["homepage"] || 0),
+          unused: 0,
         },
       },
     });

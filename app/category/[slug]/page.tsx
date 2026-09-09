@@ -12,37 +12,37 @@ const CATEGORY_DETAILS: Record<string, { title: string; desc: string; banner: st
   bakery: {
     title: "Fresh Bakery",
     desc: "Cakes, pastries, cupcakes, brownies, cookies & desserts prepared fresh in small batches daily.",
-    banner: "/bakery.png",
+    banner: "/bakery.webp",
   },
   cakes: {
     title: "Celebration Cakes",
     desc: "Layer cakes, cream cakes, and handcrafted celebration centrepieces.",
-    banner: "/celebration-cakes.png",
+    banner: "/celebration-cakes.webp",
   },
   "home-decor": {
     title: "Home Decoration",
     desc: "Vases, wall art, lamps, and decorative accents carefully curated for beautiful living spaces.",
-    banner: "/homeDisktop.png",
+    banner: "/homeDisktop.webp",
   },
   kitchen: {
     title: "Kitchen Essentials",
     desc: "Everyday kitchen utensils, organizers, storage sets, and accessories for convenient living.",
-    banner: "/kicthens.jpg",
+    banner: "/kicthens.webp",
   },
   watches: {
     title: "Watches & Timepieces",
     desc: "Classic and modern wristwatches designed for elegance, style, and durability.",
-    banner: "/WD.jpeg",
+    banner: "/WD.webp",
   },
   baskets: {
     title: "Baskets & Storage",
     desc: "Organise your home beautifully with durable storage baskets, bins, and woven hampers.",
-    banner: "/baskets.png",
+    banner: "/baskets.webp",
   },
   "daily-essentials": {
     title: "Daily Essentials & Grocery",
     desc: "Everyday household needs, pantry items, and daily products delivered fast to your door.",
-    banner: "/homeItems.jfif",
+    banner: "/homeItems.webp",
   },
 };
 

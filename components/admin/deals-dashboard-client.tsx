@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback, useEffect } from "react";
 import Link from "next/link";
 import { SafeImage } from "@/components/safe-image";
 import { useRouter } from "next/navigation";
@@ -10,6 +10,7 @@ import {
   Sparkles, Tag, Trash2, XCircle, AlertTriangle, ArrowUpRight,
 } from "lucide-react";
 import { formatPKR, publicStorageUrl } from "@/lib/catalog";
+import { PaginationControls } from "@/components/pagination";
 import type { Deal, DealSummaryStats } from "@/lib/types";
 
 interface DealsDashboardClientProps {
@@ -57,6 +58,9 @@ export function DealsDashboardClient({ initialSummary, initialDeals }: DealsDash
   const [summary, setSummary] = useState<DealSummaryStats>(initialSummary);
   const [deals, setDeals] = useState<Deal[]>(initialDeals);
   const [loading, setLoading] = useState(false);
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(15);
+  const [totalDeals, setTotalDeals] = useState(initialDeals.length);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedStatus, setSelectedStatus] = useState("");
   const [selectedType, setSelectedType] = useState("");
@@ -68,14 +72,21 @@ export function DealsDashboardClient({ initialSummary, initialDeals }: DealsDash
     setTimeout(() => setToast(null), 3000);
   };
 
-  const fetchDeals = async () => {
+  const fetchDeals = useCallback(async () => {
     setLoading(true);
     try {
-      const params = new URLSearchParams({ search: searchQuery, status: selectedStatus, deal_type: selectedType });
+      const params = new URLSearchParams({
+        page: page.toString(),
+        limit: limit.toString(),
+        search: searchQuery,
+        status: selectedStatus,
+        deal_type: selectedType,
+      });
       const res = await fetch(`/api/admin/deals?${params}`);
       const json = await res.json();
       if (json.success) {
         setDeals(json.deals || []);
+        setTotalDeals(json.pagination?.total ?? json.total ?? (json.deals || []).length);
         if (json.summary) setSummary(json.summary);
       }
     } catch {
@@ -83,7 +94,15 @@ export function DealsDashboardClient({ initialSummary, initialDeals }: DealsDash
     } finally {
       setLoading(false);
     }
-  };
+  }, [page, limit, searchQuery, selectedStatus, selectedType]);
+
+  useEffect(() => {
+    fetchDeals();
+  }, [fetchDeals]);
+
+  useEffect(() => {
+    setPage(1);
+  }, [searchQuery, selectedStatus, selectedType]);
 
   const handleAction = async (id: string, action: "pause" | "resume" | "end_now" | "duplicate" | "delete", name: string) => {
     setActiveMenu(null);
@@ -501,6 +520,19 @@ export function DealsDashboardClient({ initialSummary, initialDeals }: DealsDash
                 );
               })}
             </div>
+            <PaginationControls
+              currentPage={page}
+              pageSize={limit}
+              totalItems={totalDeals}
+              itemLabel="deals"
+              onPageChange={setPage}
+              onPageSizeChange={(newLimit) => {
+                setLimit(newLimit);
+                setPage(1);
+              }}
+              pageSizeOptions={[10, 15, 25, 50, 100]}
+              className="mt-4"
+            />
           </>
         )}
       </div>

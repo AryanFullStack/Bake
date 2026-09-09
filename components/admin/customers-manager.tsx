@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { formatPKR } from "@/lib/catalog";
-import { ShieldCheck, User, Eye, Plus, MapPin, ShoppingBag, Cake, Clock, X, ChevronRight } from "lucide-react";
+import { ShieldCheck, User, Eye, Plus, MapPin, ShoppingBag, X } from "lucide-react";
 import { CreateOrderModal } from "./create-order-modal";
+import { PaginationControls } from "@/components/pagination";
 
 const roleColors: Record<string, string> = {
   customer: "bg-cream-deep text-navy",
@@ -12,9 +13,13 @@ const roleColors: Record<string, string> = {
   admin: "bg-orange/10 text-orange",
 };
 
-export function AdminCustomersManager({ initialCustomers }: { initialCustomers: any[] }) {
+export function AdminCustomersManager({ initialCustomers = [] }: { initialCustomers?: any[] }) {
   const [customers, setCustomers] = useState(initialCustomers);
   const [query, setQuery] = useState("");
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(15);
+  const [totalCustomers, setTotalCustomers] = useState(initialCustomers.length);
+  const [loading, setLoading] = useState(false);
 
   const [activeCustomerDrawer, setActiveCustomerDrawer] = useState<any | null>(null);
   const [customerDetails, setCustomerDetails] = useState<any | null>(null);
@@ -22,11 +27,35 @@ export function AdminCustomersManager({ initialCustomers }: { initialCustomers: 
 
   const [prefilledCustomerForOrder, setPrefilledCustomerForOrder] = useState<any | null>(null);
 
-  const filtered = query
-    ? customers.filter((c) =>
-        `${c.full_name} ${c.email} ${c.phone}`.toLowerCase().includes(query.toLowerCase())
-      )
-    : customers;
+  const fetchCustomers = useCallback(async () => {
+    setLoading(true);
+    try {
+      const params = new URLSearchParams({
+        page: page.toString(),
+        limit: limit.toString(),
+        search: query,
+      });
+      const res = await fetch(`/api/admin/customers?${params}`);
+      const json = await res.json();
+      if (json.success) {
+        setCustomers(json.customers || []);
+        setTotalCustomers(json.pagination?.total ?? json.customers.length);
+      }
+    } catch {
+      // ignore
+    } finally {
+      setLoading(false);
+    }
+  }, [page, limit, query]);
+
+  useEffect(() => {
+    fetchCustomers();
+  }, [fetchCustomers]);
+
+  const handleQueryChange = (val: string) => {
+    setQuery(val);
+    setPage(1);
+  };
 
   async function updateRole(id: string, role: string) {
     const response = await fetch("/api/admin/customers", {
@@ -60,7 +89,7 @@ export function AdminCustomersManager({ initialCustomers }: { initialCustomers: 
           <p className="text-[11px] sm:text-xs font-bold uppercase tracking-wider text-orange">Customer Database</p>
           <h1 className="mt-1 font-display text-2xl sm:text-4xl font-bold text-navy">Customers</h1>
           <p className="mt-1 text-xs sm:text-sm text-muted font-medium">
-            {customers.length} registered profiles · View customer spending, saved addresses & order history.
+            {totalCustomers} registered profiles · View customer spending, saved addresses & order history.
           </p>
         </div>
       </div>
@@ -69,7 +98,7 @@ export function AdminCustomersManager({ initialCustomers }: { initialCustomers: 
       <div className="rounded-[24px] bg-white p-5 border border-line/80 shadow-xs">
         <input
           value={query}
-          onChange={(e) => setQuery(e.target.value)}
+          onChange={(e) => handleQueryChange(e.target.value)}
           placeholder="Search customer name, email or phone number..."
           className="w-full max-w-sm rounded-xl border border-line bg-cream/50 px-4 py-2.5 text-sm font-medium outline-none focus:border-orange focus:bg-white transition-colors"
         />
@@ -89,8 +118,8 @@ export function AdminCustomersManager({ initialCustomers }: { initialCustomers: 
               <th className="pb-3 text-right">Actions</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-line/60">
-            {filtered.map((customer: any) => (
+          <tbody className={`divide-y divide-line/60 ${loading ? "opacity-50" : ""}`}>
+            {customers.map((customer: any) => (
               <tr key={customer.id} className="hover:bg-cream/40 transition-colors">
                 <td className="py-4">
                   <div className="flex items-center gap-3">
@@ -144,11 +173,25 @@ export function AdminCustomersManager({ initialCustomers }: { initialCustomers: 
             ))}
           </tbody>
         </table>
-        {!filtered.length && (
+        {!customers.length && !loading && (
           <p className="p-8 text-center text-sm text-muted">
             No customers match your search criteria.
           </p>
         )}
+
+        <PaginationControls
+          currentPage={page}
+          pageSize={limit}
+          totalItems={totalCustomers}
+          itemLabel="customers"
+          onPageChange={setPage}
+          onPageSizeChange={(newLimit) => {
+            setLimit(newLimit);
+            setPage(1);
+          }}
+          pageSizeOptions={[10, 15, 25, 50, 100]}
+          className="mt-4"
+        />
       </div>
 
       {/* Customer Profile Drawer */}

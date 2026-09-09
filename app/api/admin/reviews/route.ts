@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { assertAdminApi } from "@/lib/auth";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
@@ -9,6 +9,67 @@ const adminActionSchema = z.object({
   action: z.enum(["approve", "reject", "hide", "delete", "update_note"]),
   admin_note: z.string().trim().optional(),
 });
+
+export async function GET(request: NextRequest) {
+  try {
+    await ensureReviewSchema();
+    const admin = await assertAdminApi();
+    if (!admin) {
+      return NextResponse.json({ error: "Unauthorized access" }, { status: 403 });
+    }
+
+    const { searchParams } = new URL(request.url);
+    const page = parseInt(searchParams.get("page") || "1", 10);
+    const limit = parseInt(searchParams.get("limit") || "15", 10);
+    const search = searchParams.get("search") || "";
+    const status = searchParams.get("status") || "all";
+
+    const supabase = await createSupabaseServerClient();
+    let query = supabase
+      .from("reviews")
+      .select("*, products(id, name, slug), profiles(full_name), orders(order_number, customer_email)", { count: "exact" });
+
+    if (status === "pending") {
+      query = query.or("status.eq.pending,status.is.null");
+    } else if (status === "approved") {
+      query = query.or("status.eq.approved,is_approved.eq.true");
+    } else if (status === "rejected") {
+      query = query.eq("status", "rejected");
+    } else if (status === "hidden") {
+      query = query.eq("status", "hidden");
+    } else if (status === "reported") {
+      query = query.eq("is_reported", true);
+    }
+
+    if (search) {
+      query = query.or(`reviewer_name.ilike.%${search}%,guest_name.ilike.%${search}%,guest_email.ilike.%${search}%,body.ilike.%${search}%,title.ilike.%${search}%`);
+    }
+
+    const from = (page - 1) * limit;
+    const to = from + limit - 1;
+
+    const { data: reviews, count, error } = await query
+      .order("created_at", { ascending: false })
+      .range(from, to);
+
+    if (error) {
+      return NextResponse.json({ error: error.message }, { status: 400 });
+    }
+
+    return NextResponse.json({
+      success: true,
+      reviews: reviews || [],
+      pagination: {
+        total: count || 0,
+        page,
+        limit,
+        totalPages: Math.ceil((count || 0) / limit) || 1,
+      },
+    });
+  } catch (err: any) {
+    return NextResponse.json({ error: err.message || "Failed to fetch reviews" }, { status: 500 });
+  }
+}
 
 export async function PATCH(request: Request) {
   try {

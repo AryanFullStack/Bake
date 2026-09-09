@@ -5,6 +5,7 @@ import { Check, MessageSquarePlus, Star, Filter, ArrowUpDown } from "lucide-reac
 import type { Product, Review } from "@/lib/types";
 import { calculateRatingDistribution, formatReviewerName } from "@/lib/reviews";
 import { ReviewSubmissionModal } from "./review-submission-modal";
+import { PaginationControls } from "@/components/pagination";
 
 interface ProductReviewsSectionProps {
   product: Product;
@@ -14,6 +15,8 @@ interface ProductReviewsSectionProps {
 export function ProductReviewsSection({ product, reviews }: ProductReviewsSectionProps) {
   const [filterStar, setFilterStar] = useState<number | "all">("all");
   const [sortBy, setSortBy] = useState<"newest" | "highest" | "lowest">("newest");
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
   const [modalOpen, setModalOpen] = useState(false);
 
   // Compute rating statistics
@@ -33,6 +36,21 @@ export function ProductReviewsSection({ product, reviews }: ProductReviewsSectio
     });
     return result;
   }, [reviews, filterStar, sortBy]);
+
+  const paginatedReviews = useMemo(() => {
+    const from = (page - 1) * pageSize;
+    return filteredReviews.slice(from, from + pageSize);
+  }, [filteredReviews, page, pageSize]);
+
+  const handleFilterStarChange = (star: number | "all") => {
+    setFilterStar(star);
+    setPage(1);
+  };
+
+  const handleSortByChange = (val: "newest" | "highest" | "lowest") => {
+    setSortBy(val);
+    setPage(1);
+  };
 
   return (
     <div className="flex flex-col gap-8">
@@ -69,7 +87,7 @@ export function ProductReviewsSection({ product, reviews }: ProductReviewsSectio
             return (
               <div key={star} className="flex items-center gap-3 text-xs font-bold text-navy">
                 <button
-                  onClick={() => setFilterStar(filterStar === star ? "all" : star)}
+                  onClick={() => handleFilterStarChange(filterStar === star ? "all" : star)}
                   className={`flex w-10 items-center gap-1 transition-colors ${
                     filterStar === star ? "text-orange" : "text-navy hover:text-orange"
                   }`}
@@ -98,39 +116,34 @@ export function ProductReviewsSection({ product, reviews }: ProductReviewsSectio
             <MessageSquarePlus size={16} /> Write a Review
           </button>
           <p className="mt-2 text-[10px] text-muted text-center font-medium max-w-[180px]">
-            Verified purchasers can leave a review after order delivery
+            Share feedback with fellow bakers & dessert lovers
           </p>
         </div>
       </div>
 
-      {/* Sorting & Filter Toolbar */}
-      <div className="flex flex-col justify-between gap-4 border-b border-line/60 pb-4 sm:flex-row sm:items-center">
-        <div className="flex items-center gap-2 overflow-x-auto pb-1 sm:pb-0">
-          <span className="flex items-center gap-1 text-xs font-bold text-muted mr-1">
-            <Filter size={13} /> Filter:
-          </span>
+      {/* Filter Badges & Sort Controls Bar */}
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div className="flex flex-wrap items-center gap-1.5 text-xs">
+          <span className="font-bold text-muted uppercase tracking-wider text-[10px] mr-1">Filter:</span>
           <button
-            onClick={() => setFilterStar("all")}
-            className={`rounded-xl px-3.5 py-1.5 text-xs font-bold transition-all ${
+            onClick={() => handleFilterStarChange("all")}
+            className={`rounded-full px-3 py-1 text-xs font-extrabold transition-all ${
               filterStar === "all" ? "bg-navy text-white shadow-xs" : "bg-cream-deep text-navy hover:bg-cream"
             }`}
           >
-            All ({reviews.length})
+            All ({ratingDistribution.total})
           </button>
-          {[5, 4, 3, 2, 1].map((star) => {
-            const count = ratingDistribution.counts[star as 1 | 2 | 3 | 4 | 5] || 0;
-            return (
-              <button
-                key={star}
-                onClick={() => setFilterStar(filterStar === star ? "all" : star)}
-                className={`flex items-center gap-1 rounded-xl px-3 py-1.5 text-xs font-bold transition-all ${
-                  filterStar === star ? "bg-orange text-white shadow-xs" : "bg-cream-deep text-navy hover:bg-cream"
-                }`}
-              >
-                {star} ★ ({count})
-              </button>
-            );
-          })}
+          {[5, 4, 3, 2, 1].map((star) => (
+            <button
+              key={star}
+              onClick={() => handleFilterStarChange(star)}
+              className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-extrabold transition-all ${
+                filterStar === star ? "bg-orange text-white shadow-xs" : "bg-cream-deep text-navy hover:bg-cream"
+              }`}
+            >
+              <span>{star}</span> <Star size={11} className="fill-current" /> ({ratingDistribution.counts[star as 1|2|3|4|5] || 0})
+            </button>
+          ))}
         </div>
 
         {/* Sort dropdown */}
@@ -140,8 +153,8 @@ export function ProductReviewsSection({ product, reviews }: ProductReviewsSectio
           </span>
           <select
             value={sortBy}
-            onChange={(e) => setSortBy(e.target.value as any)}
-            className="rounded-xl border border-line/80 bg-white px-3 py-1.5 text-xs font-bold text-navy outline-none focus:border-orange shadow-xs"
+            onChange={(e) => handleSortByChange(e.target.value as any)}
+            className="rounded-xl border border-line/80 bg-white px-3 py-1.5 text-xs font-bold text-navy outline-none focus:border-orange shadow-xs cursor-pointer"
           >
             <option value="newest">Newest First</option>
             <option value="highest">Highest Rating</option>
@@ -153,71 +166,87 @@ export function ProductReviewsSection({ product, reviews }: ProductReviewsSectio
       {/* Reviews Cards List */}
       <div className="grid gap-4">
         {filteredReviews.length > 0 ? (
-          filteredReviews.map((review) => {
-            const displayName = formatReviewerName(
-              review.reviewer_name || review.guest_name || review.profiles?.full_name,
-              review.guest_email
-            );
+          <>
+            {paginatedReviews.map((review) => {
+              const displayName = formatReviewerName(
+                review.reviewer_name || review.guest_name || review.profiles?.full_name,
+                review.guest_email
+              );
 
-            return (
-              <article
-                key={review.id}
-                className="rounded-[24px] border border-line/80 bg-white p-6 shadow-xs transition-all hover:shadow-md"
-              >
-                <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                  {/* Rating Stars & Badge */}
-                  <div>
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <div className="flex gap-0.5 text-orange">
-                        {[1, 2, 3, 4, 5].map((star) => (
-                          <Star
-                            key={star}
-                            size={15}
-                            className={star <= review.rating ? "fill-orange text-orange" : "fill-cream-deep text-cream-deep"}
-                          />
-                        ))}
+              return (
+                <article
+                  key={review.id}
+                  className="rounded-[24px] border border-line/80 bg-white p-6 shadow-xs transition-all hover:shadow-md"
+                >
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                    {/* Rating Stars & Badge */}
+                    <div>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <div className="flex gap-0.5 text-orange">
+                          {[1, 2, 3, 4, 5].map((star) => (
+                            <Star
+                              key={star}
+                              size={15}
+                              className={star <= review.rating ? "fill-orange text-orange" : "fill-cream-deep text-cream-deep"}
+                            />
+                          ))}
+                        </div>
+                        <span className="text-xs font-bold text-navy">{review.rating}.0</span>
+
+                        {review.is_verified_purchase && (
+                          <span className="inline-flex items-center gap-1 rounded-full bg-green/10 px-2.5 py-0.5 text-[11px] font-extrabold text-green border border-green/20">
+                            <Check size={12} strokeWidth={3} /> Verified Purchase
+                          </span>
+                        )}
                       </div>
-                      <span className="text-xs font-bold text-navy">{review.rating}.0</span>
 
-                      {review.is_verified_purchase && (
-                        <span className="inline-flex items-center gap-1 rounded-full bg-green/10 px-2.5 py-0.5 text-[11px] font-extrabold text-green border border-green/20">
-                          <Check size={12} strokeWidth={3} /> Verified Purchase
-                        </span>
-                      )}
+                      <h4 className="mt-2.5 font-bold text-navy text-sm sm:text-base">
+                        {review.body ? `“${review.body.slice(0, 70)}${review.body.length > 70 ? "..." : ""}”` : "Customer Rating"}
+                      </h4>
                     </div>
 
-                    <h4 className="mt-2.5 font-bold text-navy text-sm sm:text-base">
-                      {review.body ? `“${review.body.slice(0, 70)}${review.body.length > 70 ? "..." : ""}”` : "Customer Rating"}
-                    </h4>
+                    {/* Date */}
+                    <span className="text-[11px] font-semibold text-muted shrink-0">
+                      {new Date(review.created_at).toLocaleDateString("en-PK", {
+                        day: "numeric",
+                        month: "short",
+                        year: "numeric",
+                      })}
+                    </span>
                   </div>
 
-                  {/* Date */}
-                  <span className="text-[11px] font-semibold text-muted shrink-0">
-                    {new Date(review.created_at).toLocaleDateString("en-PK", {
-                      day: "numeric",
-                      month: "short",
-                      year: "numeric",
-                    })}
-                  </span>
-                </div>
+                  {/* Review Body */}
+                  {review.body && (
+                    <p className="mt-3 text-xs leading-relaxed font-medium text-navy/80 sm:text-sm">
+                      {review.body}
+                    </p>
+                  )}
 
-                {/* Review Body */}
-                {review.body && (
-                  <p className="mt-3 text-xs leading-relaxed font-medium text-navy/80 sm:text-sm">
-                    {review.body}
-                  </p>
-                )}
-
-                {/* Author Footer */}
-                <div className="mt-4 flex items-center gap-2.5 border-t border-line/60 pt-3 text-xs">
-                  <div className="grid h-7 w-7 place-items-center rounded-full bg-navy font-bold text-white text-xs shadow-xs">
-                    {displayName.charAt(0)}
+                  {/* Author Footer */}
+                  <div className="mt-4 flex items-center gap-2.5 border-t border-line/60 pt-3 text-xs">
+                    <div className="grid h-7 w-7 place-items-center rounded-full bg-navy font-bold text-white text-xs shadow-xs">
+                      {displayName.charAt(0)}
+                    </div>
+                    <span className="font-extrabold text-navy">{displayName}</span>
                   </div>
-                  <span className="font-extrabold text-navy">{displayName}</span>
-                </div>
-              </article>
-            );
-          })
+                </article>
+              );
+            })}
+
+            <PaginationControls
+              currentPage={page}
+              pageSize={pageSize}
+              totalItems={filteredReviews.length}
+              itemLabel="reviews"
+              onPageChange={setPage}
+              onPageSizeChange={(newSize) => {
+                setPageSize(newSize);
+                setPage(1);
+              }}
+              pageSizeOptions={[5, 10, 20, 50]}
+              className="mt-4"
+            />
+          </>
         ) : (
           /* Empty State */
           <div className="rounded-[28px] border border-line/80 bg-white p-12 text-center shadow-xs">

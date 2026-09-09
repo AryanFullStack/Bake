@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { formatPKR, publicStorageUrl } from "@/lib/catalog";
 import { ProductWizard } from "./product-wizard";
+import { PaginationControls } from "@/components/pagination";
 
 interface ProductRow {
   id: string;
@@ -75,7 +76,7 @@ export function AdminProductsManager({ initialProducts = [], categories = [], br
   const [products, setProducts] = useState<ProductRow[]>(initialProducts);
   const [loading, setLoading] = useState(false);
   const [page, setPage] = useState(1);
-  const [limit] = useState(25);
+  const [limit, setLimit] = useState(20);
   const [totalPages, setTotalPages] = useState(1);
   const [totalProducts, setTotalProducts] = useState(0);
   const [searchQuery, setSearchQuery] = useState("");
@@ -110,13 +111,17 @@ export function AdminProductsManager({ initialProducts = [], categories = [], br
         }
         setProducts(list);
         setTotalPages(json.pagination?.totalPages || 1);
-        setTotalProducts(list.length || json.pagination?.total || 0);
+        setTotalProducts(json.pagination?.total ?? list.length);
       }
     } catch { /* silent */ }
     finally { setLoading(false); }
   }, [page, limit, searchQuery, selectedCategory, selectedStockStatus, selectedStatus, dealsOnlyFilter]);
 
   useEffect(() => { fetchProducts(); }, [fetchProducts]);
+
+  useEffect(() => {
+    setPage(1);
+  }, [searchQuery, selectedCategory, selectedStockStatus, selectedStatus, dealsOnlyFilter]);
 
   useEffect(() => { setSelectedIds([]); }, [page, searchQuery, selectedCategory, selectedStockStatus, selectedStatus, dealsOnlyFilter]);
 
@@ -416,28 +421,19 @@ export function AdminProductsManager({ initialProducts = [], categories = [], br
       </div>
 
       {/* ── Pagination ───────────────────────────────── */}
-      {totalPages > 1 && (
-        <div className="mt-4 flex items-center justify-between">
-          <span className="text-xs text-admin-muted">Page {page} of {totalPages} · {totalProducts} products</span>
-          <div className="flex items-center gap-1.5">
-            <button disabled={page <= 1} onClick={() => setPage(p => p - 1)} className="rounded-lg border border-admin-border p-2 text-admin-muted hover:border-orange hover:text-orange disabled:opacity-30 transition-colors">
-              <ChevronLeft size={15} />
-            </button>
-            {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-              const pg = page <= 3 ? i + 1 : page + i - 2;
-              if (pg < 1 || pg > totalPages) return null;
-              return (
-                <button key={pg} onClick={() => setPage(pg)} className={`rounded-lg px-3 py-1.5 text-xs font-bold transition-colors ${pg === page ? "bg-orange text-white shadow-sm" : "border border-admin-border text-admin-muted hover:border-orange hover:text-orange"}`}>
-                  {pg}
-                </button>
-              );
-            })}
-            <button disabled={page >= totalPages} onClick={() => setPage(p => p + 1)} className="rounded-lg border border-admin-border p-2 text-admin-muted hover:border-orange hover:text-orange disabled:opacity-30 transition-colors">
-              <ChevronRight size={15} />
-            </button>
-          </div>
-        </div>
-      )}
+      <PaginationControls
+        currentPage={page}
+        pageSize={limit}
+        totalItems={totalProducts}
+        itemLabel="products"
+        onPageChange={setPage}
+        onPageSizeChange={(newLimit) => {
+          setLimit(newLimit);
+          setPage(1);
+        }}
+        pageSizeOptions={[10, 20, 50, 100]}
+        className="mt-4"
+      />
 
       {/* ── Product Wizard ───────────────────────────── */}
       {isWizardOpen && (

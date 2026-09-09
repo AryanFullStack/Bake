@@ -3,6 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight, Home, UtensilsCrossed, Sparkles } from "lucide-react";
+import { HOME_DECOR_BLUR, KITCHEN_BLUR } from "@/lib/image-placeholders";
 
 export function HomeKitchenShowcase() {
   return (
@@ -21,20 +22,24 @@ export function HomeKitchenShowcase() {
           {/* Desktop Image (≥768px) */}
           <div className="hidden md:block absolute inset-0 w-full h-full">
             <Image
-              src="/homeDisktop.png"
+              src="/homeDisktop.webp"
               alt="Home Decoration — Vases, wall art, lamps & aesthetic accents"
               fill
+              placeholder="blur"
+              blurDataURL={HOME_DECOR_BLUR}
               className="object-cover transition-transform duration-700 group-hover:scale-105"
               sizes="50vw"
             />
           </div>
 
-          {/* Mobile Image (<768px) — /HomeM.png */}
+          {/* Mobile Image (<768px) — /HomeM.webp */}
           <div className="md:hidden absolute inset-0 w-full h-full">
             <Image
-              src="/HomeM.png"
+              src="/HomeM.webp"
               alt="Home Decoration — Mobile visual"
               fill
+              placeholder="blur"
+              blurDataURL={HOME_DECOR_BLUR}
               className="object-cover object-center transition-transform duration-700 group-hover:scale-105"
               sizes="100vw"
             />
@@ -67,9 +72,11 @@ export function HomeKitchenShowcase() {
         <div className="group relative overflow-hidden rounded-3xl bg-navy text-white min-h-[420px] sm:min-h-[480px] flex flex-col justify-end p-6 sm:p-10 shadow-lg border border-line/40">
           <div className="absolute inset-0 w-full h-full">
             <Image
-              src="/kicthens.jpg"
+              src="/kicthens.webp"
               alt="Kitchen Essentials — Utensils, storage, cookware & useful accessories"
               fill
+              placeholder="blur"
+              blurDataURL={KITCHEN_BLUR}
               className="object-cover transition-transform duration-700 group-hover:scale-105"
               sizes="(max-width: 768px) 100vw, 50vw"
             />

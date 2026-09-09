@@ -14,20 +14,20 @@ export async function getCategories(): Promise<Category[]> {
   const { data } = await supabase.from("categories").select("id,name,slug,description,image_path,parent_id").order("sort_order").limit(100);
   
   const defaultImageMap: Record<string, string> = {
-    bakery: "/bakery.png",
-    baskets: "/baskets.png",
-    "baskets-storage": "/baskets.png",
-    watches: "/WD.jpeg",
-    kitchen: "/kicthens.jpg",
-    "home-decor": "/homeDisktop.png",
-    cakes: "/celebration-cakes.png",
-    "celebration-cakes": "/celebration-cakes.png",
-    "daily-essentials": "/homeItems.jfif",
-    pastries: "/bakery.png",
-    cupcakes: "/celebration-cakes.png",
-    brownies: "/bakery.png",
-    cookies: "/bakery.png",
-    desserts: "/celebration-cakes.png",
+    bakery: "/bakery.webp",
+    baskets: "/baskets.webp",
+    "baskets-storage": "/baskets.webp",
+    watches: "/WD.webp",
+    kitchen: "/kicthens.webp",
+    "home-decor": "/homeDisktop.webp",
+    cakes: "/celebration-cakes.webp",
+    "celebration-cakes": "/celebration-cakes.webp",
+    "daily-essentials": "/homeItems.webp",
+    pastries: "/bakery.webp",
+    cupcakes: "/celebration-cakes.webp",
+    brownies: "/bakery.webp",
+    cookies: "/bakery.webp",
+    desserts: "/celebration-cakes.webp",
   };
 
   const dbCategories = (data ?? []).map((row: any) => {
@@ -35,7 +35,7 @@ export async function getCategories(): Promise<Category[]> {
     if (img && img !== "/placeholder-bake.svg" && !img.includes("unsplash.com")) {
       img = resolveMediaUrl(img);
     } else if (!img || img === "/placeholder-bake.svg" || img.includes("unsplash.com")) {
-      img = defaultImageMap[row.slug] || defaultImageMap[row.name?.toLowerCase()] || "/bakery.png";
+      img = defaultImageMap[row.slug] || defaultImageMap[row.name?.toLowerCase()] || "/bakery.webp";
     }
 
     return {
@@ -49,13 +49,13 @@ export async function getCategories(): Promise<Category[]> {
   });
 
   const standardPresets: Array<{ name: string; slug: string; description: string; image: string }> = [
-    { name: "Bakery", slug: "bakery", description: "Freshly baked cakes, pastries & desserts", image: "/bakery.png" },
-    { name: "Celebration Cakes", slug: "cakes", description: "Layer cakes, cream cakes and celebration centrepieces", image: "/celebration-cakes.png" },
-    { name: "Baskets & Storage", slug: "baskets", description: "Organise your home beautifully", image: "/baskets.png" },
-    { name: "Watches", slug: "watches", description: "Classic & modern timepieces", image: "/WD.jpeg" },
-    { name: "Kitchen Essentials", slug: "kitchen", description: "Utensils, storage & accessories", image: "/kicthens.jpg" },
-    { name: "Home Decoration", slug: "home-decor", description: "Vases, wall art & decorative items", image: "/homeDisktop.png" },
-    { name: "Daily Essentials", slug: "daily-essentials", description: "Everyday grocery & household needs", image: "/homeItems.jfif" },
+    { name: "Bakery", slug: "bakery", description: "Freshly baked cakes, pastries & desserts", image: "/bakery.webp" },
+    { name: "Celebration Cakes", slug: "cakes", description: "Layer cakes, cream cakes and celebration centrepieces", image: "/celebration-cakes.webp" },
+    { name: "Baskets & Storage", slug: "baskets", description: "Organise your home beautifully", image: "/baskets.webp" },
+    { name: "Watches", slug: "watches", description: "Classic & modern timepieces", image: "/WD.webp" },
+    { name: "Kitchen Essentials", slug: "kitchen", description: "Utensils, storage & accessories", image: "/kicthens.webp" },
+    { name: "Home Decoration", slug: "home-decor", description: "Vases, wall art & decorative items", image: "/homeDisktop.webp" },
+    { name: "Daily Essentials", slug: "daily-essentials", description: "Everyday grocery & household needs", image: "/homeItems.webp" },
   ];
 
   const result = [...dbCategories];

@@ -4,6 +4,7 @@ import { useMemo, useState, useEffect, useRef } from "react";
 import { ArrowUpDown, ChevronDown, Filter, LayoutGrid, List, Search, SlidersHorizontal, Sparkles, Tag, X } from "lucide-react";
 import type { Category, Product } from "@/lib/types";
 import { ProductCard, ProductCardSkeleton } from "./product-card";
+import { PaginationControls } from "@/components/pagination";
 
 type SortKey = "featured" | "price_asc" | "price_desc" | "rating" | "newest";
 
@@ -55,16 +56,23 @@ export function ShopBrowser({
   const [category, setCategory] = useState(initialCategory);
   const [saleOnly, setSaleOnly] = useState(initialSaleOnly);
   const [sortBy, setSortBy] = useState<SortKey>("featured");
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(20);
   const [mobileFilters, setMobileFilters] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const toolbarRef = useRef<HTMLDivElement>(null);
+  const listTopRef = useRef<HTMLDivElement>(null);
   const [toolbarStuck, setToolbarStuck] = useState(false);
 
   useEffect(() => {
     const timer = setTimeout(() => setIsLoading(false), 300);
     return () => clearTimeout(timer);
   }, []);
+
+  useEffect(() => {
+    setPage(1);
+  }, [query, category, saleOnly, sortBy]);
 
   // Sticky toolbar detection
   useEffect(() => {
@@ -92,6 +100,18 @@ export function ShopBrowser({
     else if (sortBy === "newest") result = [...result].slice();
     return result;
   }, [products, query, category, saleOnly, sortBy, categories]);
+
+  const paginatedProducts = useMemo(() => {
+    const from = (page - 1) * pageSize;
+    return filtered.slice(from, from + pageSize);
+  }, [filtered, page, pageSize]);
+
+  const handlePageChange = (newPage: number) => {
+    setPage(newPage);
+    if (listTopRef.current) {
+      listTopRef.current.scrollIntoView({ behavior: "smooth" });
+    }
+  };
 
   const activeFilterCount = [query, category !== "All" && category, saleOnly].filter(Boolean).length;
 
@@ -228,7 +248,7 @@ export function ShopBrowser({
           </aside>
 
           {/* Grid */}
-          <section className="flex flex-col gap-6">
+          <section ref={listTopRef} className="flex flex-col gap-6">
             {isLoading ? (
               <div className={`grid gap-4 ${viewMode === "grid" ? "grid-cols-2 sm:grid-cols-3 xl:grid-cols-4" : "grid-cols-1"}`}>
                 {Array.from({ length: 8 }).map((_, i) => <ProductCardSkeleton key={i} />)}
@@ -236,9 +256,24 @@ export function ShopBrowser({
             ) : filtered.length === 0 ? (
               <EmptyState onReset={() => { setQuery(""); setCategory("All"); setSaleOnly(false); }} />
             ) : (
-              <div className={`grid gap-4 animate-fade-in ${viewMode === "grid" ? "grid-cols-2 sm:grid-cols-3 xl:grid-cols-4" : "grid-cols-1 sm:grid-cols-2"}`}>
-                {filtered.map(p => <ProductCard key={p.id} product={p} />)}
-              </div>
+              <>
+                <div className={`grid gap-4 animate-fade-in ${viewMode === "grid" ? "grid-cols-2 sm:grid-cols-3 xl:grid-cols-4" : "grid-cols-1 sm:grid-cols-2"}`}>
+                  {paginatedProducts.map(p => <ProductCard key={p.id} product={p} />)}
+                </div>
+                <PaginationControls
+                  currentPage={page}
+                  pageSize={pageSize}
+                  totalItems={filtered.length}
+                  itemLabel="products"
+                  onPageChange={handlePageChange}
+                  onPageSizeChange={(newSize) => {
+                    setPageSize(newSize);
+                    setPage(1);
+                  }}
+                  pageSizeOptions={[10, 20, 40, 60]}
+                  className="mt-4"
+                />
+              </>
             )}
           </section>
         </div>
