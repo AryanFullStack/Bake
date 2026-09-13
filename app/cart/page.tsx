@@ -5,11 +5,26 @@ import Link from "next/link";
 import { ArrowRight, Minus, Plus, ShoppingBag, Trash2, Truck } from "lucide-react";
 import { formatPKR } from "@/lib/catalog";
 import { useCart } from "@/components/storefront/cart-provider";
+import { useEffect, useState } from "react";
 
 export default function CartPage() {
   const { items, total, update, remove } = useCart();
-  const freeThreshold = 3000;
-  const delivery = total >= freeThreshold || total === 0 ? 0 : 250;
+  const [freeThreshold, setFreeThreshold] = useState(3000);
+  const [deliveryFeeAmount, setDeliveryFeeAmount] = useState(250);
+
+  useEffect(() => {
+    fetch("/api/settings")
+      .then((r) => r.json())
+      .then((data) => {
+        if (data?.delivery) {
+          setFreeThreshold(data.delivery.free_threshold);
+          setDeliveryFeeAmount(data.delivery.fee);
+        }
+      })
+      .catch(() => {/* silently use defaults */});
+  }, []);
+
+  const delivery = total >= freeThreshold || total === 0 ? 0 : deliveryFeeAmount;
   const amountNeededForFreeDelivery = Math.max(0, freeThreshold - total);
 
   return (
@@ -122,24 +137,32 @@ export default function CartPage() {
 
                     <div className="mt-4 flex items-center justify-between">
                       {/* Quantity Modifier */}
-                      <div className="flex items-center rounded-xl border border-line bg-cream/50">
-                        <button
-                          onClick={() => update(item.id, item.quantity - 1, item.variationId)}
-                          className="p-2 text-navy hover:text-orange"
-                          aria-label="Decrease quantity"
-                        >
-                          <Minus size={14} />
-                        </button>
-                        <span className="w-8 text-center text-xs font-extrabold text-navy">
-                          {item.quantity}
-                        </span>
-                        <button
-                          onClick={() => update(item.id, item.quantity + 1, item.variationId)}
-                          className="p-2 text-navy hover:text-orange"
-                          aria-label="Increase quantity"
-                        >
-                          <Plus size={14} />
-                        </button>
+                      <div className="flex flex-col gap-1">
+                        <div className="flex items-center rounded-xl border border-line bg-cream/50">
+                          <button
+                            onClick={() => update(item.id, item.quantity - 1, item.variationId)}
+                            className="p-2 text-navy hover:text-orange"
+                            aria-label="Decrease quantity"
+                          >
+                            <Minus size={14} />
+                          </button>
+                          <span className="w-8 text-center text-xs font-extrabold text-navy">
+                            {item.quantity}
+                          </span>
+                          <button
+                            onClick={() => update(item.id, item.quantity + 1, item.variationId)}
+                            disabled={item.stock != null && item.stock > 0 && item.quantity >= item.stock}
+                            className="p-2 text-navy hover:text-orange disabled:opacity-30 disabled:cursor-not-allowed"
+                            aria-label="Increase quantity"
+                          >
+                            <Plus size={14} />
+                          </button>
+                        </div>
+                        {item.stock != null && item.stock > 0 && item.quantity >= item.stock && (
+                          <p className="text-[10px] font-bold text-amber-600 text-center">
+                            Max {item.stock} in stock
+                          </p>
+                        )}
                       </div>
 
                       <div className="text-right">

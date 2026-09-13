@@ -1,9 +1,9 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { resolveMediaUrl } from "@/lib/media-url";
+import { SafeImage } from "@/components/safe-image";
 import {
   ArrowRight, Cake, ChevronLeft, ChevronRight,
   Home, ShoppingBag, Sparkles, Star, UtensilsCrossed, Watch,
@@ -184,12 +184,13 @@ export function HeroCarousel({ banners }: { banners: any[] }) {
             >
               {/* Main image card */}
               <div className="relative aspect-[1.05] overflow-hidden rounded-[28px] shadow-[0_30px_80px_rgba(0,0,0,.5)] ring-1 ring-white/10">
-                <Image
+                <SafeImage
                   src={imgSrc}
                   alt={title}
                   fill
                   priority
-                  sizes="(max-width: 1024px) 100vw, 50vw"
+                  sizes="(max-width: 1024px) 95vw, 48vw"
+                  quality={90}
                   className="object-cover transition-transform duration-[1500ms] hover:scale-[1.03]"
                 />
                 {/* Gradient overlay */}

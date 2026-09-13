@@ -81,6 +81,7 @@ export function ProductDetailClient({ product, reviews, faqs = [] }: { product: 
     });
   }, [product, variations]);
 
+  const { items: cartItems } = useCart();
   const [selection, setSelection] = useState<Record<string, string>>({});
   const [quantity, setQuantity] = useState(1);
   const [saved, setSaved] = useState(false);
@@ -183,6 +184,24 @@ export function ProductDetailClient({ product, reviews, faqs = [] }: { product: 
     if (isOutOfStock) {
       if (e) e.preventDefault();
       setValidationError("Selected product option is currently out of stock.");
+      return false;
+    }
+
+    // Check how many are already in the cart
+    const variationId = activeVariation?.id;
+    const existingInCart = cartItems.find(
+      (item) => item.id === product.id && (item.variationId || null) === (variationId || null)
+    );
+    const alreadyInCart = existingInCart?.quantity ?? 0;
+    const maxStock = hasRequiredSelection ? activeStock : Infinity;
+    if (maxStock !== Infinity && alreadyInCart + quantity > maxStock) {
+      if (e) e.preventDefault();
+      const remaining = maxStock - alreadyInCart;
+      if (remaining <= 0) {
+        setValidationError(`You already have the maximum available stock (${maxStock}) in your basket.`);
+      } else {
+        setValidationError(`Only ${remaining} more item${remaining !== 1 ? "s" : ""} can be added — only ${maxStock} in stock.`);
+      }
       return false;
     }
 
@@ -480,7 +499,11 @@ export function ProductDetailClient({ product, reviews, faqs = [] }: { product: 
             </div>
           ) : null}
 
-          <p className="mt-6 text-[15px] font-medium leading-relaxed text-muted">{activeDescription}</p>
+          {product.shortDescription && (
+            <p className="mt-4 text-[14px] font-medium leading-relaxed text-muted border-l-2 border-orange/30 pl-3">
+              {product.shortDescription}
+            </p>
+          )}
 
           {validationError && (
             <div className="mt-4 rounded-xl border border-red-200 bg-red-50 p-4 text-xs font-bold text-red-700 shadow-xs flex items-center gap-2">

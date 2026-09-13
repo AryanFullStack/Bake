@@ -67,7 +67,7 @@ export default async function AccountPage() {
             <LayoutDashboard size={24} />
           </div>
           <div>
-            <p className="font-bold text-base">Bake Mart Admin Studio</p>
+            <p className="font-bold text-base text-white">Bake Mart Admin Studio</p>
             <p className="mt-0.5 text-xs text-white/70">Manage orders, products, custom cake quotes & site settings</p>
           </div>
           <span className="ml-auto inline-flex items-center gap-1 text-xs font-extrabold text-orange">

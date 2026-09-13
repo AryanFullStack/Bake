@@ -276,8 +276,19 @@ export async function POST(request: Request) {
       });
     }
 
-    // Calculate delivery fee (free shipping if subtotal >= 3000 PKR)
-    const deliveryFee = subtotal >= 3000 ? 0 : 250;
+    // Fetch delivery settings from Supabase (admin-configurable)
+    const { data: settingsRow } = await dbClient
+      .from("site_settings")
+      .select("value")
+      .eq("key", "delivery")
+      .maybeSingle();
+    const deliverySettings = settingsRow?.value ?? {};
+    const standardFee = Number(deliverySettings.fee ?? 250);
+    const freeThreshold = Number(deliverySettings.free_threshold ?? 3000);
+
+    // Calculate delivery fee (free shipping if subtotal >= threshold)
+    const deliveryFee = subtotal >= freeThreshold ? 0 : standardFee;
+
     const orderNumber = "BM-" + Math.floor(10000 + Math.random() * 90000);
     const totalAmount = subtotal + deliveryFee;
 

@@ -39,6 +39,10 @@ export default function CheckoutPage() {
   const [orderNumber, setOrderNumber] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
 
+  // Delivery settings from admin
+  const [deliveryFeeAmount, setDeliveryFeeAmount] = useState(250);
+  const [freeThreshold, setFreeThreshold] = useState(3000);
+
   // Customer & saved address state
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [savedAddresses, setSavedAddresses] = useState<SavedAddress[]>([]);
@@ -56,10 +60,22 @@ export default function CheckoutPage() {
   const [landmark, setLandmark] = useState("");
   const [instructions, setInstructions] = useState("");
 
-  const deliveryFee = total >= 3000 || total === 0 ? 0 : 250;
+  const deliveryFee = total >= freeThreshold || total === 0 ? 0 : deliveryFeeAmount;
 
   // Auto-load saved addresses for authenticated users
   useEffect(() => {
+    fetch("/api/settings")
+      .then((r) => r.json())
+      .then((data) => {
+        if (data?.delivery) {
+          setDeliveryFeeAmount(data.delivery.fee);
+          setFreeThreshold(data.delivery.free_threshold);
+        }
+      })
+      .catch(() => {/* silently use defaults */});
+
+    loadAddresses();
+
     async function loadAddresses() {
       try {
         const res = await fetch("/api/addresses");
@@ -85,8 +101,6 @@ export default function CheckoutPage() {
         console.error("Failed to load saved addresses", e);
       }
     }
-
-    loadAddresses();
   }, []);
 
   function applyAddressFields(addr: SavedAddress) {

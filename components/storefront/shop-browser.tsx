@@ -121,12 +121,48 @@ export function ShopBrowser({
       <div className="container-shell pt-10 pb-6 md:pt-14 md:pb-8">
         <div className="flex flex-col justify-between gap-5 md:flex-row md:items-end border-b border-line/60 pb-8">
           <div>
-            <p className="eyebrow">Fresh From Our Kitchen</p>
+            <p className="eyebrow">
+              {category === "All" ? "Fresh From Our Kitchen" :
+               category === "Bakery" || ["Celebration Cakes","Pastries","Cupcakes","Brownies","Cookies","Brownies & Cookies","Desserts"].includes(category) ? "Freshly Baked" :
+               category === "Home Decoration" ? "Decorate Your Space" :
+               category === "Kitchen Essentials" ? "Cook & Create" :
+               category === "Watches" ? "Timeless Style" :
+               category === "Baskets & Storage" ? "Organise in Style" :
+               category === "Daily Essentials" ? "Everyday Needs" :
+               category === "Health & Beauty" ? "Look & Feel Great" :
+               "Browse Products"}
+            </p>
             <h1 className="mt-2 font-display text-4xl sm:text-5xl font-bold text-navy">
-              Shop Bakery Counter
+              {category === "All" ? "Shop Everything" :
+               category === "Bakery" ? "Bakery Counter" :
+               category === "Celebration Cakes" ? "Celebration Cakes" :
+               category === "Pastries" ? "Fresh Pastries" :
+               category === "Cupcakes" ? "Cupcakes" :
+               category === "Brownies" || category === "Cookies" || category === "Brownies & Cookies" ? "Brownies & Cookies" :
+               category === "Desserts" ? "Sweet Desserts" :
+               category === "Home Decoration" ? "Home Decoration" :
+               category === "Kitchen Essentials" ? "Kitchen Essentials" :
+               category === "Watches" ? "Watches" :
+               category === "Baskets & Storage" ? "Baskets & Storage" :
+               category === "Daily Essentials" ? "Daily Essentials" :
+               category === "Health & Beauty" ? "Health & Beauty" :
+               category}
             </h1>
             <p className="mt-3 max-w-xl text-sm leading-relaxed text-muted font-medium">
-              Small-batch cakes, flaky pastries, fudgy brownies, cupcakes and sweet gift boxes — ready for delivery.
+              {category === "All" ? "Small-batch cakes, pastries, home décor, kitchen essentials & everyday products — all delivered to your door." :
+               category === "Bakery" ? "Small-batch cakes, flaky pastries, fudgy brownies, cupcakes and sweet gift boxes — ready for delivery." :
+               category === "Celebration Cakes" ? "Custom and ready-made celebration cakes for every occasion — birthdays, weddings, and more." :
+               category === "Pastries" ? "Flaky, buttery pastries baked fresh daily — croissants, danishes, and more." :
+               category === "Cupcakes" ? "Delicious cupcakes in a variety of flavours, perfect for gifts or everyday indulgence." :
+               category === "Brownies" || category === "Cookies" || category === "Brownies & Cookies" ? "Fudgy brownies and crunchy cookies baked with the finest ingredients." :
+               category === "Desserts" ? "Irresistible desserts for every sweet craving." :
+               category === "Home Decoration" ? "Elegant vases, accents and décor pieces to transform your living space." :
+               category === "Kitchen Essentials" ? "Quality utensils, storage and kitchen tools for every home chef." :
+               category === "Watches" ? "Classic and modern timepieces for every wrist and every occasion." :
+               category === "Baskets & Storage" ? "Stylish baskets and organisers to keep every room neat and tidy." :
+               category === "Daily Essentials" ? "Everyday products your household can't live without." :
+               category === "Health & Beauty" ? "Premium health and beauty products for your daily routine." :
+               `Browse our full ${category} collection.`}
             </p>
           </div>
           <div className="flex items-center gap-3">
@@ -258,7 +294,9 @@ export function ShopBrowser({
             ) : (
               <>
                 <div className={`grid gap-4 animate-fade-in ${viewMode === "grid" ? "grid-cols-2 sm:grid-cols-3 xl:grid-cols-4" : "grid-cols-1 sm:grid-cols-2"}`}>
-                  {paginatedProducts.map(p => <ProductCard key={p.id} product={p} />)}
+                  {paginatedProducts.map((p, i) => (
+                    <ProductCard key={p.id} product={p} priority={i < 4} />
+                  ))}
                 </div>
                 <PaginationControls
                   currentPage={page}

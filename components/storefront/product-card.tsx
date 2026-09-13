@@ -33,7 +33,7 @@ export function ProductCardSkeleton() {
 }
 
 /* ── Main Product Card ──────────────────────────────────────── */
-export function ProductCard({ product }: { product: Product }) {
+export function ProductCard({ product, priority = false }: { product: Product; priority?: boolean }) {
   const { add } = useCart();
   const [saved, setSaved] = useState(false);
   const [added, setAdded] = useState(false);
@@ -99,30 +99,29 @@ export function ProductCard({ product }: { product: Product }) {
       {/* ── Image area ───────────────────────────────── */}
       <div className="relative aspect-[.92] overflow-hidden bg-cream-deep">
         <Link href={`/products/${product.slug}`} className="block h-full" tabIndex={-1}>
-          {/* Primary image */}
+          {/* Primary image — priority for above-the-fold cards */}
           <SafeImage
             src={allImages[0]}
             alt={product.name}
-            width={600}
-            height={650}
-            sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
-            quality={75}
-            loading="lazy"
-            className={`absolute inset-0 h-full w-full object-cover transition-all duration-700 ${
+            fill
+            sizes="(max-width: 480px) 50vw, (max-width: 768px) 40vw, (max-width: 1024px) 30vw, 22vw"
+            quality={priority ? 85 : 75}
+            priority={priority}
+            loading={priority ? "eager" : "lazy"}
+            className={`object-cover transition-all duration-700 ${
               hovering && hasMultiple ? "opacity-0 scale-[1.05]" : "opacity-100 scale-100"
             }`}
           />
-          {/* Secondary (hover) image */}
+          {/* Secondary (hover) image — always lazy, lower quality fine */}
           {hasMultiple && (
             <SafeImage
               src={allImages[1]}
               alt={`${product.name} – alternate view`}
-              width={600}
-              height={650}
-              sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
-              quality={75}
+              fill
+              sizes="(max-width: 480px) 50vw, (max-width: 768px) 40vw, (max-width: 1024px) 30vw, 22vw"
+              quality={65}
               loading="lazy"
-              className={`absolute inset-0 h-full w-full object-cover transition-all duration-700 ${
+              className={`object-cover transition-all duration-700 ${
                 hovering ? "opacity-100 scale-[1.04]" : "opacity-0 scale-100"
               }`}
             />

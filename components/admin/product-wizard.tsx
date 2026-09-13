@@ -222,6 +222,16 @@ export function ProductWizard({ initialProduct, product, categories, brands, onC
   const [showPreviewModal, setShowPreviewModal] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Inline category/brand creation state
+  const [localCategories, setLocalCategories] = useState<Category[]>(categories);
+  const [localBrands, setLocalBrands] = useState<Brand[]>(brands);
+  const [showNewCatForm, setShowNewCatForm] = useState(false);
+  const [newCatName, setNewCatName] = useState("");
+  const [newCatSaving, setNewCatSaving] = useState(false);
+  const [showNewBrandForm, setShowNewBrandForm] = useState(false);
+  const [newBrandName, setNewBrandName] = useState("");
+  const [newBrandSaving, setNewBrandSaving] = useState(false);
+
   // Smart Image Gallery state
   const [managingTarget, setManagingTarget] = useState<
     | { type: "attribute_value"; attrIndex: number; valIndex: number }
@@ -351,6 +361,63 @@ export function ProductWizard({ initialProduct, product, categories, brands, onC
     setToast({ msg, type });
     setTimeout(() => setToast(null), 3500);
   };
+
+  // Inline category creation
+  async function createCategory() {
+    const name = newCatName.trim();
+    if (!name || name.length < 2) { showToastMsg("Category name must be at least 2 characters", "error"); return; }
+    const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)+/g, "");
+    setNewCatSaving(true);
+    try {
+      const res = await fetch("/api/admin/catalog", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ entity: "category", name, slug }),
+      });
+      const json = await res.json();
+      if (!res.ok || json.error) { showToastMsg(json.error || "Failed to create category", "error"); return; }
+      // Reload catalog list
+      const catalogRes = await fetch("/api/admin/catalog");
+      const catalogJson = await catalogRes.json();
+      if (catalogJson.categories) {
+        setLocalCategories(catalogJson.categories);
+        const newCat = catalogJson.categories.find((c: Category) => c.slug === slug);
+        if (newCat) setCategoryId(newCat.id);
+      }
+      setNewCatName("");
+      setShowNewCatForm(false);
+      showToastMsg(`Category "${name}" created`);
+    } catch { showToastMsg("Network error creating category", "error"); }
+    finally { setNewCatSaving(false); }
+  }
+
+  // Inline brand creation
+  async function createBrand() {
+    const name = newBrandName.trim();
+    if (!name || name.length < 2) { showToastMsg("Brand name must be at least 2 characters", "error"); return; }
+    const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)+/g, "");
+    setNewBrandSaving(true);
+    try {
+      const res = await fetch("/api/admin/catalog", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ entity: "brand", name, slug }),
+      });
+      const json = await res.json();
+      if (!res.ok || json.error) { showToastMsg(json.error || "Failed to create brand", "error"); return; }
+      const catalogRes = await fetch("/api/admin/catalog");
+      const catalogJson = await catalogRes.json();
+      if (catalogJson.brands) {
+        setLocalBrands(catalogJson.brands);
+        const newBrand = catalogJson.brands.find((b: Brand) => b.slug === slug);
+        if (newBrand) setBrandId(newBrand.id);
+      }
+      setNewBrandName("");
+      setShowNewBrandForm(false);
+      showToastMsg(`Brand "${name}" created`);
+    } catch { showToastMsg("Network error creating brand", "error"); }
+    finally { setNewBrandSaving(false); }
+  }
 
   // Upload Files handler using Persistent VPS media API
   async function uploadFiles(files: FileList | File[], onUploaded: (urls: string[]) => void) {
@@ -676,16 +743,30 @@ export function ProductWizard({ initialProduct, product, categories, brands, onC
     }
   }
 
-  const steps = [
+  const allSteps = [
     { id: 1, label: "Basics" },
     { id: 2, label: "Media" },
     { id: 3, label: "Pricing & Stock" },
-    { id: 4, label: "Attributes & Swatches" },
-    { id: 5, label: "Variant Matrix" },
+    { id: 4, label: "Attributes & Swatches", variantOnly: true },
+    { id: 5, label: "Variant Matrix", variantOnly: true },
     { id: 6, label: "Specifications" },
     { id: 7, label: "Descriptions" },
     { id: 8, label: "SEO & Tags" },
   ];
+
+  const visibleSteps = useMemo(() => {
+    return allSteps.filter(s => hasVariants || !s.variantOnly);
+  }, [hasVariants]);
+
+  useEffect(() => {
+    if (!hasVariants && (step === 4 || step === 5)) {
+      setStep(3);
+    }
+  }, [hasVariants, step]);
+
+  const currentStepIdx = visibleSteps.findIndex(s => s.id === step);
+  const prevStep = visibleSteps[currentStepIdx - 1];
+  const nextStep = visibleSteps[currentStepIdx + 1];
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-navy/60 p-2 sm:p-4 md:p-6 backdrop-blur-sm animate-scale-in">
@@ -709,7 +790,7 @@ export function ProductWizard({ initialProduct, product, categories, brands, onC
           <div className="flex items-center gap-2 sm:gap-3">
             <button
               onClick={() => setShowPreviewModal(true)}
-              className="inline-flex items-center gap-1.5 rounded-xl border border-admin-border bg-admin-bg px-2.5 sm:px-3.5 py-1.5 sm:py-2 text-xs font-bold text-navy hover:bg-white transition-colors"
+              className="inline-flex items-center gap-1.5 rounded-xl border border-admin-border bg-admin-bg px-2.5 sm:px-3.5 py-1.5 sm:py-2 text-xs font-bold text-navy hover:bg-white transition-colors cursor-pointer"
             >
               <Eye size={14} className="text-orange" /> <span className="hidden sm:inline">Preview Storefront</span>
             </button>
@@ -725,20 +806,21 @@ export function ProductWizard({ initialProduct, product, categories, brands, onC
 
         {/* Step Tabs Navigation Bar */}
         <div className="flex overflow-x-auto border-b border-admin-border bg-admin-bg/60 scrollbar-none px-1">
-          {steps.map(s => {
+          {visibleSteps.map((s, idx) => {
             const active = step === s.id;
+            const displayNum = idx + 1;
             return (
               <button
                 key={s.id}
                 onClick={() => setStep(s.id)}
-                className={`flex shrink-0 items-center gap-1.5 sm:gap-2 border-b-2 px-3 sm:px-4 py-2.5 sm:py-3 text-[11px] sm:text-xs font-extrabold transition-colors ${
+                className={`flex shrink-0 items-center gap-1.5 sm:gap-2 border-b-2 px-3 sm:px-4 py-2.5 sm:py-3 text-[11px] sm:text-xs font-extrabold transition-all cursor-pointer ${
                   active
                     ? "border-orange bg-white text-orange shadow-xs"
                     : "border-transparent text-admin-muted hover:text-navy"
                 }`}
               >
                 <span className={`grid h-4 sm:h-5 w-4 sm:w-5 place-items-center rounded-full text-[9px] sm:text-[10px] font-bold ${active ? "bg-orange text-white" : "bg-admin-border text-admin-muted"}`}>
-                  {s.id}
+                  {displayNum}
                 </span>
                 {s.label}
               </button>
@@ -759,11 +841,22 @@ export function ProductWizard({ initialProduct, product, categories, brands, onC
               </div>
 
               {/* Product Type Switch Card */}
-              <div className="rounded-2xl border border-admin-border bg-admin-bg/40 p-5">
-                <div className="flex items-center justify-between">
+              <div className={`rounded-2xl border transition-all p-5 ${hasVariants ? "border-orange/30 bg-orange/5 shadow-xs" : "border-admin-border bg-admin-bg/40"}`}>
+                <div className="flex items-center justify-between gap-4">
                   <div>
-                    <span className="font-bold text-navy text-sm">Product Has Options / Variants</span>
-                    <p className="mt-0.5 text-xs text-admin-muted">
+                    <div className="flex items-center gap-2">
+                      <span className="font-bold text-navy text-sm">Product Has Options / Variants</span>
+                      {hasVariants ? (
+                        <span className="rounded-full bg-orange/15 px-2.5 py-0.5 text-[10px] font-extrabold text-orange flex items-center gap-1">
+                          <Layers size={11} /> Variable Mode (8 Steps)
+                        </span>
+                      ) : (
+                        <span className="rounded-full bg-admin-border/70 px-2.5 py-0.5 text-[10px] font-bold text-admin-muted">
+                          Simple Mode (6 Steps)
+                        </span>
+                      )}
+                    </div>
+                    <p className="mt-1 text-xs text-admin-muted">
                       Enable if this product comes in different Sizes, Colors, Flavors, Materials, etc.
                     </p>
                   </div>
@@ -781,6 +874,18 @@ export function ProductWizard({ initialProduct, product, categories, brands, onC
                     />
                   </button>
                 </div>
+
+                {!hasVariants ? (
+                  <p className="mt-3 text-[11px] text-admin-muted border-t border-admin-border/50 pt-2.5 flex items-center gap-1.5">
+                    <Info size={13} className="text-orange shrink-0" />
+                    Simple Product mode active. Attributes & Swatches and Variant Matrix steps are hidden.
+                  </p>
+                ) : (
+                  <p className="mt-3 text-[11px] text-orange font-medium border-t border-orange/20 pt-2.5 flex items-center gap-1.5">
+                    <Sparkles size={13} className="text-orange shrink-0" />
+                    Variable Product mode active. Options, swatches, and variant matrix tabs (Steps 4 & 5) are enabled!
+                  </p>
+                )}
               </div>
 
               <div className="grid gap-4 sm:grid-cols-2">
@@ -845,12 +950,44 @@ export function ProductWizard({ initialProduct, product, categories, brands, onC
                     className="field-shell mt-2"
                   >
                     <option value="">Choose category…</option>
-                    {categories.map(c => (
+                    {localCategories.map(c => (
                       <option key={c.id} value={c.id}>
                         {c.name}
                       </option>
                     ))}
                   </select>
+                  {/* Inline New Category */}
+                  {!showNewCatForm ? (
+                    <button
+                      type="button"
+                      onClick={() => setShowNewCatForm(true)}
+                      className="mt-1.5 inline-flex items-center gap-1 text-[11px] font-bold text-orange hover:underline"
+                    >
+                      <Plus size={11} /> New Category
+                    </button>
+                  ) : (
+                    <div className="mt-2 flex items-center gap-2 rounded-xl border border-orange/30 bg-orange/5 p-2.5">
+                      <input
+                        value={newCatName}
+                        onChange={e => setNewCatName(e.target.value)}
+                        onKeyDown={e => e.key === "Enter" && createCategory()}
+                        placeholder="Category name"
+                        className="flex-1 rounded-lg border border-admin-border bg-white px-3 py-1.5 text-xs font-semibold outline-none focus:border-orange"
+                        autoFocus
+                      />
+                      <button
+                        type="button"
+                        onClick={createCategory}
+                        disabled={newCatSaving}
+                        className="rounded-lg bg-orange px-3 py-1.5 text-[11px] font-bold text-white disabled:opacity-50"
+                      >
+                        {newCatSaving ? "Saving…" : "Add"}
+                      </button>
+                      <button type="button" onClick={() => { setShowNewCatForm(false); setNewCatName(""); }} className="p-1 text-admin-muted hover:text-navy">
+                        <X size={13} />
+                      </button>
+                    </div>
+                  )}
                 </label>
 
                 <label className="field-label">
@@ -861,14 +998,58 @@ export function ProductWizard({ initialProduct, product, categories, brands, onC
                     className="field-shell mt-2"
                   >
                     <option value="">No brand</option>
-                    {brands.map(b => (
+                    {localBrands.map(b => (
                       <option key={b.id} value={b.id}>
                         {b.name}
                       </option>
                     ))}
                   </select>
+                  {/* Inline New Brand */}
+                  {!showNewBrandForm ? (
+                    <button
+                      type="button"
+                      onClick={() => setShowNewBrandForm(true)}
+                      className="mt-1.5 inline-flex items-center gap-1 text-[11px] font-bold text-orange hover:underline"
+                    >
+                      <Plus size={11} /> New Brand
+                    </button>
+                  ) : (
+                    <div className="mt-2 flex items-center gap-2 rounded-xl border border-orange/30 bg-orange/5 p-2.5">
+                      <input
+                        value={newBrandName}
+                        onChange={e => setNewBrandName(e.target.value)}
+                        onKeyDown={e => e.key === "Enter" && createBrand()}
+                        placeholder="Brand name"
+                        className="flex-1 rounded-lg border border-admin-border bg-white px-3 py-1.5 text-xs font-semibold outline-none focus:border-orange"
+                        autoFocus
+                      />
+                      <button
+                        type="button"
+                        onClick={createBrand}
+                        disabled={newBrandSaving}
+                        className="rounded-lg bg-orange px-3 py-1.5 text-[11px] font-bold text-white disabled:opacity-50"
+                      >
+                        {newBrandSaving ? "Saving…" : "Add"}
+                      </button>
+                      <button type="button" onClick={() => { setShowNewBrandForm(false); setNewBrandName(""); }} className="p-1 text-admin-muted hover:text-navy">
+                        <X size={13} />
+                      </button>
+                    </div>
+                  )}
                 </label>
               </div>
+
+              {/* Short Description — quick access here and in Step 7 */}
+              <label className="field-label">
+                Short Description
+                <p className="mb-1.5 text-[10px] text-admin-muted">Brief catchy summary shown below the price on the product page. Also editable in Step 7.</p>
+                <input
+                  value={shortDescription}
+                  onChange={e => setShortDescription(e.target.value)}
+                  placeholder="e.g. Crispy, golden-baked perfection in every bite..."
+                  className="field-shell"
+                />
+              </label>
 
               {/* Status & Flags */}
               <div className="grid gap-4 sm:grid-cols-3">
@@ -1760,18 +1941,18 @@ export function ProductWizard({ initialProduct, product, categories, brands, onC
         <footer className="flex items-center justify-between border-t border-admin-border bg-admin-bg/50 px-6 py-4">
           <button
             type="button"
-            onClick={() => (step > 1 ? setStep(step - 1) : onClose())}
-            className="button-secondary"
+            onClick={() => (prevStep ? setStep(prevStep.id) : onClose())}
+            className="button-secondary cursor-pointer"
           >
-            <ChevronLeft size={15} /> {step > 1 ? "Previous Step" : "Cancel"}
+            <ChevronLeft size={15} /> {prevStep ? "Previous Step" : "Cancel"}
           </button>
 
           <div className="flex items-center gap-3">
-            {step < steps.length && (
+            {nextStep && (
               <button
                 type="button"
-                onClick={() => setStep(step + 1)}
-                className="button-primary"
+                onClick={() => setStep(nextStep.id)}
+                className="button-primary cursor-pointer"
               >
                 Next Step <ChevronRight size={15} />
               </button>
@@ -1781,7 +1962,7 @@ export function ProductWizard({ initialProduct, product, categories, brands, onC
               type="button"
               onClick={saveProduct}
               disabled={saving || uploading}
-              className="button-primary bg-green hover:bg-green-dark disabled:opacity-50"
+              className="button-primary bg-green hover:bg-green-dark disabled:opacity-50 cursor-pointer"
             >
               {saving ? (
                 <>

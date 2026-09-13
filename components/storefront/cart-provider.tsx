@@ -46,20 +46,25 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         setItems((current) => {
           const variationId = (product as CartItem).variationId;
           const qty = Math.max(1, quantityToAdd);
+          const stockLimit = (product as Product).stock ?? Infinity;
           const existingIndex = current.findIndex(
             (item) => item.id === product.id && (item.variationId || null) === (variationId || null)
           );
 
           if (existingIndex > -1) {
             const updated = [...current];
+            const newQty = stockLimit !== Infinity
+              ? Math.min(stockLimit, updated[existingIndex].quantity + qty)
+              : updated[existingIndex].quantity + qty;
             updated[existingIndex] = {
               ...updated[existingIndex],
-              quantity: updated[existingIndex].quantity + qty,
+              quantity: newQty,
             };
             return updated;
           }
 
-          return [...current, { ...product, quantity: qty }];
+          const initialQty = stockLimit !== Infinity ? Math.min(stockLimit, qty) : qty;
+          return [...current, { ...product, quantity: initialQty }];
         }),
       update: (id: string, quantity: number, variationId?: string) =>
         setItems((current) =>
@@ -67,7 +72,13 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
             ? current.filter((item) => !(item.id === id && (item.variationId || null) === (variationId || null)))
             : current.map((item) =>
                 item.id === id && (item.variationId || null) === (variationId || null)
-                  ? { ...item, quantity }
+                  ? {
+                      ...item,
+                      quantity:
+                        item.stock != null && item.stock > 0
+                          ? Math.min(item.stock, quantity)
+                          : quantity,
+                    }
                   : item
               )
         ),
