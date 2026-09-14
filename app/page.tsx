@@ -84,7 +84,7 @@ export default async function HomePage() {
               id: prodObj.id,
               name: varObj ? `${prodObj.name} (${varObj.name || Object.values(varObj.attributes || {}).join(" / ")})` : prodObj.name,
               slug: prodObj.slug || prodObj.id,
-              category: prodObj.categories?.name || "Bake Mart",
+              category: prodObj.categories?.name || "Bake Bazaar Mart",
               description: prodObj.description || deal.short_description || "Special Deal Offer",
               price: actualRegPrice,
               salePrice: effectiveSaleP,
@@ -462,7 +462,7 @@ export default async function HomePage() {
             <div>
               <p className="eyebrow text-orange">Just Dropped</p>
               <h2 className="section-heading mt-1.5">New Arrivals</h2>
-              <p className="mt-1 text-xs sm:text-sm text-muted">Fresh products added to Bake Mart Bazaar.</p>
+              <p className="mt-1 text-xs sm:text-sm text-muted">Fresh products added to Bake Bazaar Mart.</p>
             </div>
             <Link
               href="/shop?sort=newest"
@@ -482,34 +482,34 @@ export default async function HomePage() {
         </section>
       )}
 
-      {/* ── Why Bake Mart Bazaar? (4 Trust Pillars) ────────────── */}
+      {/* ── Why Bake Bazaar Mart? (4 Trust Pillars) ────────────── */}
       <section className="container-shell py-16 md:py-20 bg-paper/60 rounded-3xl my-8">
         <div className="text-center mb-12">
           <p className="eyebrow text-orange">Why Choose Us</p>
-          <h2 className="section-heading mt-1.5">Why Bake Mart Bazaar?</h2>
+          <h2 className="section-heading mt-1.5">Why Bake Bazaar Mart?</h2>
         </div>
 
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
           {[
             {
               icon: Award,
-              title: "Quality Products",
-              copy: "Carefully selected for everyday needs.",
+              title: "Curated Variety",
+              copy: "Carefully selected products across bakery, kitchen, home & everyday needs.",
             },
             {
               icon: Cake,
-              title: "Fresh Bakery",
-              copy: "Freshly prepared with quality ingredients.",
+              title: "Fresh Bakery & Cakes",
+              copy: "Freshly prepared celebration cakes, cupcakes & custom designs.",
             },
             {
               icon: Package,
-              title: "Great Prices",
-              copy: "Quality products at competitive prices.",
+              title: "Honest Value",
+              copy: "Transparent pricing with quality guaranteed on every item.",
             },
             {
               icon: Truck,
-              title: "Fast Delivery",
-              copy: "Safe delivery across Lahore.",
+              title: "Reliable Delivery",
+              copy: "Fast delivery across Karachi and nationwide online delivery all over Pakistan.",
             },
           ].map(({ icon: Icon, title, copy }) => (
             <div
@@ -528,17 +528,17 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* ── Trust Statistics Strip ─────────────────────────────── */}
+      {/* ── Genuine Store Highlights Strip ─────────────────────── */}
       <section className="bg-navy py-12 text-white">
         <div className="container-shell grid grid-cols-2 gap-4 md:grid-cols-4">
           {[
-            { stat: "700+", label: "Products" },
-            { stat: "5,000+", label: "Happy Customers" },
-            { stat: "4.9★", label: "Average Rating" },
-            { stat: "Lahore", label: "Same-Day Delivery" },
+            { stat: "Karachi", label: "Store & Delivery Hub" },
+            { stat: "Fresh", label: "Bakery & Custom Cakes" },
+            { stat: "Multi-Category", label: "Home, Kitchen & Essentials" },
+            { stat: "Pakistan", label: "Nationwide Online Delivery" },
           ].map(({ stat, label }) => (
             <div key={label} className="text-center p-4">
-              <p className="font-display text-3xl sm:text-4xl font-black text-orange">{stat}</p>
+              <p className="font-display text-2xl sm:text-3xl font-black text-orange">{stat}</p>
               <p className="mt-1 text-[11px] font-semibold text-white/60 uppercase tracking-wider">{label}</p>
             </div>
           ))}
@@ -550,12 +550,12 @@ export default async function HomePage() {
         <section className="container-shell py-16 md:py-24">
           <div className="mx-auto max-w-2xl text-center mb-10">
             <p className="eyebrow text-orange">Customer Reviews</p>
-            <h2 className="section-heading mt-1.5">Loved by Families Across Lahore</h2>
+            <h2 className="section-heading mt-1.5">What Our Customers Say</h2>
             <div className="mt-3 flex items-center justify-center gap-1 text-orange">
               {Array.from({ length: 5 }).map((_, i) => (
                 <Star key={i} size={16} fill="currentColor" />
               ))}
-              <span className="ml-2 text-xs font-bold text-navy">4.9 average rating</span>
+              <span className="ml-2 text-xs font-bold text-navy">Verified Customer Feedback</span>
             </div>
           </div>
 
@@ -563,7 +563,7 @@ export default async function HomePage() {
             {reviews.slice(0, 3).map((review: any, i: number) => {
               const name = review.profiles?.full_name ?? review.reviewer_name ?? review.guest_name ?? "Verified Customer";
               const body = review.body;
-              const product = review.products?.name ?? "Bake Mart Product";
+              const product = review.products?.name ?? "Bake Bazaar Mart Product";
               const rating = review.rating ?? 5;
               return (
                 <article key={name + i} className="card p-6 flex flex-col justify-between hover:-translate-y-1 transition-transform">
@@ -600,7 +600,7 @@ export default async function HomePage() {
             <div className="relative aspect-[1.15] overflow-hidden rounded-[28px] shadow-lg">
               <Image
                 src="/cakechake.webp"
-                alt="Bake Mart Bazaar — More than a bakery"
+                alt="Bake Bazaar Mart — More than a bakery"
                 fill
                 placeholder="blur"
                 blurDataURL={BAKERY_BLUR}
@@ -612,12 +612,12 @@ export default async function HomePage() {
             {/* Content */}
             <div>
               <p className="eyebrow text-orange">Our Story</p>
-              <h2 className="section-heading mt-2">More Than a Bakery.</h2>
+              <h2 className="section-heading mt-2">More Than a Bakery. Everything Your Family Needs.</h2>
               <p className="mt-4 text-sm sm:text-base leading-relaxed text-muted font-normal">
-                Bake Mart Bazaar brings bakery favourites, home décor, kitchen essentials, watches, baskets, daily-use products and more together in one convenient online store.
+                Bake Bazaar Mart brings bakery favourites, custom celebration cakes, home decoration, kitchen essentials, watches, storage baskets, daily-use products and gifts together in one convenient online store.
               </p>
               <p className="mt-3 text-sm sm:text-base leading-relaxed text-muted font-normal">
-                One store for celebrations, everyday needs and everything in between.
+                Based in Karachi, Pakistan, we offer fast doorstep delivery across Karachi as well as online delivery across Pakistan for all our home, kitchen, and everyday essentials.
               </p>
 
               <div className="mt-8">
@@ -667,4 +667,4 @@ export default async function HomePage() {
   );
 }
 
-export const dynamic = "force-dynamic";
+export const revalidate = 60;

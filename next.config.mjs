@@ -6,6 +6,8 @@ const root = fileURLToPath(new URL(".", import.meta.url));
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   output: "standalone",
+  compress: true,
+  poweredByHeader: false,
   images: {
     // Use our custom ImageKit loader so resizing is done by ImageKit's CDN
     // directly — browsers hit ImageKit, bypassing the slow /_next/image proxy.
@@ -15,8 +17,6 @@ const nextConfig = {
     deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048],
     imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
     minimumCacheTTL: 2592000,
-    // Keep remotePatterns for non-IK images (Supabase, Unsplash) that still
-    // go through the default Next.js optimiser when loader returns them as-is.
     remotePatterns: [
       { protocol: "https", hostname: "images.unsplash.com" },
       { protocol: "https", hostname: "*.supabase.co" },

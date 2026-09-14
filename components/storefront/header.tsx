@@ -5,22 +5,28 @@ import Image from "next/image";
 import { Suspense, useEffect, useRef, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
-  Cake, ChevronDown, ChevronRight, Grid3x3, Heart, Home, Menu,
-  PhoneCall, Search, ShoppingBag, ShoppingBasket, ShoppingCart, Sparkles,
+  Cake, ChevronDown, ChevronRight, Grid3x3, Heart, Home, Mail, Menu,
+  Search, ShoppingBag, ShoppingBasket, ShoppingCart, Sparkles,
   Truck, UserRound, UtensilsCrossed, Watch, X,
 } from "lucide-react";
 import { useCart } from "./cart-provider";
 
 const navCategories = [
   {
-    title: "Bakery",
+    title: "Cakes & Bakery",
     items: [
-      { label: "Cakes & Pastries", href: "/shop?category=bakery" },
-      { label: "Cupcakes & Desserts", href: "/shop?category=bakery&sub=desserts" },
+      { label: "Bakery / Cakes", href: "/shop?category=bakery" },
+      { label: "Custom Cakes", href: "/custom-cake" },
     ],
   },
   {
-    title: "Home Decoration",
+    title: "Chocolates & Sweets",
+    items: [
+      { label: "Cooking Chocolate & Sweets", href: "/shop?category=cooking-chocolate" },
+    ],
+  },
+  {
+    title: "Home & Decoration",
     items: [
       { label: "Vases & Living Accents", href: "/shop?category=home-decor" },
     ],
@@ -28,11 +34,11 @@ const navCategories = [
   {
     title: "Kitchen Essentials",
     items: [
-      { label: "Utensils & Storage", href: "/shop?category=kitchen" },
+      { label: "Utensils, Cookware & Storage", href: "/shop?category=kitchen" },
     ],
   },
   {
-    title: "Watches",
+    title: "Watches & Accessories",
     items: [
       { label: "Classic & Modern Timepieces", href: "/shop?category=watches" },
     ],
@@ -54,22 +60,25 @@ const navCategories = [
 const navLinks = [
   { label: "Shop", href: "/shop" },
   { label: "Categories", href: "/shop", isDropdown: true },
-  { label: "Bakery", href: "/shop?category=bakery" },
+  { label: "Bakery / Cakes", href: "/shop?category=bakery" },
   { label: "Custom Cakes", href: "/custom-cake" },
-  { label: "About", href: "/about" },
+  { label: "About Us", href: "/about" },
 ];
 
 const mobileNavLinks = [
   { label: "Home",              href: "/" },
   { label: "Shop All",          href: "/shop" },
-  { label: "Bakery",            href: "/shop?category=bakery" },
-  { label: "Home Décor",        href: "/shop?category=home-decor" },
-  { label: "Kitchen Items",     href: "/shop?category=kitchen" },
-  { label: "Watches",           href: "/shop?category=watches" },
+  { label: "Bakery / Cakes",    href: "/shop?category=bakery" },
+  { label: "Custom Cakes",      href: "/custom-cake" },
+  { label: "Chocolates & Sweets", href: "/shop?category=cooking-chocolate" },
+  { label: "Home Decoration",   href: "/shop?category=home-decor" },
+  { label: "Kitchen Essentials",href: "/shop?category=kitchen" },
+  { label: "Watches & Accessories", href: "/shop?category=watches" },
   { label: "Baskets & Storage", href: "/shop?category=baskets" },
   { label: "Daily Essentials",  href: "/shop?category=daily-essentials" },
-  { label: "Custom Cake Studio",href: "/custom-cake" },
   { label: "About Us",          href: "/about" },
+  { label: "Delivery Information", href: "/shipping-delivery" },
+  { label: "Return Policy",     href: "/refund-cancellation" },
   { label: "FAQs",              href: "/faq" },
   { label: "Track Order",       href: "/track-order" },
   { label: "Contact Us",        href: "/contact" },
@@ -223,15 +232,15 @@ export function Header() {
         <div className="container-shell flex items-center justify-between gap-2">
           <p className="flex items-center gap-1.5 truncate">
             <Sparkles size={13} className="shrink-0 text-orange" />
-            <span className="truncate">Fresh Bakery · Quality Products · Delivery Across Lahore</span>
+            <span className="truncate">Fresh Bakery · Home & Kitchen · Delivery Across Karachi & All Pakistan Online</span>
           </p>
           <div className="flex items-center gap-3 shrink-0 text-[10.5px]">
             <Link href="/track-order" className="flex items-center gap-1 hover:text-orange transition-colors">
               <Truck size={12} className="text-orange" /> <span className="hidden sm:inline">Track Order</span><span className="sm:hidden">Track</span>
             </Link>
             <span className="text-white/30">·</span>
-            <a href="tel:03211234567" className="flex items-center gap-1 text-white hover:text-orange transition-colors font-bold">
-              <PhoneCall size={11} className="text-orange hidden xs:inline" /> 0321-1234567
+            <a href="mailto:info@bakebazaarmart.com" className="flex items-center gap-1 text-white hover:text-orange transition-colors font-bold">
+              <Mail size={11} className="text-orange" /> info@bakebazaarmart.com
             </a>
           </div>
         </div>
@@ -260,7 +269,7 @@ export function Header() {
           >
             <Image
               src="/logobake-01.png"
-              alt="Bake Mart Bazaar"
+              alt="Bake Bazaar Mart"
               width={220}
               height={60}
               className="h-10 md:h-13 w-auto object-contain drop-shadow-xs"
@@ -342,7 +351,7 @@ export function Header() {
           <div className="absolute inset-y-0 left-0 flex w-[min(88vw,360px)] flex-col bg-cream shadow-2xl animate-fade-in overflow-y-auto">
             <div className="flex items-center justify-between border-b border-line px-5 py-5 sticky top-0 bg-cream z-10">
               <Link href="/" className="flex items-center gap-2.5">
-                <Image src="/logobake-01.png" alt="Bake Mart Bazaar" width={160} height={45} className="h-9 w-auto object-contain" />
+                <Image src="/logobake-01.png" alt="Bake Bazaar Mart" width={160} height={45} className="h-9 w-auto object-contain" />
               </Link>
               <button onClick={() => setMenuOpen(false)} className="grid h-9 w-9 place-items-center rounded-lg border border-line bg-white text-navy" aria-label="Close navigation">
                 <X size={18} />
@@ -380,8 +389,8 @@ export function Header() {
             {/* Contact strip */}
             <div className="border-t border-line bg-cream-deep px-5 py-4 text-xs text-muted sticky bottom-0">
               <div className="flex items-center justify-between">
-                <span>Need help?</span>
-                <a className="font-bold text-navy hover:text-orange" href="tel:03211234567">0321-1234567</a>
+                <span>Support:</span>
+                <a className="font-bold text-navy hover:text-orange" href="mailto:info@bakebazaarmart.com">info@bakebazaarmart.com</a>
               </div>
             </div>
           </div>

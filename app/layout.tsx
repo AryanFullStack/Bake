@@ -20,12 +20,38 @@ const manrope = Manrope({
 
 export const metadata: Metadata = {
   title: {
-    default: "Bake Mart Bazaar | Everything Your Family Needs",
-    template: "%s | Bake Mart Bazaar",
+    default: "Bake Bazaar Mart | Cakes, Home Décor, Kitchen & Everyday Essentials",
+    template: "%s | Bake Bazaar Mart",
   },
-  description: "Bakery, home décor, kitchen essentials, watches & daily products — all in one place. Fresh baked goods and quality everyday items delivered across Lahore, Pakistan.",
-  keywords: ["bakery", "home décor", "kitchen essentials", "watches", "daily essentials", "Lahore", "online store", "Pakistan"],
-  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000"),
+  description: "Bake Bazaar Mart is your trusted online family and general store based in Karachi, Pakistan, offering fast local delivery in Karachi and nationwide online delivery across Pakistan. Shop cakes, custom cakes, home decoration, kitchen essentials, watches, and everyday products.",
+  keywords: [
+    "Bake Bazaar Mart",
+    "online store Karachi",
+    "cakes Karachi",
+    "custom cakes Karachi",
+    "bakery Pakistan",
+    "home decoration",
+    "kitchen essentials",
+    "watches",
+    "daily essentials",
+    "baskets and storage",
+    "chocolates and sweets",
+    "online shopping Pakistan"
+  ],
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "https://bakebazaarmart.com"),
+  openGraph: {
+    title: "Bake Bazaar Mart | Cakes, Home Décor, Kitchen & Everyday Essentials",
+    description: "Your trusted online family and general store in Karachi, Pakistan. Fresh cakes & bakery, custom cakes, home décor, kitchen essentials, watches & daily products delivered across Karachi and nationwide.",
+    url: "https://bakebazaarmart.com",
+    siteName: "Bake Bazaar Mart",
+    locale: "en_PK",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Bake Bazaar Mart | Cakes, Home Décor, Kitchen & Everyday Essentials",
+    description: "Online family store in Karachi, Pakistan. Fresh bakery, custom cakes, home décor, kitchen essentials, watches & everyday essentials delivered across Pakistan.",
+  },
   icons: {
     icon: "/logomainficonocns-01.png",
     shortcut: "/logomainficonocns-01.png",

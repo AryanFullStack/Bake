@@ -53,7 +53,7 @@ export default function CheckoutPage() {
   const [fullName, setFullName] = useState("");
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
-  const [citySelect, setCitySelect] = useState<string>("Lahore");
+  const [citySelect, setCitySelect] = useState<string>("Karachi");
   const [customCity, setCustomCity] = useState<string>("");
   const [area, setArea] = useState("");
   const [address, setAddress] = useState("");
@@ -121,7 +121,7 @@ export default function CheckoutPage() {
       setIsFormEditing(true);
       setFullName("");
       setPhone("");
-      setCitySelect("Lahore");
+      setCitySelect("Karachi");
       setCustomCity("");
       setArea("");
       setAddress("");
@@ -207,7 +207,7 @@ export default function CheckoutPage() {
             Thank You For Your Order!
           </h1>
           <p className="mt-4 text-sm leading-relaxed text-muted font-medium">
-            Order number <strong className="text-navy font-bold">{orderNumber}</strong> has been registered. Our bakery team is preparing your fresh order for dispatch.
+            Order number <strong className="text-navy font-bold">{orderNumber}</strong> has been registered. Our team is preparing your order for dispatch.
           </p>
 
           <div className="mt-8 rounded-2xl bg-cream/60 p-6 border border-line/70 text-left text-xs space-y-3 text-navy">
@@ -245,7 +245,7 @@ export default function CheckoutPage() {
               href="/shop"
               className="inline-flex items-center justify-center gap-2 rounded-2xl border-2 border-line py-4 text-sm font-bold text-navy hover:border-orange transition-all"
             >
-              Back to Bakery Shop
+              Continue Shopping
             </Link>
           </div>
         </div>
@@ -278,7 +278,7 @@ export default function CheckoutPage() {
             href="/shop"
             className="mt-4 inline-flex items-center gap-2 font-bold text-orange hover:underline"
           >
-            Browse Bakery Counter →
+            Browse All Products →
           </Link>
         </div>
       ) : (
@@ -607,7 +607,7 @@ export default function CheckoutPage() {
               {payment === "bank_transfer" && (
                 <div className="mt-4 rounded-2xl bg-orange/5 p-4 border border-orange/20 text-xs leading-relaxed text-navy">
                   <p className="font-bold text-orange">Official Bank Account Details:</p>
-                  <p className="mt-1">Bank: Meezan Bank Ltd. | Title: Bake Mart Bazaar</p>
+                  <p className="mt-1">Bank: Meezan Bank Ltd. | Title: Bake Bazaar Mart</p>
                   <p>Account No: 01010102938475 | IBAN: PK36MEZN0001010102938475</p>
                 </div>
               )}

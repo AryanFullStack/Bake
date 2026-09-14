@@ -88,7 +88,7 @@ async function syncProductVariations(supabase: any, productId: string, product: 
       name: variation.name || `${product.name} - ${Object.values(variation.attributes || {}).join(" / ")}`,
       title: variation.title || null,
       description: variation.description || null,
-      sku: variation.sku || `${product.sku}-${slugify(Object.values(variation.attributes || {}).join("-"))}`,
+      sku: variation.sku || `${product.sku}-${slugify(Object.values(variation.attributes || {}).join("-"))}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`,
       barcode: variation.barcode || null,
       regular_price: Number(variation.regular_price ?? variation.regularPrice ?? product.price) || 0,
       sale_price: variation.sale_price == null && variation.salePrice == null ? null : Number(variation.sale_price ?? variation.salePrice),
@@ -251,50 +251,96 @@ export async function POST(req: NextRequest) {
     }
 
     const supabase = await getAdminDatabaseClient();
-    const cleanSlug = slug || name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)+/g, "");
+    let cleanSlug = slug || name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)+/g, "");
+    let cleanSku = (sku || "PROD-ITEM").trim().toUpperCase();
+
+    // Check slug uniqueness and make unique if collision exists
+    const { data: existingSlug } = await supabase
+      .from("products")
+      .select("id")
+      .eq("slug", cleanSlug)
+      .maybeSingle();
+
+    if (existingSlug) {
+      cleanSlug = `${cleanSlug}-${Math.random().toString(36).substring(2, 7)}`;
+    }
+
+    // Check SKU uniqueness and make unique if collision exists
+    const { data: existingSku } = await supabase
+      .from("products")
+      .select("id")
+      .eq("sku", cleanSku)
+      .maybeSingle();
+
+    if (existingSku) {
+      cleanSku = `${cleanSku}-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
+    }
+
+    const insertPayload = {
+      name,
+      slug: cleanSlug,
+      sku: cleanSku,
+      barcode,
+      product_type,
+      brand_id: brand_id || null,
+      category_id: category_id || null,
+      subcategory_id: subcategory_id || null,
+      description,
+      price: Number(price) || 0,
+      sale_price: sale_price ? Number(sale_price) : null,
+      cost_price: cost_price ? Number(cost_price) : null,
+      stock_quantity: Number(stock_quantity) || 0,
+      low_stock_threshold: Number(low_stock_threshold) || 5,
+      warehouse_location,
+      track_inventory,
+      tags: Array.isArray(tags) ? tags : [],
+      search_keywords: Array.isArray(search_keywords) ? search_keywords : [],
+      featured_image,
+      seo_title,
+      seo_description,
+      status,
+      is_published: status === "published",
+      is_featured,
+      is_bestseller,
+      short_description,
+      specifications,
+      ingredients,
+      care_instructions,
+      delivery_information,
+      return_policy,
+    };
 
     // Insert Product
-    const { data: product, error: prodErr } = await supabase
+    let { data: product, error: prodErr } = await supabase
       .from("products")
-      .insert({
-        name,
-        slug: cleanSlug,
-        sku,
-        barcode,
-        product_type,
-        brand_id: brand_id || null,
-        category_id: category_id || null,
-        subcategory_id: subcategory_id || null,
-        description,
-        price: Number(price) || 0,
-        sale_price: sale_price ? Number(sale_price) : null,
-        cost_price: cost_price ? Number(cost_price) : null,
-        stock_quantity: Number(stock_quantity) || 0,
-        low_stock_threshold: Number(low_stock_threshold) || 5,
-        warehouse_location,
-        track_inventory,
-        tags: Array.isArray(tags) ? tags : [],
-        search_keywords: Array.isArray(search_keywords) ? search_keywords : [],
-        featured_image,
-        seo_title,
-        seo_description,
-        status,
-        is_published: status === "published",
-        is_featured,
-        is_bestseller,
-        short_description,
-        specifications,
-        ingredients,
-        care_instructions,
-        delivery_information,
-        return_policy,
-      })
+      .insert(insertPayload)
       .select("id")
       .single();
 
-    if (prodErr) {
+    // In case of race-condition unique collisions, auto-retry with an extra random suffix
+    if (prodErr && (prodErr.code === "23505" || prodErr.message?.includes("unique"))) {
+      if (prodErr.message.includes("slug")) {
+        cleanSlug = `${cleanSlug}-${Math.random().toString(36).substring(2, 7)}`;
+      }
+      if (prodErr.message.includes("sku")) {
+        cleanSku = `${cleanSku}-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
+      }
+      const retryResult = await supabase
+        .from("products")
+        .insert({
+          ...insertPayload,
+          slug: cleanSlug,
+          sku: cleanSku,
+        })
+        .select("id")
+        .single();
+      product = retryResult.data;
+      prodErr = retryResult.error;
+    }
+
+    if (prodErr || !product) {
       console.error("[API admin/products POST] Insert product error:", prodErr);
-      return NextResponse.json({ error: prodErr.message }, { status: 400 });
+      return NextResponse.json({ error: prodErr?.message || "Failed to create product" }, { status: 400 });
     }
 
     const productId = product.id;
@@ -311,7 +357,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Insert Variations for Variable Products
-    if (product_type === "variable" && Array.isArray(variations)) await syncProductVariations(supabase, productId, { name, sku, price }, variations, product_type);
+    if (product_type === "variable" && Array.isArray(variations)) await syncProductVariations(supabase, productId, { name, sku: cleanSku, price }, variations, product_type);
     if (product_type === "variable" && Array.isArray(attributes)) await syncProductAttributes(supabase, productId, attributes);
 
     return NextResponse.json({
@@ -355,6 +401,14 @@ export async function PATCH(req: NextRequest) {
       .eq("id", id);
 
     if (updateErr) {
+      if (updateErr.code === "23505" || updateErr.message?.includes("unique")) {
+        if (updateErr.message.includes("slug")) {
+          return NextResponse.json({ error: "This product slug is already taken. Please click Auto Gen on Product Slug to generate a unique slug." }, { status: 400 });
+        }
+        if (updateErr.message.includes("sku")) {
+          return NextResponse.json({ error: "This product SKU is already taken. Please click Auto Gen on SKU to generate a unique SKU." }, { status: 400 });
+        }
+      }
       return NextResponse.json({ error: updateErr.message }, { status: 400 });
     }
 

@@ -162,7 +162,7 @@ export function DealsDashboardClient({ initialSummary, initialDeals }: DealsDash
             </span>
           </div>
           <p className="mt-1 text-sm text-admin-muted">
-            Create, schedule and manage time-limited promotional sales across Bake Mart storefront.
+            Create, schedule and manage time-limited promotional sales across Bake Bazaar Mart storefront.
           </p>
         </div>
         <Link href="/admin/deals/new" className="button-primary shadow-sm hover:shadow-md">
@@ -271,7 +271,7 @@ export function DealsDashboardClient({ initialSummary, initialDeals }: DealsDash
             </div>
             <h3 className="font-display text-lg font-bold text-navy">No deals created yet</h3>
             <p className="max-w-md text-xs text-admin-muted leading-relaxed">
-              Create your first promotional deal to highlight special discounts, display countdown timers, and attract more customers across the Bake Mart storefront.
+              Create your first promotional deal to highlight special discounts, display countdown timers, and attract more customers across the Bake Bazaar Mart storefront.
             </p>
             <Link href="/admin/deals/new" className="button-primary mt-2 text-xs px-5">
               <Plus size={15} /> Create Your First Deal

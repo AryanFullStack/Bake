@@ -47,7 +47,7 @@ export function DealPageClient({ deal }: DealPageClientProps) {
         id: p.id,
         name: variation ? `${p.name} (${variation.name || Object.values(variation.attributes || {}).join(" / ")})` : p.name,
         slug: p.slug,
-        category: p.categories?.name || "Bake Mart",
+        category: p.categories?.name || "Bake Bazaar Mart",
         description: p.description || deal.short_description || "Special Deal Offer",
         price: regPrice,
         salePrice: dealPrice < regPrice ? dealPrice : null,

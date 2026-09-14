@@ -43,15 +43,15 @@ export default function LoginPage() {
         {/* Left Side: Branded Bakery Imagery Panel */}
         <div className="relative hidden md:flex flex-col justify-between p-10 bg-navy text-white pattern-navy-dots">
           <Link href="/" className="inline-block w-fit rounded-xl bg-white p-2.5 shadow-md transition-transform hover:scale-[1.02]">
-            <Image src="/logobake-01.png" alt="Bake Mart Bazaar" width={180} height={50} className="h-10 w-auto object-contain" />
+            <Image src="/brand/bakebazaar-logo.png" alt="Bake Bazaar Mart" width={180} height={50} className="h-10 w-auto object-contain" />
           </Link>
 
           <div className="my-auto py-10">
             <div className="inline-flex items-center gap-2 rounded-full bg-orange/20 px-3.5 py-1.5 text-xs font-bold text-orange border border-orange/30 mb-4">
-              <Sparkles size={14} /> WELCOME BACK TO THE BAKERY
+              <Sparkles size={14} /> WELCOME BACK TO BAKE BAZAAR MART
             </div>
             <h2 className="font-display text-4xl font-bold leading-tight">
-              Fresh bakes & saved favorites await you.
+              Fresh products & saved favorites await you.
             </h2>
             <p className="mt-4 text-sm leading-relaxed text-white/70 font-medium">
               Log in to track your order progress, manage saved delivery addresses, review custom cake quotes, and view your purchase history.

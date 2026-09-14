@@ -1,10 +1,10 @@
 export const OTHER_CITY_OPTION = "Other / Enter City";
 
 export const PAKISTAN_CITIES = [
+  "Karachi",
   "Lahore",
   "Islamabad",
   "Rawalpindi",
-  "Karachi",
   "Abbottabad",
   "Mansehra",
   "Haripur",
@@ -68,7 +68,7 @@ export function isPredefinedCity(city: string): boolean {
  */
 export function getCitySelectionState(savedCity: string): { selectValue: string; customCity: string } {
   if (!savedCity) {
-    return { selectValue: "Lahore", customCity: "" };
+    return { selectValue: "Karachi", customCity: "" };
   }
   if (isPredefinedCity(savedCity)) {
     return { selectValue: savedCity, customCity: "" };

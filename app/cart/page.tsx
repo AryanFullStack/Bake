@@ -44,16 +44,16 @@ export default function CartPage() {
             <ShoppingBag size={36} />
           </div>
           <h2 className="mt-6 font-display text-3xl font-bold text-navy">
-            Your basket is waiting for something sweet.
+            Your basket is currently empty.
           </h2>
           <p className="mt-3 text-sm text-muted max-w-md mx-auto">
-            Browse our fresh bakery counter for celebration cakes, flaky morning pastries, cupcakes and brownies.
+            Explore our fresh bakery, celebration cakes, home décor, kitchen essentials, and everyday family goods.
           </p>
           <Link
             href="/shop"
             className="mt-8 inline-flex items-center gap-2 rounded-2xl bg-orange px-8 py-4 text-sm font-extrabold text-white shadow-xl shadow-orange/20 hover:bg-orange-dark transition-all"
           >
-            <span>Explore Bakery Counter</span>
+            <span>Explore Store Catalog</span>
             <ArrowRight size={18} />
           </Link>
         </div>

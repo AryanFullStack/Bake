@@ -54,8 +54,8 @@ export function AdminLayoutShell({ children }: { children: React.ReactNode }) {
             <Link href="/admin" className="flex items-center gap-2">
               <div className="rounded-lg bg-white px-2 py-1 shadow-xs">
                 <Image
-                  src="/logobake-01.png"
-                  alt="Bake Mart"
+                  src="/brand/bakebazaar-logo.png"
+                  alt="Bake Bazaar Mart"
                   width={90}
                   height={26}
                   className="h-6 w-auto object-contain"

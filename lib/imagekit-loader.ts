@@ -5,8 +5,8 @@
  * ImageKit handles all resizing / format conversion itself — the browser hits
  * ImageKit directly and the slow /_next/image proxy is bypassed entirely.
  *
- * For every other URL (local public files, Supabase, Unsplash…) the src is
- * returned unchanged; Next.js / the browser handles them normally.
+ * For every other URL (local public files, Supabase, Unsplash…) the loader
+ * returns a URL with width & quality query params to satisfy Next.js's loader contract.
  */
 export default function imagekitLoader({
   src,
@@ -32,9 +32,8 @@ export default function imagekitLoader({
     }
   }
 
-  // ── Everything else: return as-is ──────────────────────────────────────
-  // Covers: /public static files, /api/media/serve/*, Supabase, Unsplash, etc.
-  // Next.js will serve local files directly; unoptimized=true is set on those
-  // components where needed (e.g. SafeImage for VPS media).
-  return src;
+  // ── Non-ImageKit URLs (local public files, etc.) ─────────────────────────
+  // Next.js requires custom loaders to return a URL that reflects the requested width.
+  const join = src.includes("?") ? "&" : "?";
+  return `${src}${join}w=${width}&q=${quality ?? 75}`;
 }

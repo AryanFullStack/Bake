@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { createSupabasePublicClient } from "@/lib/supabase/server";
 
 // Cache for 60 seconds to avoid hammering Supabase on every page render
 export const revalidate = 60;
@@ -7,6 +8,7 @@ export const revalidate = 60;
 export async function GET() {
   try {
     const supabase = await createSupabaseServerClient();
+    const supabase = createSupabasePublicClient();
     const { data, error } = await supabase
       .from("site_settings")
       .select("key,value")
@@ -29,10 +31,10 @@ export async function GET() {
         cities: delivery.cities ?? [],
       },
       store: {
-        name: store.name ?? "Bake Mart Bazaar",
-        email: store.email ?? "",
+        name: store.name ?? "Bake Bazaar Mart",
+        email: store.email ?? "info@bakebazaarmart.com",
         phone: store.phone ?? "",
-        city: store.city ?? "Lahore",
+        city: store.city ?? "Karachi",
       },
     });
   } catch (err: any) {
@@ -40,7 +42,7 @@ export async function GET() {
     // Return safe defaults so storefront never crashes
     return NextResponse.json({
       delivery: { fee: 250, free_threshold: 3000, same_day_cutoff: "13:00", cities: [] },
-      store: { name: "Bake Mart Bazaar", email: "", phone: "", city: "Lahore" },
+      store: { name: "Bake Bazaar Mart", email: "info@bakebazaarmart.com", phone: "", city: "Karachi" },
     });
   }
 }

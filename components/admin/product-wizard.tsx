@@ -31,7 +31,7 @@ import {
   Wand2,
   X,
 } from "lucide-react";
-import { formatPKR, generateSKU, publicStorageUrl, slugify } from "@/lib/catalog";
+import { formatPKR, generateSKU, generateUniqueSlug, isFoodOrBakeryProduct, publicStorageUrl, slugify } from "@/lib/catalog";
 import { resolveProductGallery } from "@/lib/gallery-resolver";
 import { MediaPickerModal } from "@/components/admin/media-picker-modal";
 import { formatBytes } from "@/lib/media-url";
@@ -163,6 +163,8 @@ export function ProductWizard({ initialProduct, product, categories, brands, onC
   const [slug, setSlug] = useState(current?.slug || "");
   const [originalSlug] = useState(current?.slug || "");
   const [sku, setSku] = useState(current?.sku || "");
+  const [isSkuCustomized, setIsSkuCustomized] = useState(Boolean(current?.sku));
+  const [isSlugCustomized, setIsSlugCustomized] = useState(Boolean(current?.slug));
   const [barcode, setBarcode] = useState(current?.barcode || "");
   const [categoryId, setCategoryId] = useState(current?.category_id || "");
   const [brandId, setBrandId] = useState(current?.brand_id || "");
@@ -203,6 +205,16 @@ export function ProductWizard({ initialProduct, product, categories, brands, onC
   const [description, setDescription] = useState(current?.description || "");
   const [shortDescription, setShortDescription] = useState(current?.short_description || "");
   const [ingredients, setIngredients] = useState(current?.ingredients || "");
+  const [enableIngredients, setEnableIngredients] = useState<boolean>(() => {
+    if (current?.ingredients?.trim()) return true;
+    return isFoodOrBakeryProduct({
+      category: current?.category || current?.categories?.name,
+      categorySlug: current?.categories?.slug,
+      name: current?.name,
+      hasIngredients: Boolean(current?.ingredients?.trim()),
+    });
+  });
+  const [ingredientsUserToggled, setIngredientsUserToggled] = useState(false);
   const [careInstructions, setCareInstructions] = useState(current?.care_instructions || "");
   const [deliveryInfo, setDeliveryInfo] = useState(current?.delivery_information || "");
   const [returnPolicy, setReturnPolicy] = useState(current?.return_policy || "");
@@ -348,14 +360,44 @@ export function ProductWizard({ initialProduct, product, categories, brands, onC
 
   const activeCategory = useMemo(() => categories.find(c => c.id === categoryId), [categories, categoryId]);
 
+  const isCategoryFood = useMemo(() => {
+    return isFoodOrBakeryProduct({
+      category: activeCategory?.name,
+      categorySlug: activeCategory?.slug,
+      name,
+      hasIngredients: Boolean(ingredients?.trim()),
+    });
+  }, [activeCategory, name, ingredients]);
+
+  // Sync enableIngredients when category changes if user hasn't explicitly toggled it
+  useEffect(() => {
+    if (!ingredientsUserToggled) {
+      if (ingredients?.trim()) {
+        setEnableIngredients(true);
+      } else {
+        setEnableIngredients(isCategoryFood);
+      }
+    }
+  }, [isCategoryFood, ingredientsUserToggled, ingredients]);
+
   // Auto-generate Slug & SKU when Name changes (for new products)
   useEffect(() => {
-    if (!current && name) {
+    if (current || !name.trim()) return;
+
+    if (!isSlugCustomized) {
       setSlug(slugify(name));
-      if (!sku) setSku(generateSKU(name, activeCategory?.name));
-      if (!seoTitle) setSeoTitle(name);
     }
-  }, [name, current, activeCategory, sku, seoTitle]);
+    if (!seoTitle) {
+      setSeoTitle(name);
+    }
+
+    if (!isSkuCustomized) {
+      const timer = setTimeout(() => {
+        setSku(generateSKU(name, activeCategory?.name));
+      }, 400);
+      return () => clearTimeout(timer);
+    }
+  }, [name, current, activeCategory?.name, isSkuCustomized, isSlugCustomized, seoTitle]);
 
   const showToastMsg = (msg: string, type: "success" | "error" = "success") => {
     setToast({ msg, type });
@@ -658,11 +700,8 @@ export function ProductWizard({ initialProduct, product, categories, brands, onC
       setStep(1);
       return;
     }
-    if (!sku.trim()) {
-      showToastMsg("SKU is required", "error");
-      setStep(1);
-      return;
-    }
+    const finalSku = (sku.trim() || generateSKU(name || "PROD", activeCategory?.name)).toUpperCase();
+    const finalSlug = (slug.trim() || slugify(name) || generateUniqueSlug(name, true));
 
     setSaving(true);
 
@@ -679,8 +718,8 @@ export function ProductWizard({ initialProduct, product, categories, brands, onC
     const payload = {
       id: current?.id,
       name,
-      slug: slug || slugify(name),
-      sku,
+      slug: finalSlug,
+      sku: finalSku,
       barcode,
       product_type: isVar ? "variable" : "simple",
       brand_id: brandId || null,
@@ -713,7 +752,7 @@ export function ProductWizard({ initialProduct, product, categories, brands, onC
       is_featured: isFeatured,
       is_bestseller: isBestseller,
       specifications: specsMap,
-      ingredients,
+      ingredients: enableIngredients ? (ingredients.trim() || null) : null,
       care_instructions: careInstructions,
       delivery_information: deliveryInfo,
       return_policy: returnPolicy,
@@ -904,30 +943,65 @@ export function ProductWizard({ initialProduct, product, categories, brands, onC
                   <div className="relative mt-2">
                     <input
                       value={sku}
-                      onChange={e => setSku(e.target.value)}
-                      placeholder="e.g. WATCH-CHRONO-001"
+                      onChange={e => {
+                        setSku(e.target.value);
+                        setIsSkuCustomized(true);
+                      }}
+                      placeholder="e.g. PROD-CAKE-8K4M2X"
                       className="field-shell pr-20 font-mono text-xs"
                     />
                     <button
                       type="button"
-                      onClick={() => setSku(generateSKU(name || "PROD", activeCategory?.name))}
-                      className="absolute right-2 top-1/2 -translate-y-1/2 rounded-lg bg-admin-bg px-2 py-1 text-[10px] font-bold text-navy hover:bg-orange hover:text-white transition-colors"
+                      onClick={() => {
+                        const newSku = generateSKU(name || "PROD", activeCategory?.name);
+                        setSku(newSku);
+                        setIsSkuCustomized(true);
+                        showToastMsg(`Generated SKU: ${newSku}`);
+                      }}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 rounded-lg bg-admin-bg px-2 py-1 text-[10px] font-bold text-navy hover:bg-orange hover:text-white transition-colors cursor-pointer"
+                      title="Auto-generate unique 12+ character alphanumeric SKU"
                     >
                       Auto Gen
                     </button>
                   </div>
+                  <span className="mt-1 block text-[10px] text-admin-muted">
+                    Unique 12+ character code with letters &amp; numbers (never duplicates).
+                  </span>
                 </label>
 
                 <label className="field-label">
-                  Product Slug
-                  <input
-                    value={slug}
-                    onChange={e => setSlug(slugify(e.target.value))}
-                    className="field-shell mt-2 font-mono text-xs"
-                  />
-                  {current?.is_published && slug !== originalSlug && (
+                  Product Slug <span className="text-orange">*</span>
+                  <div className="relative mt-2">
+                    <input
+                      value={slug}
+                      onChange={e => {
+                        setSlug(slugify(e.target.value));
+                        setIsSlugCustomized(true);
+                      }}
+                      placeholder="e.g. belgian-chocolate-cake"
+                      className="field-shell pr-20 font-mono text-xs"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const newSlug = generateUniqueSlug(name || slug || "product", true);
+                        setSlug(newSlug);
+                        setIsSlugCustomized(true);
+                        showToastMsg(`Generated Slug: ${newSlug}`);
+                      }}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 rounded-lg bg-admin-bg px-2 py-1 text-[10px] font-bold text-navy hover:bg-orange hover:text-white transition-colors cursor-pointer"
+                      title="Auto-generate unique slug with alphanumeric code"
+                    >
+                      Auto Gen
+                    </button>
+                  </div>
+                  {current?.is_published && slug !== originalSlug ? (
                     <span className="mt-1 flex items-center gap-1 text-[11px] font-bold text-amber-600">
                       <AlertTriangle size={12} /> Changing slug of a published product may affect SEO links.
+                    </span>
+                  ) : (
+                    <span className="mt-1 block text-[10px] text-admin-muted">
+                      Click Auto Gen to append unique code and avoid &quot;not unique&quot; duplicate errors.
                     </span>
                   )}
                 </label>
@@ -1867,29 +1941,79 @@ export function ProductWizard({ initialProduct, product, categories, brands, onC
                 />
               </label>
 
-              <div className="grid gap-4 sm:grid-cols-2">
-                <label className="field-label">
-                  Ingredients / Composition (Optional)
-                  <textarea
-                    value={ingredients}
-                    onChange={e => setIngredients(e.target.value)}
-                    rows={3}
-                    placeholder="e.g. Cocoa solids, Dairy milk, Flour..."
-                    className="field-shell mt-2"
-                  />
-                </label>
+              {enableIngredients ? (
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <label className="field-label">
+                    <div className="flex items-center justify-between">
+                      <span>Ingredients / Food Composition (Optional)</span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setEnableIngredients(false);
+                          setIngredientsUserToggled(true);
+                        }}
+                        className="text-[10px] font-semibold text-admin-muted hover:text-red-500 cursor-pointer"
+                        title="Hide ingredients for non-food products"
+                      >
+                        (Hide / Not Applicable)
+                      </button>
+                    </div>
+                    <textarea
+                      value={ingredients}
+                      onChange={e => setIngredients(e.target.value)}
+                      rows={3}
+                      placeholder="e.g. Cocoa solids, Dairy milk, Flour, Vanilla essence..."
+                      className="field-shell mt-2"
+                    />
+                    <span className="mt-1 block text-[10px] text-admin-muted">
+                      Applicable for Bakery, Cakes, and Food products.
+                    </span>
+                  </label>
 
-                <label className="field-label">
-                  Care Instructions (Optional)
-                  <textarea
-                    value={careInstructions}
-                    onChange={e => setCareInstructions(e.target.value)}
-                    rows={3}
-                    placeholder="e.g. Keep refrigerated, avoid direct sunlight..."
-                    className="field-shell mt-2"
-                  />
-                </label>
-              </div>
+                  <label className="field-label">
+                    Care Instructions (Optional)
+                    <textarea
+                      value={careInstructions}
+                      onChange={e => setCareInstructions(e.target.value)}
+                      rows={3}
+                      placeholder="e.g. Keep refrigerated, avoid direct sunlight..."
+                      className="field-shell mt-2"
+                    />
+                  </label>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <label className="field-label">
+                    Care Instructions (Optional)
+                    <textarea
+                      value={careInstructions}
+                      onChange={e => setCareInstructions(e.target.value)}
+                      rows={3}
+                      placeholder="e.g. Wipe with damp cloth, avoid direct sunlight or moisture..."
+                      className="field-shell mt-2"
+                    />
+                  </label>
+
+                  <div className="flex items-center justify-between rounded-xl border border-admin-border/70 bg-admin-bg/40 p-3.5">
+                    <div>
+                      <p className="text-xs font-bold text-navy">Ingredients / Food Composition</p>
+                      <p className="text-[11px] text-admin-muted">
+                        Hidden &amp; not applicable for non-food products (Kitchen Items, Watches, Home Decor, etc.).
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setEnableIngredients(true);
+                        setIngredientsUserToggled(true);
+                      }}
+                      className="inline-flex items-center gap-1 rounded-lg border border-orange/40 bg-orange/10 px-3 py-1.5 text-xs font-bold text-orange hover:bg-orange hover:text-white transition-colors cursor-pointer"
+                    >
+                      <Plus size={12} /> Enable Ingredients
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           )}
 

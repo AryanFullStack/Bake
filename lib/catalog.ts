@@ -8,12 +8,98 @@ export function slugify(value: string) {
     .replace(/(^-|-$)+/g, "");
 }
 
+export function generateRandomCode(length = 6): string {
+  const chars = "23456789ABCDEFGHJKLMNPQRSTUVWXYZ";
+  let result = "";
+  for (let i = 0; i < length; i++) {
+    result += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return result;
+}
+
 export function generateSKU(productName: string, categoryName?: string, attributeLabels: string[] = []): string {
   const catPrefix = categoryName ? slugify(categoryName).slice(0, 4).toUpperCase() : "PROD";
-  const nameParts = slugify(productName).split("-").filter(Boolean).map(p => p.slice(0, 4).toUpperCase());
-  const attrParts = attributeLabels.map(l => slugify(l).slice(0, 3).toUpperCase());
-  const base = [catPrefix, ...nameParts.slice(0, 2), ...attrParts].join("-");
-  return base || "SKU-001";
+  const nameParts = slugify(productName).split("-").filter(Boolean);
+  const nameCode = nameParts.length > 0
+    ? nameParts.slice(0, 2).map(p => p.slice(0, 4).toUpperCase()).join("-")
+    : "ITEM";
+  const attrParts = attributeLabels.map(l => slugify(l).slice(0, 3).toUpperCase()).filter(Boolean);
+  const uniqueCode = generateRandomCode(6);
+
+  let base = [catPrefix, nameCode, ...attrParts, uniqueCode].filter(Boolean).join("-");
+
+  // Ensure SKU is at least 12 characters with letters and numbers
+  if (base.length < 12) {
+    base = `${base}-${generateRandomCode(Math.max(4, 12 - base.length))}`;
+  }
+
+  return base;
+}
+
+export function generateUniqueSlug(productName: string, withCode = true): string {
+  const base = slugify(productName) || "product";
+  if (!withCode) return base;
+  const code = Math.random().toString(36).substring(2, 7);
+  return `${base}-${code}`;
+}
+
+/**
+ * Determines whether a product or category is food / bakery related,
+ * where ingredients are applicable. Non-food products (Kitchen items,
+ * Watches, Home decoration, Baskets & Storage, Daily Essentials, etc.)
+ * return false.
+ */
+export function isFoodOrBakeryProduct(params: {
+  category?: string | null;
+  categorySlug?: string | null;
+  name?: string | null;
+  tags?: string[] | null;
+  hasIngredients?: boolean | null;
+}): boolean {
+  const normCat = (params.category || "").toLowerCase().trim();
+  const normSlug = (params.categorySlug || "").toLowerCase().trim();
+  const normName = (params.name || "").toLowerCase().trim();
+  const tagsStr = (params.tags || []).join(" ").toLowerCase();
+
+  // Known non-food categories and keywords
+  const nonFoodKeywords = [
+    "watch", "watches", "timepiece", "chronograph", "strap", "dial",
+    "kitchen", "cookware", "utensil", "utensils", "cutlery", "knife", "knives", "pot", "pots", "pan", "pans",
+    "home decor", "home-decor", "decoration", "decor", "vase", "vases", "cushion", "cushions", "furniture", "lamp", "lamps",
+    "basket", "baskets", "storage", "organizer", "organizers",
+    "daily-essentials", "daily essentials", "electronics", "apparel", "clothing"
+  ];
+
+  const hasNonFoodMatch = nonFoodKeywords.some(kw => 
+    normCat.includes(kw) || normSlug.includes(kw) || normName.includes(kw)
+  );
+
+  // If it's explicitly identified as non-food, ingredients is not applicable
+  if (hasNonFoodMatch) {
+    return false;
+  }
+
+  // Known food / bakery categories and keywords
+  const foodKeywords = [
+    "cake", "cakes", "bakery", "bake", "bakes", "pastry", "pastries",
+    "cupcake", "cupcakes", "brownie", "brownies", "cookie", "cookies",
+    "dessert", "desserts", "sweet", "sweets", "bread", "breads", "bun", "buns",
+    "pie", "pies", "tart", "tarts", "muffin", "muffins", "croissant", "croissants",
+    "donut", "donuts", "doughnut", "doughnuts", "chocolate", "chocolates",
+    "cheesecake", "macaron", "macarons", "food", "edible", "confectionery",
+    "snack", "snacks", "biscuit", "biscuits", "waffle", "waffles"
+  ];
+
+  const hasFoodMatch = foodKeywords.some(kw =>
+    normCat.includes(kw) || normSlug.includes(kw) || normName.includes(kw) || tagsStr.includes(kw)
+  );
+
+  if (hasFoodMatch) {
+    return true;
+  }
+
+  // If not explicitly non-food and has ingredients entered, treat as applicable
+  return Boolean(params.hasIngredients);
 }
 
 export function formatPKR(value: number | string | null | undefined) {

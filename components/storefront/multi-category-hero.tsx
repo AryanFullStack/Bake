@@ -221,6 +221,7 @@ export function MultiCategoryHero() {
                     fill
                     sizes="100vw"
                     priority={idx === 0}
+                    loading={idx === 0 ? "eager" : "lazy"}
                     placeholder="blur"
                     blurDataURL={scene.blurDataURL}
                     quality={85}
@@ -240,6 +241,7 @@ export function MultiCategoryHero() {
                     fill
                     sizes="100vw"
                     priority={idx === 0}
+                    loading={idx === 0 ? "eager" : "lazy"}
                     placeholder="blur"
                     blurDataURL={scene.blurDataURL}
                     quality={85}
@@ -373,7 +375,7 @@ export function MultiCategoryHero() {
 
         {/* ── Animated Scroll Down Prompt Widget ── */}
         <motion.div
-          animate={{ y: [0, 5, 0] }}
+          animate={prefersReducedMotion ? false : { y: [0, 5, 0] }}
           transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
           className="absolute bottom-6 right-6 z-40 hidden md:flex items-center gap-2 px-3 py-1.5 rounded-full bg-black/40 border border-white/15 backdrop-blur-md pointer-events-none"
         >

@@ -1,6 +1,6 @@
-# Bake Mart Bazaar
+# Bake Bazaar Mart
 
-Database-driven bakery commerce for Bake Mart Bazaar / Pickled Bean. The app uses Next.js App Router, TypeScript, Tailwind CSS, Supabase Auth, PostgreSQL/RLS and Supabase Storage.
+Modern ecommerce store for Bake Bazaar Mart, Karachi, Pakistan. The app uses Next.js App Router, TypeScript, Tailwind CSS, Supabase Auth, PostgreSQL/RLS and Supabase Storage. Delivery available across Karachi and nationwide across Pakistan.
 
 ## Local setup
 

@@ -2,48 +2,50 @@ import Image from "next/image";
 import Link from "next/link";
 import type { Metadata } from "next";
 import {
-  ArrowRight, Award, Cake, Clock, Heart, Home, Package,
-  ShieldCheck, Sparkles, Star, Truck, UtensilsCrossed, Watch,
+  ArrowRight, Cake, Clock, Heart, Home, Mail, Package,
+  ShieldCheck, Sparkles, Truck, UtensilsCrossed, Watch,
 } from "lucide-react";
 
 export const metadata: Metadata = {
   title: "About Us",
   description:
-    "Bake Mart Bazaar is Lahore's favourite family marketplace — fresh bakery, home décor, kitchen essentials, watches and everyday products all in one place.",
+    "Learn about Bake Bazaar Mart — your trusted online family and general store based in Karachi, Pakistan, delivering fresh bakery, custom cakes, home décor, kitchen essentials, and everyday products.",
 };
 
 const CATEGORIES = [
-  { icon: Cake,            label: "Freshly Baked Goods",  desc: "Cakes, pastries, brownies & more" },
-  { icon: Home,            label: "Home Decoration",       desc: "Beautiful things for your space" },
-  { icon: UtensilsCrossed, label: "Kitchen Essentials",    desc: "Everyday cooking & storage" },
-  { icon: Watch,           label: "Watches",               desc: "Classic & modern timepieces" },
-  { icon: Package,         label: "Baskets & Storage",     desc: "Organise beautifully" },
-  { icon: ShieldCheck,     label: "Daily Essentials",      desc: "Grocery & everyday needs" },
+  { icon: Cake,            label: "Cakes & Fresh Bakery",  desc: "Celebration cakes, pastries, cupcakes & desserts" },
+  { icon: Sparkles,        label: "Custom Cakes",          desc: "Personalized event & birthday cake designs" },
+  { icon: Heart,           label: "Chocolates & Sweets",   desc: "Cooking chocolate and confectionery treats" },
+  { icon: Home,            label: "Home & Decoration",     desc: "Vases, accents & aesthetic living décor" },
+  { icon: UtensilsCrossed, label: "Kitchen Essentials",    desc: "Utensils, cookware & functional organizers" },
+  { icon: Watch,           label: "Watches & Accessories", desc: "Classic & contemporary timepieces" },
+  { icon: Package,         label: "Baskets & Storage",     desc: "Organiser bins, laundry hampers & storage" },
+  { icon: ShieldCheck,     label: "Daily Essentials",      desc: "Household necessities and everyday products" },
 ];
 
 const VALUES = [
   {
     number: "01",
-    title: "Quality You Can Feel",
-    body: "Every single product on Bake Mart Bazaar — whether it's a chocolate cake, a decorative vase or a kitchen storage set — is selected for quality, durability and genuine value.",
+    title: "Curated Variety",
+    body: "We combine celebration cakes, artisan bakes, home decoration, practical kitchen tools, and daily essentials under one trusted digital storefront so families can find everything they need in one place.",
   },
   {
     number: "02",
-    title: "Fresh From Our Kitchen",
-    body: "Our bakery operates in small batches, prepared fresh every day. We bake to order so your celebration cake, pastry or brownie reaches you at its very best.",
+    title: "Freshness & Care",
+    body: "Our bakery items and custom cakes are prepared fresh to order in small batches. We take special pride in secure, temperature-conscious packaging so every order arrives in pristine condition.",
   },
   {
     number: "03",
-    title: "One Store, Everything",
-    body: "We believe Pakistani families shouldn't need five different apps. We've brought bakery, home essentials, kitchen goods, watches and daily products under one roof — online.",
+    title: "Customer-First Experience",
+    body: "From transparent pricing and simple payment options (Cash on Delivery & Bank Transfer) to responsive customer support, we are dedicated to making online shopping seamless and reliable.",
   },
 ];
 
-const STATS = [
-  { val: "700+",   label: "Products" },
-  { val: "5,000+", label: "Happy Customers" },
-  { val: "4.9★",   label: "Average Rating" },
-  { val: "6",      label: "Categories" },
+const STORE_HIGHLIGHTS = [
+  { stat: "Karachi", label: "Store & Delivery Hub" },
+  { stat: "Fresh",   label: "Baked to Order" },
+  { stat: "Multi-Category", label: "Family Store Variety" },
+  { stat: "Pakistan", label: "Nationwide Online Delivery" },
 ];
 
 export default function AboutPage() {
@@ -52,9 +54,7 @@ export default function AboutPage() {
 
       {/* ── Hero ─────────────────────────────────────────────── */}
       <section className="relative overflow-hidden bg-navy py-20 md:py-32">
-        {/* Subtle dots */}
         <div className="pointer-events-none absolute inset-0 pattern-navy-dots opacity-50" />
-        {/* Orange glow */}
         <div
           className="pointer-events-none absolute right-0 top-0 h-full w-1/2"
           style={{ background: "radial-gradient(ellipse at right, rgba(253,118,0,.12) 0%, transparent 65%)" }}
@@ -64,20 +64,21 @@ export default function AboutPage() {
           {/* Text */}
           <div>
             <div className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3.5 py-1.5 text-xs font-bold text-white/80 mb-5">
-              <Sparkles size={13} className="text-orange" /> OUR STORY
+              <Sparkles size={13} className="text-orange" /> ABOUT BAKE BAZAAR MART
             </div>
             <h1 className="font-display text-[clamp(2.6rem,5vw,4.2rem)] font-bold leading-tight text-white">
               More Than a Bakery.{" "}
               <span className="text-orange">Everything Your Family Needs.</span>
             </h1>
             <p className="mt-5 text-base leading-8 text-white/70 max-w-lg">
-              Bake Mart Bazaar started with a passion for freshly baked goods — and grew into something
-              much bigger. Today we bring bakery favourites, home décor, kitchen essentials, watches,
-              baskets and everyday products together in one convenient online store.
+              Bake Bazaar Mart is an online family and general store based in Karachi, Pakistan.
+              We bring fresh bakery favorites, custom celebration cakes, home décor accents,
+              kitchen essentials, watches, storage solutions, and daily household needs together
+              in one convenient ecommerce store.
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
               <Link href="/shop" className="button-primary">
-                Shop Everything <ArrowRight size={15} />
+                Explore Our Store <ArrowRight size={15} />
               </Link>
               <Link href="/custom-cake" className="button-secondary border-white/25 bg-white/10 text-white hover:bg-white hover:text-navy">
                 Custom Cake Studio
@@ -85,89 +86,88 @@ export default function AboutPage() {
             </div>
           </div>
 
-          {/* Stats grid */}
+          {/* Highlights grid */}
           <div className="grid grid-cols-2 gap-3">
-            {STATS.map(({ val, label }) => (
+            {STORE_HIGHLIGHTS.map(({ stat, label }) => (
               <div key={label} className="stat-item">
-                <span className="font-display text-3xl font-black text-orange">{val}</span>
-                <span className="text-[10px] font-bold text-white/50 uppercase tracking-wider">{label}</span>
+                <span className="font-display text-2xl sm:text-3xl font-black text-orange">{stat}</span>
+                <span className="text-[10px] font-bold text-white/60 uppercase tracking-wider">{label}</span>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* ── What We Sell ─────────────────────────────────────── */}
+      {/* ── What We Offer ─────────────────────────────────────── */}
       <section className="container-shell py-16 md:py-24">
         <div className="text-center mb-12">
-          <p className="eyebrow">Everything in one place</p>
-          <h2 className="section-heading mt-2">Six Categories, One Store</h2>
-          <p className="mt-4 text-base text-muted max-w-xl mx-auto leading-7">
-            From freshly baked cakes to beautifully curated home décor — Bake Mart Bazaar is your
-            complete family marketplace in Lahore.
+          <p className="eyebrow text-orange">Convenience & Product Variety</p>
+          <h2 className="section-heading mt-2">What We Offer</h2>
+          <p className="mt-4 text-base text-muted max-w-xl mx-auto leading-7 font-medium">
+            From handcrafted celebration cakes to everyday kitchen utensils and home organizers,
+            Bake Bazaar Mart is designed to make shopping simple, reliable, and delightful.
           </p>
         </div>
 
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {CATEGORIES.map(({ icon: Icon, label, desc }) => (
             <div
               key={label}
-              className="flex items-center gap-4 rounded-2xl bg-white p-5 border border-line shadow-xs hover:-translate-y-1 hover:shadow-md transition-all"
+              className="flex items-start gap-4 rounded-2xl bg-white p-5 border border-line shadow-xs hover:-translate-y-1 hover:shadow-md transition-all"
             >
               <div className="grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-orange-light text-orange">
                 <Icon size={22} />
               </div>
               <div>
-                <p className="font-bold text-navy">{label}</p>
-                <p className="mt-0.5 text-xs text-muted">{desc}</p>
+                <p className="font-bold text-navy text-sm">{label}</p>
+                <p className="mt-1 text-xs text-muted leading-relaxed">{desc}</p>
               </div>
             </div>
           ))}
         </div>
       </section>
 
-      {/* ── Our Values ─────────────────────────────────────── */}
+      {/* ── Our Core Values ─────────────────────────────────────── */}
       <section className="bg-cream-deep py-16 md:py-24">
         <div className="container-shell">
           <div className="text-center mb-12">
-            <p className="eyebrow">What we stand for</p>
-            <h2 className="section-heading mt-2">Our Three Principles</h2>
+            <p className="eyebrow text-orange">Our Approach</p>
+            <h2 className="section-heading mt-2">How We Serve You</h2>
           </div>
           <div className="grid gap-6 sm:grid-cols-3">
             {VALUES.map(({ number, title, body }) => (
               <div key={number} className="flex flex-col rounded-[28px] bg-white p-8 border border-line shadow-xs">
-                <span className="font-display text-5xl font-extrabold text-orange">{number}</span>
-                <h3 className="mt-8 font-display text-2xl font-bold text-navy">{title}</h3>
-                <p className="mt-3 text-sm leading-relaxed text-muted">{body}</p>
+                <span className="font-display text-4xl font-extrabold text-orange">{number}</span>
+                <h3 className="mt-6 font-display text-2xl font-bold text-navy">{title}</h3>
+                <p className="mt-3 text-sm leading-relaxed text-muted font-medium">{body}</p>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* ── Story Banner ─────────────────────────────────────── */}
+      {/* ── Story & Fulfillment ─────────────────────────────────── */}
       <section className="bg-navy text-white py-16 md:py-24">
         <div className="container-shell grid gap-12 md:grid-cols-2 items-center">
           <div>
-            <p className="eyebrow text-orange mb-3">Our Lahore Roots</p>
+            <p className="eyebrow text-orange mb-3">Karachi Hub · Pakistan-Wide Delivery</p>
             <h2 className="font-display text-[clamp(2rem,4vw,3.5rem)] font-bold leading-tight">
-              Built for Pakistani Families, Delivered With Care.
+              An Online Store Built for Real Families.
             </h2>
-            <p className="mt-5 text-sm leading-8 text-white/70 max-w-lg">
-              We know Pakistani families need quality, convenience and affordability — all at once.
-              Bake Mart Bazaar was built from the ground up to serve Lahore's families: fresh bakery
-              items for celebrations, home essentials for everyday living, and daily-use products for
-              the whole household.
+            <p className="mt-5 text-sm leading-8 text-white/75 max-w-lg">
+              Bake Bazaar Mart was created to bridge the gap between fresh celebratory bakery items
+              and practical everyday household products. Instead of jumping between multiple stores,
+              our customers enjoy a unified shopping experience with honest value and dependable delivery.
             </p>
 
             <div className="mt-7 flex flex-col gap-3">
               {[
-                "Fresh bakery prepared in small batches every day",
-                "Products carefully selected for quality and value",
-                "Same-day delivery available across Lahore",
-                "Trusted by over 5,000 families and counting",
+                "Fresh celebration cakes & custom cakes prepared to order",
+                "Carefully selected home décor, kitchenware & daily essentials",
+                "Fast local delivery across Karachi for bakes and general goods",
+                "Nationwide online delivery across all cities in Pakistan",
               ].map((item) => (
-                <div key={item} className="flex items-center gap-3 text-sm text-white/80">
+                <div key={item} className="flex items-center gap-3 text-sm text-white/85">
                   <div className="grid h-5 w-5 shrink-0 place-items-center rounded-full bg-orange/20 border border-orange/30">
                     <Heart size={11} className="text-orange fill-orange" />
                   </div>
@@ -178,7 +178,7 @@ export default function AboutPage() {
 
             <div className="mt-8 flex flex-wrap gap-3">
               <Link href="/shop" className="button-primary">
-                Shop Now <ArrowRight size={15} />
+                Shop Our Catalog <ArrowRight size={15} />
               </Link>
               <Link href="/custom-cake" className="button-secondary border-white/25 bg-white/10 text-white hover:bg-white hover:text-navy">
                 Custom Cake Studio
@@ -191,7 +191,7 @@ export default function AboutPage() {
             <div className="relative aspect-[0.8] overflow-hidden rounded-[20px]">
               <Image
                 src="https://images.unsplash.com/photo-1578985545062-69928b1d9587?auto=format&fit=crop&w=800&q=85"
-                alt="Fresh cakes from Bake Mart Bazaar"
+                alt="Celebration cakes from Bake Bazaar Mart"
                 fill
                 className="object-cover"
               />
@@ -200,7 +200,7 @@ export default function AboutPage() {
               <div className="relative aspect-square overflow-hidden rounded-[20px]">
                 <Image
                   src="https://images.unsplash.com/photo-1586023492125-27b2c045efd7?auto=format&fit=crop&w=600&q=85"
-                  alt="Home decoration products"
+                  alt="Home decoration items from Bake Bazaar Mart"
                   fill
                   className="object-cover"
                 />
@@ -208,7 +208,7 @@ export default function AboutPage() {
               <div className="relative aspect-square overflow-hidden rounded-[20px]">
                 <Image
                   src="https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?auto=format&fit=crop&w=600&q=85"
-                  alt="Kitchen essentials"
+                  alt="Kitchen essentials from Bake Bazaar Mart"
                   fill
                   className="object-cover"
                 />
@@ -218,44 +218,15 @@ export default function AboutPage() {
         </div>
       </section>
 
-      {/* ── Why Us Cards ─────────────────────────────────────── */}
-      <section className="container-shell py-16 md:py-24">
-        <div className="text-center mb-12">
-          <p className="eyebrow">Why shop with us</p>
-          <h2 className="section-heading mt-2">Why Lahore Loves Bake Mart</h2>
-        </div>
-        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
-          {[
-            { icon: Award,   title: "Quality First",       copy: "Every product is hand-picked for quality and value — whether it's a cake or a kitchen accessory." },
-            { icon: Cake,    title: "Fresh Bakery Daily",  copy: "Baked fresh in small batches every morning. Real ingredients, real care, real flavour." },
-            { icon: Star,    title: "Great Prices",        copy: "Premium-feeling products at prices designed for Pakistani families. Honest value, always." },
-            { icon: Truck,   title: "Fast Delivery",       copy: "Same-day delivery available across Lahore. Your order, carefully packed and delivered to your door." },
-          ].map(({ icon: Icon, title, copy }) => (
-            <div
-              key={title}
-              className="flex flex-col items-center text-center gap-4 p-7 rounded-2xl bg-white border border-line shadow-xs hover:shadow-md hover:-translate-y-1 transition-all"
-            >
-              <div className="feature-icon-ring">
-                <Icon size={24} />
-              </div>
-              <div>
-                <h3 className="font-display text-lg font-bold text-navy">{title}</h3>
-                <p className="mt-2 text-sm leading-6 text-muted">{copy}</p>
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* ── Operating Hours ─────────────────────────────────── */}
+      {/* ── Operating Hours & Customer Care ─────────────────── */}
       <section className="bg-cream-deep py-12 md:py-16">
         <div className="container-shell grid gap-8 md:grid-cols-2 items-center">
           <div>
-            <p className="eyebrow mb-3">We're always open</p>
-            <h2 className="section-heading">Store &amp; Delivery Hours</h2>
-            <p className="mt-4 text-sm leading-7 text-muted">
-              Our online store never closes, but our kitchen and delivery team operate during the hours
-              below. Orders placed outside delivery hours are fulfilled the following morning.
+            <p className="eyebrow text-orange mb-3">Service & Support</p>
+            <h2 className="section-heading">Store &amp; Support Hours</h2>
+            <p className="mt-4 text-sm leading-7 text-muted font-medium">
+              Our online storefront is open 24 hours a day, 7 days a week. Our customer support,
+              kitchen dispatch, and logistics operations are active during the schedule below.
             </p>
             <div className="mt-6 flex flex-col gap-3">
               {[
@@ -276,19 +247,19 @@ export default function AboutPage() {
           <div className="relative aspect-[1.2] overflow-hidden rounded-[28px] shadow-lg">
             <Image
               src="https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=1200&q=85"
-              alt="Bake Mart Bazaar — your everyday store"
+              alt="Bake Bazaar Mart — your online family store"
               fill
               className="object-cover"
             />
             <div className="absolute inset-0 bg-gradient-to-t from-navy/40 to-transparent" />
             <div className="absolute bottom-5 left-5 flex items-center gap-3 rounded-xl border border-white/30 bg-white/90 px-4 py-3 shadow-xl backdrop-blur-sm">
               <span className="grid h-8 w-8 place-items-center rounded-lg bg-orange text-white">
-                <ShieldCheck size={15} />
+                <Truck size={15} />
               </span>
-              <span>
-                <span className="block text-xs font-extrabold text-navy">Delivery Across Lahore</span>
-                <span className="mt-0.5 block text-[11px] text-muted">Same-day &amp; next-day available</span>
-              </span>
+              <div>
+                <span className="block text-xs font-extrabold text-navy">Delivery Across Karachi & Pakistan</span>
+                <span className="mt-0.5 block text-[11px] text-muted">Same-day Karachi &amp; nationwide courier</span>
+              </div>
             </div>
           </div>
         </div>
@@ -307,9 +278,8 @@ export default function AboutPage() {
             <h2 className="mt-3 font-display text-[clamp(2rem,4vw,3.2rem)] font-bold text-white max-w-2xl leading-tight">
               Everything Your Family Needs — All in One Place.
             </h2>
-            <p className="mt-4 text-white/65 text-sm max-w-xl leading-7">
-              700+ products across 6 categories. Fresh bakery, beautiful home finds, kitchen essentials,
-              watches, baskets and daily products — delivered to your door in Lahore.
+            <p className="mt-4 text-white/70 text-sm max-w-xl leading-7">
+              Fresh cakes, home décor, kitchen essentials, watches, storage baskets, and daily products — delivered with care to your door.
             </p>
             <div className="mt-8 flex flex-wrap gap-3 justify-center">
               <Link href="/shop" className="button-primary text-base px-8">

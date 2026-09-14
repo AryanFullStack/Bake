@@ -33,7 +33,7 @@ export function HeroCarousel({ banners }: { banners: any[] }) {
 
   const current   = banners[currentIndex];
   const title     = current?.title     ?? "Everything Your\nFamily Needs";
-  const body      = current?.body      ?? "Quality bakery, home décor, kitchen & everyday essentials — all in one place. Delivered fresh across Lahore.";
+  const body      = current?.body      ?? "Quality bakery, custom cakes, home décor, kitchen & everyday essentials — all in one place. Delivered in Karachi & online across Pakistan.";
   const ctaHref   = current?.cta_href  ?? "/shop";
   const ctaLabel  = current?.cta_label ?? "Shop All Products";
   const imgSrc    = resolveMediaUrl(current?.image_path, "/bakery.png");
@@ -80,7 +80,7 @@ export function HeroCarousel({ banners }: { banners: any[] }) {
               {/* Eyebrow */}
               <div className="inline-flex items-center gap-2 rounded-full border border-orange/30 bg-orange/10 px-4 py-1.5 text-xs font-bold text-orange mb-6">
                 <Sparkles size={13} />
-                Bake Mart Bazaar · Lahore, Pakistan
+                Bake Bazaar Mart · Karachi, Pakistan
               </div>
 
               {/* Heading */}
@@ -123,18 +123,18 @@ export function HeroCarousel({ banners }: { banners: any[] }) {
               </div>
 
               {/* Trust strip */}
-              <div className="mt-8 flex flex-wrap gap-x-6 gap-y-2 border-t border-white/10 pt-6 text-xs font-semibold text-white/50">
+              <div className="mt-8 flex flex-wrap gap-x-6 gap-y-2 border-t border-white/10 pt-6 text-xs font-semibold text-white/60">
                 <span className="flex items-center gap-2">
-                  <span className="h-1.5 w-1.5 rounded-full bg-green" /> Baked fresh daily
+                  <span className="h-1.5 w-1.5 rounded-full bg-green" /> Fresh bakes & custom cakes
                 </span>
                 <span className="flex items-center gap-2">
-                  <span className="h-1.5 w-1.5 rounded-full bg-orange" /> 700+ products
+                  <span className="h-1.5 w-1.5 rounded-full bg-orange" /> Home, kitchen & lifestyle
                 </span>
                 <span className="flex items-center gap-2">
-                  <span className="h-1.5 w-1.5 rounded-full bg-green" /> Cash on delivery
+                  <span className="h-1.5 w-1.5 rounded-full bg-green" /> Cash on delivery & bank transfer
                 </span>
                 <span className="flex items-center gap-2">
-                  <Star size={11} className="text-orange fill-orange" /> 4.9 rating
+                  <span className="h-1.5 w-1.5 rounded-full bg-orange" /> Delivery across Pakistan
                 </span>
               </div>
 
@@ -209,14 +209,14 @@ export function HeroCarousel({ banners }: { banners: any[] }) {
                 </div>
               </div>
 
-              {/* Floating rating card — top right */}
-              <div className="absolute -top-4 -right-4 hidden md:flex items-center gap-2 rounded-2xl border border-white/20 bg-white/10 px-3 py-3 backdrop-blur-md shadow-xl ring-1 ring-white/10">
+              {/* Floating hub card — top right */}
+              <div className="absolute -top-4 -right-4 hidden md:flex items-center gap-2 rounded-2xl border border-white/20 bg-white/10 px-3.5 py-3 backdrop-blur-md shadow-xl ring-1 ring-white/10">
                 <div className="grid h-9 w-9 place-items-center rounded-xl bg-orange text-white">
-                  <Star size={16} fill="white" />
+                  <ShoppingBag size={16} />
                 </div>
                 <div>
-                  <p className="text-sm font-black text-white">4.9 ★</p>
-                  <p className="text-[10px] text-white/55">5,000+ happy customers</p>
+                  <p className="text-xs font-black text-white">Karachi, Pakistan</p>
+                  <p className="text-[10px] text-white/70">Online Store & Delivery Hub</p>
                 </div>
               </div>
 

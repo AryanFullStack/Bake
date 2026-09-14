@@ -201,7 +201,7 @@ export function AdminCategoriesManager() {
   };
 
   const seedDefaultCategories = async () => {
-    if (!confirm("Add standard Bake Mart Bazaar category presets (Bakery, Celebration Cakes, Pastries, Cupcakes, Home Décor, Kitchen, Watches, Baskets, Grocery)?")) return;
+    if (!confirm("Add standard Bake Bazaar Mart category presets (Bakery, Celebration Cakes, Pastries, Cupcakes, Home Décor, Kitchen, Watches, Baskets, Grocery)?")) return;
     setLoading(true);
     const presets = [
       { name: "Bakery", slug: "bakery", description: "Freshly baked cakes, pastries & desserts", icon_path: "/bakery.png" },

@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, useEffect, useRef } from "react";
+import { useDeferredValue, useMemo, useState, useEffect, useRef } from "react";
 import { ArrowUpDown, ChevronDown, Filter, LayoutGrid, List, Search, SlidersHorizontal, Sparkles, Tag, X } from "lucide-react";
 import type { Category, Product } from "@/lib/types";
 import { ProductCard, ProductCardSkeleton } from "./product-card";
@@ -53,26 +53,23 @@ export function ShopBrowser({
   initialSaleOnly: boolean;
 }) {
   const [query, setQuery] = useState(initialQuery);
+  const deferredQuery = useDeferredValue(query);
   const [category, setCategory] = useState(initialCategory);
   const [saleOnly, setSaleOnly] = useState(initialSaleOnly);
   const [sortBy, setSortBy] = useState<SortKey>("featured");
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
   const [mobileFilters, setMobileFilters] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const toolbarRef = useRef<HTMLDivElement>(null);
   const listTopRef = useRef<HTMLDivElement>(null);
   const [toolbarStuck, setToolbarStuck] = useState(false);
-
-  useEffect(() => {
-    const timer = setTimeout(() => setIsLoading(false), 300);
-    return () => clearTimeout(timer);
-  }, []);
+  // Track whether the deferred query has caught up — while lagging, show subtle indicator
+  const isSearchPending = query !== deferredQuery;
 
   useEffect(() => {
     setPage(1);
-  }, [query, category, saleOnly, sortBy]);
+  }, [deferredQuery, category, saleOnly, sortBy]);
 
   // Sticky toolbar detection
   useEffect(() => {
@@ -88,8 +85,8 @@ export function ShopBrowser({
 
   const filtered = useMemo(() => {
     let result = products.filter(p => {
-      const q = query.toLowerCase();
-      const matchQuery = !query || `${p.name} ${p.category} ${(p.tags ?? []).join(" ")} ${p.description ?? ""}`.toLowerCase().includes(q);
+      const q = deferredQuery.toLowerCase();
+      const matchQuery = !deferredQuery || `${p.name} ${p.category} ${(p.tags ?? []).join(" ")} ${p.description ?? ""}`.toLowerCase().includes(q);
       const matchCategory = isProductInCategory(p.category, category, categories);
       const matchSale = !saleOnly || Boolean(p.salePrice);
       return matchQuery && matchCategory && matchSale;
@@ -99,7 +96,7 @@ export function ShopBrowser({
     else if (sortBy === "rating") result = [...result].sort((a, b) => (b.rating ?? 0) - (a.rating ?? 0));
     else if (sortBy === "newest") result = [...result].slice();
     return result;
-  }, [products, query, category, saleOnly, sortBy, categories]);
+  }, [products, deferredQuery, category, saleOnly, sortBy, categories]);
 
   const paginatedProducts = useMemo(() => {
     const from = (page - 1) * pageSize;
@@ -122,7 +119,7 @@ export function ShopBrowser({
         <div className="flex flex-col justify-between gap-5 md:flex-row md:items-end border-b border-line/60 pb-8">
           <div>
             <p className="eyebrow">
-              {category === "All" ? "Fresh From Our Kitchen" :
+              {category === "All" ? "Curated Store Collection" :
                category === "Bakery" || ["Celebration Cakes","Pastries","Cupcakes","Brownies","Cookies","Brownies & Cookies","Desserts"].includes(category) ? "Freshly Baked" :
                category === "Home Decoration" ? "Decorate Your Space" :
                category === "Kitchen Essentials" ? "Cook & Create" :
@@ -228,8 +225,8 @@ export function ShopBrowser({
             </div>
 
             <div className="flex items-center gap-3 justify-between sm:justify-end">
-              <span className="text-xs font-semibold text-muted shrink-0">
-                {isLoading ? "Loading…" : `${filtered.length} products`}
+              <span className={`text-xs font-semibold shrink-0 transition-colors ${isSearchPending ? "text-orange" : "text-muted"}`}>
+                {isSearchPending ? "Searching…" : `${filtered.length} products`}
               </span>
 
               <select
@@ -285,15 +282,11 @@ export function ShopBrowser({
 
           {/* Grid */}
           <section ref={listTopRef} className="flex flex-col gap-6">
-            {isLoading ? (
-              <div className={`grid gap-4 ${viewMode === "grid" ? "grid-cols-2 sm:grid-cols-3 xl:grid-cols-4" : "grid-cols-1"}`}>
-                {Array.from({ length: 8 }).map((_, i) => <ProductCardSkeleton key={i} />)}
-              </div>
-            ) : filtered.length === 0 ? (
+            {filtered.length === 0 ? (
               <EmptyState onReset={() => { setQuery(""); setCategory("All"); setSaleOnly(false); }} />
             ) : (
               <>
-                <div className={`grid gap-4 animate-fade-in ${viewMode === "grid" ? "grid-cols-2 sm:grid-cols-3 xl:grid-cols-4" : "grid-cols-1 sm:grid-cols-2"}`}>
+                <div className={`grid gap-4 transition-opacity duration-150 ${isSearchPending ? "opacity-75" : "opacity-100"} ${viewMode === "grid" ? "grid-cols-2 sm:grid-cols-3 xl:grid-cols-4" : "grid-cols-1 sm:grid-cols-2"}`}>
                   {paginatedProducts.map((p, i) => (
                     <ProductCard key={p.id} product={p} priority={i < 4} />
                   ))}
@@ -324,7 +317,7 @@ export function ShopBrowser({
           <div className="absolute inset-x-0 bottom-0 max-h-[88vh] overflow-y-auto rounded-t-[32px] bg-cream p-6 shadow-2xl animate-slide-up">
             <div className="mb-5 flex items-center justify-between border-b border-line pb-4">
               <div className="flex items-center gap-2 font-display text-xl font-bold text-navy">
-                <SlidersHorizontal size={20} className="text-orange" /> Filter Bakes
+                <SlidersHorizontal size={20} className="text-orange" /> Filter Products
               </div>
               <button onClick={() => setMobileFilters(false)} className="rounded-full border border-line bg-white p-2 text-navy hover:text-orange">
                 <X size={16} />
@@ -417,9 +410,9 @@ function EmptyState({ onReset }: { onReset: () => void }) {
       <div className="mb-4 grid h-16 w-16 place-items-center rounded-full bg-orange/10 text-orange">
         <Search size={28} />
       </div>
-      <h3 className="font-display text-2xl font-bold text-navy">No matching bakes found</h3>
+      <h3 className="font-display text-2xl font-bold text-navy">No matching products found</h3>
       <p className="mt-2 max-w-xs text-sm text-muted">
-        Try a different keyword, remove some filters, or browse everything we bake fresh daily.
+        Try a different keyword, remove some filters, or explore all store categories.
       </p>
       <button onClick={onReset} className="mt-6 button-primary">
         <X size={15} /> Reset Filters

@@ -102,7 +102,7 @@ function TrackOrderContent() {
     <div className="container-shell py-12 md:py-20">
       <div className="mx-auto max-w-2xl text-center">
         <div className="inline-flex items-center gap-2 rounded-full bg-orange/10 px-3.5 py-1.5 text-xs font-bold text-orange border border-orange/20 mb-3 shadow-sm">
-          <Truck size={14} className="animate-pulse" /> LIVE BAKERY TRACKING
+          <Truck size={14} className="animate-pulse" /> LIVE ORDER TRACKING
         </div>
         <h1 className="font-display text-4xl sm:text-5xl font-bold text-navy">
           Track Your Order & Consultations

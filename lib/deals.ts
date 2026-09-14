@@ -1,4 +1,4 @@
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { createSupabasePublicClient, createSupabaseServerClient } from "@/lib/supabase/server";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import type {
   Deal,
@@ -173,7 +173,7 @@ export function attachDealPricingToProduct(product: any, activeDeals: Deal[]): a
  */
 export async function getActiveDeals(): Promise<Deal[]> {
   try {
-    const supabase = await createSupabaseServerClient();
+    const supabase = createSupabasePublicClient();
     const nowIso = new Date().toISOString();
 
     const { data, error } = await supabase
@@ -208,7 +208,7 @@ export async function getStorefrontDeals(): Promise<Deal[]> {
   const activeDeals = await getActiveDeals();
   if (activeDeals.length === 0) return [];
 
-  const supabase = await createSupabaseServerClient();
+  const supabase = createSupabasePublicClient();
   const dealIds = activeDeals.map((d) => d.id);
 
   const { data: dealProducts } = await supabase
@@ -250,7 +250,7 @@ export async function getStorefrontDeals(): Promise<Deal[]> {
  * Fetches a single public deal by slug for storefront deal details page.
  */
 export async function getDealBySlug(slug: string): Promise<Deal | null> {
-  const supabase = await createSupabaseServerClient();
+  const supabase = createSupabasePublicClient();
   const { data: deal, error } = await supabase
     .from("deals")
     .select("*, deal_products(*)")

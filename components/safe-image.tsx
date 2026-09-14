@@ -1,7 +1,7 @@
 "use client";
 
 import Image, { ImageProps } from "next/image";
-import { useState, useEffect } from "react";
+import { useState, useMemo } from "react";
 import { resolveMediaUrl, isVpsMediaUrl, DEFAULT_FALLBACK_IMAGE } from "@/lib/media-url";
 import { DEFAULT_BLUR_PLACEHOLDER } from "@/lib/image-placeholders";
 
@@ -38,27 +38,24 @@ export function SafeImage({
   blurDataURL,
   ...props
 }: SafeImageProps) {
-  // For ImageKit URLs: pass raw URL — the custom Next.js loader (imagekit-loader.ts)
-  // will apply width/quality transforms directly on ImageKit's CDN side.
-  // For VPS/local URLs: resolveMediaUrl turns them into /api/media/serve/... paths.
-  const resolvedSrc = resolveMediaUrl(src, fallbackSrc);
-  const [imgSrc, setImgSrc] = useState<string>(resolvedSrc);
-  const [hasFailed, setHasFailed] = useState<boolean>(false);
+  // Resolve canonical media URL synchronously without extra render cycles
+  const resolvedSrc = useMemo(() => resolveMediaUrl(src, fallbackSrc), [src, fallbackSrc]);
+  const [failedSrc, setFailedSrc] = useState<string | null>(null);
 
-  useEffect(() => {
-    const updated = resolveMediaUrl(src, fallbackSrc);
-    setImgSrc(updated);
-    setHasFailed(false);
-  }, [src, fallbackSrc]);
+  const isFailed = failedSrc === resolvedSrc;
+  const currentSrc = isFailed ? fallbackSrc : resolvedSrc;
 
   // VPS media API routes can't go through /_next/image — keep unoptimized for those.
   // ImageKit URLs use the custom loader, so they should NOT be unoptimized.
-  const isVps = isVpsMediaUrl(imgSrc);
+  const isVps = useMemo(() => isVpsMediaUrl(currentSrc), [currentSrc]);
   const shouldBeUnoptimized = unoptimized ?? isVps;
 
   // Blur placeholder: use caller-supplied value OR auto-generate ImageKit LQIP URL
   // OR fall back to our SVG colour placeholder.
-  const lqipUrl = blurDataURL ?? getImageKitLqip(imgSrc) ?? DEFAULT_BLUR_PLACEHOLDER;
+  const lqipUrl = useMemo(
+    () => blurDataURL ?? getImageKitLqip(currentSrc) ?? DEFAULT_BLUR_PLACEHOLDER,
+    [blurDataURL, currentSrc]
+  );
   const activePlaceholder: ImageProps["placeholder"] =
     placeholder ?? (lqipUrl ? "blur" : undefined);
   const activeBlurDataURL =
@@ -67,15 +64,14 @@ export function SafeImage({
   return (
     <Image
       {...props}
-      src={imgSrc}
+      src={currentSrc}
       alt={alt}
       unoptimized={shouldBeUnoptimized}
       placeholder={activePlaceholder}
       blurDataURL={activeBlurDataURL}
       onError={(e) => {
-        if (imgSrc !== fallbackSrc && !hasFailed) {
-          setHasFailed(true);
-          setImgSrc(fallbackSrc);
+        if (!isFailed) {
+          setFailedSrc(resolvedSrc);
         }
         if (onError) {
           onError(e);

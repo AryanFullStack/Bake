@@ -197,7 +197,7 @@ export function SettingsManager({
                 name="cities"
                 label="Supported Delivery Cities (Comma Separated)"
                 defaultValue={(delivery.cities ?? []).join(", ")}
-                placeholder="Lahore, Islamabad, Karachi"
+                placeholder="Karachi, Lahore, Islamabad, Rawalpindi"
               />
             </div>
           </div>

@@ -1,6 +1,13 @@
+import type { Metadata } from "next";
 import { getFaqs } from "@/lib/storefront";
 import { FaqList } from "@/components/storefront/faq-list";
 import { Sparkles } from "lucide-react";
+
+export const metadata: Metadata = {
+  title: "Frequently Asked Questions | Bake Bazaar Mart",
+  description:
+    "Find answers to frequently asked questions about Bake Bazaar Mart, Karachi local delivery, nationwide shipping across Pakistan, custom cakes, and payments.",
+};
 
 export default async function FaqPage() {
   const faqs = await getFaqs();
@@ -15,7 +22,7 @@ export default async function FaqPage() {
           Frequently Asked Questions
         </h1>
         <p className="mt-3 text-sm leading-relaxed text-muted font-medium">
-          Everything you need to know about our fresh small-batch baking, delivery schedules, custom cake orders, and payment options.
+          Everything you need to know about our products, Karachi local delivery, nationwide courier delivery across Pakistan, custom cakes, and payment options.
         </p>
       </div>
 
@@ -24,4 +31,4 @@ export default async function FaqPage() {
   );
 }
 
-export const dynamic = "force-dynamic";
+export const revalidate = 3600;

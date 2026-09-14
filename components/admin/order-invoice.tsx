@@ -58,18 +58,17 @@ export function OrderInvoice({ order, onClose }: OrderInvoiceProps) {
             <div>
               <div className="flex items-center gap-3">
                 <img
-                  src="/logobake-01.png"
-                  alt="Bake Mart Bazaar"
+                  src="/brand/bakebazaar-logo.png"
+                  alt="Bake Bazaar Mart"
                   className="h-12 w-auto object-contain"
                 />
                 <div>
-                  <p className="text-[10px] font-bold tracking-widest text-orange uppercase">Artisan Bakery & Cake Studio</p>
+                  <p className="text-[10px] font-bold tracking-widest text-orange uppercase">Family & General Store · Fresh Bakery</p>
                 </div>
               </div>
               <div className="mt-3 text-xs leading-relaxed text-muted">
-                <p>Gulberg III, Main Boulevard, Lahore, Pakistan</p>
-                <p>Phone: +92 300 1234567 • Email: orders@bakemart.pk</p>
-                <p>NTN: 8940217-4 • Web: www.bakemartbazaar.pk</p>
+                <p>Karachi, Pakistan</p>
+                <p>Email: info@bakebazaarmart.com • Web: bakebazaarmart.com</p>
               </div>
             </div>
 
@@ -195,8 +194,8 @@ export function OrderInvoice({ order, onClose }: OrderInvoiceProps) {
 
           {/* Printable Footer */}
           <div className="mt-12 border-t border-line pt-6 text-center text-xs text-muted space-y-1">
-            <p className="font-bold text-navy">Thank you for choosing Bake Mart Bazaar!</p>
-            <p>Freshly baked artisan goods & customized cakes handcrafted with love in Pakistan.</p>
+            <p className="font-bold text-navy">Thank you for choosing Bake Bazaar Mart!</p>
+            <p>Fresh bakery, celebration cakes & curated lifestyle essentials · Delivered across Karachi and all Pakistan.</p>
             <p className="text-[10px] text-muted/70 mt-2">Computer-generated tax invoice. No signature required.</p>
           </div>
         </div>

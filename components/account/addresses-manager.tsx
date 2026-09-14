@@ -23,7 +23,7 @@ export function AddressesManager({ initialAddresses }: { initialAddresses: Addre
   const [editingAddress, setEditingAddress] = useState<AddressItem | null>(null);
   const [isFormOpen, setIsFormOpen] = useState(initialAddresses.length === 0);
   const [labelChoice, setLabelChoice] = useState("Home");
-  const [citySelect, setCitySelect] = useState("Lahore");
+  const [citySelect, setCitySelect] = useState("Karachi");
   const [customCity, setCustomCity] = useState("");
   const [status, setStatus] = useState<"idle" | "loading" | "error">("idle");
   const [errorMessage, setErrorMessage] = useState("");
@@ -40,7 +40,7 @@ export function AddressesManager({ initialAddresses }: { initialAddresses: Addre
   function startNew() {
     setEditingAddress(null);
     setLabelChoice("Home");
-    setCitySelect("Lahore");
+    setCitySelect("Karachi");
     setCustomCity("");
     setIsFormOpen(true);
   }

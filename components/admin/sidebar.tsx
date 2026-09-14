@@ -59,7 +59,7 @@ export function AdminSidebar({ onNavigate }: { onNavigate?: () => void }) {
       <div className="px-5 pt-6 pb-4 border-b border-white/[.07]">
         <Link href="/admin" onClick={onNavigate} className="flex items-center gap-3">
           <div className="rounded-xl bg-white px-2 py-1.5 shadow-sm">
-            <Image src="/logobake-01.png" alt="Bake Mart Bazaar" width={120} height={36} className="h-8 w-auto object-contain" />
+            <Image src="/brand/bakebazaar-logo.png" alt="Bake Bazaar Mart" width={120} height={36} className="h-8 w-auto object-contain" />
           </div>
         </Link>
         <div className="mt-3 flex items-center gap-2">

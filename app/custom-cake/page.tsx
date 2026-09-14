@@ -30,7 +30,7 @@ export default function CustomCakePage() {
     full_name: "",
     phone: "",
     email: "",
-    city: "Lahore",
+    city: "Karachi",
     area: "",
     landmark: "",
     address: "",
@@ -209,13 +209,14 @@ export default function CustomCakePage() {
       <div className="grid gap-8 lg:grid-cols-[1fr_1.25fr] lg:items-start mb-10">
         <div>
           <div className="inline-flex items-center gap-2 rounded-full bg-orange/10 px-3.5 py-1.5 text-xs font-extrabold text-orange border border-orange/20 mb-3">
-            <Sparkles size={14} /> MADE AROUND YOUR MOMENT
+            <Sparkles size={14} /> BESPOKE CAKES & CELEBRATIONS
           </div>
           <h1 className="font-display text-4xl sm:text-5xl font-bold leading-tight text-navy">
-            Your Dream Cake Starts Here.
+            Custom Cake Studio
           </h1>
           <p className="mt-4 text-sm sm:text-base leading-relaxed text-muted font-medium">
-            Share the idea, date and delivery details. Our cake team will review it, send a custom quotation and guide you through the next step.
+            Order custom celebration cakes, birthday cakes, anniversary cakes, and event centerpieces handcrafted to your specifications.
+            Share your custom requirements, upload reference design images, choose your delivery date, and track your order in real time.
           </p>
 
           {/* 3 Step Story Highlights */}
@@ -369,10 +370,10 @@ export default function CustomCakePage() {
                       onChange={handleInputChange}
                       className="mt-2 w-full rounded-xl border border-line bg-cream/50 px-3.5 py-3 text-sm font-semibold text-navy outline-none focus:border-orange focus:bg-white"
                     >
+                      <option value="Karachi">Karachi</option>
                       <option value="Lahore">Lahore</option>
                       <option value="Islamabad">Islamabad</option>
                       <option value="Rawalpindi">Rawalpindi</option>
-                      <option value="Karachi">Karachi</option>
                     </select>
                   </label>
 
@@ -382,7 +383,7 @@ export default function CustomCakePage() {
                       name="area"
                       value={formData.area}
                       onChange={handleInputChange}
-                      placeholder="e.g. Gulberg, Model Town, Johar Town"
+                      placeholder="e.g. Clifton, DHA, Gulshan, PECHS, Nazimabad"
                       required
                       className="mt-2 w-full rounded-xl border border-line bg-cream/50 px-3.5 py-3 text-sm font-medium outline-none focus:border-orange focus:bg-white"
                     />
@@ -394,7 +395,7 @@ export default function CustomCakePage() {
                       name="landmark"
                       value={formData.landmark}
                       onChange={handleInputChange}
-                      placeholder="e.g. Near Kalma Chowk"
+                      placeholder="e.g. Near Dolmen Mall, Clifton"
                       className="mt-2 w-full rounded-xl border border-line bg-cream/50 px-3.5 py-3 text-sm font-medium outline-none focus:border-orange focus:bg-white"
                     />
                   </label>

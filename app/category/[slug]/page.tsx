@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
@@ -45,6 +46,30 @@ const CATEGORY_DETAILS: Record<string, { title: string; desc: string; banner: st
     banner: "/homeItems.webp",
   },
 };
+
+export async function generateMetadata({ params }: CategoryPageProps): Promise<Metadata> {
+  const { slug } = await params;
+  const categories = await getCategories();
+  const matchedCat = categories.find((c) => c.slug === slug);
+  const details = CATEGORY_DETAILS[slug] || {
+    title: matchedCat?.name || slug.replaceAll("-", " ").toUpperCase(),
+    desc: matchedCat?.description || "Browse top quality products at Bake Bazaar Mart.",
+    banner: matchedCat?.image || "/brand/bakebazaar-logo.png",
+  };
+
+  const title = `${details.title} | Bake Bazaar Mart`;
+  const description = `${details.desc} Order online from Bake Bazaar Mart Karachi with delivery across Karachi and all Pakistan.`;
+
+  return {
+    title,
+    description,
+    openGraph: {
+      title,
+      description,
+      images: [details.banner],
+    },
+  };
+}
 
 export default async function CategoryPage({ params }: CategoryPageProps) {
   const { slug } = await params;

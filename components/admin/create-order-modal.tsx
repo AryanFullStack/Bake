@@ -34,7 +34,7 @@ export function CreateOrderModal({ couriers, onClose, onSuccess }: CreateOrderMo
   const [fullName, setFullName] = useState("");
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
-  const [city, setCity] = useState("Lahore");
+  const [city, setCity] = useState("Karachi");
   const [area, setArea] = useState("");
   const [address, setAddress] = useState("");
   const [landmark, setLandmark] = useState("");
@@ -105,7 +105,7 @@ export function CreateOrderModal({ couriers, onClose, onSuccess }: CreateOrderMo
     setFullName(c.full_name || "");
     setPhone(c.phone || "");
     if (c.default_address) {
-      setCity(c.default_address.city || "Lahore");
+      setCity(c.default_address.city || "Karachi");
       setArea(c.default_address.area || "");
       setAddress(c.default_address.address || "");
       setLandmark(c.default_address.landmark || "");
@@ -376,7 +376,7 @@ export function CreateOrderModal({ couriers, onClose, onSuccess }: CreateOrderMo
                   required
                   value={city}
                   onChange={(e) => setCity(e.target.value)}
-                  placeholder="Lahore"
+                  placeholder="Karachi"
                   className="mt-1 w-full rounded-xl border border-line bg-white px-3 py-2 text-xs font-semibold outline-none focus:border-orange transition-all"
                 />
               </label>

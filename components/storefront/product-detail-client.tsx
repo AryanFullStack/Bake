@@ -8,7 +8,7 @@ import {
   Plus, RotateCcw, Share2, ShieldCheck, Sparkles, Star, Truck, X, Zap, ZoomIn,
 } from "lucide-react";
 import type { Product, ProductAttribute, ProductVariation } from "@/lib/types";
-import { formatPKR } from "@/lib/catalog";
+import { formatPKR, isFoodOrBakeryProduct } from "@/lib/catalog";
 import { resolveProductGallery } from "@/lib/gallery-resolver";
 import { useCart } from "./cart-provider";
 import { ProductReviewsSection } from "./product-reviews-section";
@@ -237,11 +237,55 @@ export function ProductDetailClient({ product, reviews, faqs = [] }: { product: 
 
   const avgRating = reviews.length ? reviews.reduce((sum, review) => sum + review.rating, 0) / reviews.length : product.rating ?? 0;
   const discountPercent = activeSalePrice && activePrice > activeSalePrice ? Math.round(((activePrice - activeSalePrice) / activePrice) * 100) : null;
-  const tabs: { id: Tab; label: string }[] = [
-    { id: "description", label: "Description" }, { id: "specifications", label: "Specifications" },
-    { id: "ingredients", label: "Ingredients" }, { id: "care", label: "Care" }, { id: "delivery", label: "Delivery" },
-    { id: "returns", label: "Returns" }, { id: "reviews", label: `Reviews (${reviews.length})` }, { id: "faqs", label: "FAQs" },
-  ];
+  const isFood = useMemo(() => {
+    return isFoodOrBakeryProduct({
+      category: product.category,
+      name: product.name,
+      tags: product.tags,
+      hasIngredients: Boolean(product.ingredients?.trim()),
+    });
+  }, [product.category, product.name, product.tags, product.ingredients]);
+
+  const showIngredientsTab = useMemo(() => {
+    if (!isFood) return false;
+    const normCat = (product.category || "").toLowerCase();
+    const isBakeryOrCake =
+      normCat.includes("cake") ||
+      normCat.includes("bakery") ||
+      normCat.includes("pastr") ||
+      normCat.includes("cupcake") ||
+      normCat.includes("brownie") ||
+      normCat.includes("cookie") ||
+      normCat.includes("dessert");
+    return isBakeryOrCake || Boolean(product.ingredients?.trim());
+  }, [isFood, product.category, product.ingredients]);
+
+  const tabs: { id: Tab; label: string }[] = useMemo(() => {
+    const list: { id: Tab; label: string }[] = [
+      { id: "description", label: "Description" },
+      { id: "specifications", label: "Specifications" },
+    ];
+
+    if (showIngredientsTab) {
+      list.push({ id: "ingredients", label: "Ingredients" });
+    }
+
+    list.push(
+      { id: "care", label: "Care" },
+      { id: "delivery", label: "Delivery" },
+      { id: "returns", label: "Returns" },
+      { id: "reviews", label: `Reviews (${reviews.length})` },
+      { id: "faqs", label: "FAQs" }
+    );
+
+    return list;
+  }, [showIngredientsTab, reviews.length]);
+
+  useEffect(() => {
+    if (activeTab === "ingredients" && !showIngredientsTab) {
+      setActiveTab("description");
+    }
+  }, [activeTab, showIngredientsTab]);
 
   return (
     <div className="mt-8 md:mt-12">
@@ -540,7 +584,7 @@ export function ProductDetailClient({ product, reviews, faqs = [] }: { product: 
         </div>
       </div>
 
-      <section className="mt-16 rounded-3xl border border-line/60 bg-white p-5 shadow-xs sm:p-8"><div className="flex gap-6 overflow-x-auto border-b border-line">{tabs.map((tab) => <button key={tab.id} onClick={() => setActiveTab(tab.id)} className={`relative whitespace-nowrap pb-4 text-sm font-bold ${activeTab === tab.id ? "text-orange after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:rounded-full after:bg-orange" : "text-muted hover:text-navy"}`}>{tab.label}</button>)}</div><div className="mt-7 max-w-3xl text-sm font-medium leading-relaxed text-muted">{activeTab === "description" && <p>{activeDescription}</p>}{activeTab === "specifications" && <div className="grid gap-2">{Object.entries(activeVariation?.specifications ?? product.specifications ?? {}).map(([key, value]) => <div key={key} className="flex justify-between gap-6 border-b border-line/60 py-2"><span className="font-bold text-navy">{key}</span><span>{String(value)}</span></div>)}</div>}{activeTab === "ingredients" && <p>{product.ingredients || "Ingredients information will be available soon."}</p>}{activeTab === "care" && <p>{product.careInstructions || "Care instructions will be available soon."}</p>}{activeTab === "delivery" && <p>{product.deliveryInformation || "Same-day delivery is available across Lahore for orders placed before 1:00 PM."}</p>}{activeTab === "returns" && <p>{product.returnPolicy || "Contact our support team within 24 hours of delivery for return assistance."}</p>}{activeTab === "reviews" && <ProductReviewsSection product={product} reviews={reviews} />}{activeTab === "faqs" && <div className="grid gap-3">{faqs.length ? faqs.map((faq) => <details key={faq.id} className="rounded-xl border border-line/70 p-4"><summary className="cursor-pointer font-bold text-navy">{faq.question}</summary><p className="mt-3">{faq.answer}</p></details>) : <p>Frequently asked questions will be available soon.</p>}</div>}</div></section>
+      <section className="mt-16 rounded-3xl border border-line/60 bg-white p-5 shadow-xs sm:p-8"><div className="flex gap-6 overflow-x-auto border-b border-line">{tabs.map((tab) => <button key={tab.id} onClick={() => setActiveTab(tab.id)} className={`relative whitespace-nowrap pb-4 text-sm font-bold ${activeTab === tab.id ? "text-orange after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:rounded-full after:bg-orange" : "text-muted hover:text-navy"}`}>{tab.label}</button>)}</div><div className="mt-7 max-w-3xl text-sm font-medium leading-relaxed text-muted">{activeTab === "description" && <p>{activeDescription}</p>}{activeTab === "specifications" && <div className="grid gap-2">{Object.entries(activeVariation?.specifications ?? product.specifications ?? {}).map(([key, value]) => <div key={key} className="flex justify-between gap-6 border-b border-line/60 py-2"><span className="font-bold text-navy">{key}</span><span>{String(value)}</span></div>)}</div>}{activeTab === "ingredients" && <p>{product.ingredients || "Ingredients information will be available soon."}</p>}{activeTab === "care" && <p>{product.careInstructions || "Care instructions will be available soon."}</p>}{activeTab === "delivery" && <p>{product.deliveryInformation || "Same-day delivery is available across Karachi for orders placed before 1:00 PM. Nationwide online delivery is available across Pakistan via reliable courier partners."}</p>}{activeTab === "returns" && <p>{product.returnPolicy || "Contact our support team at info@bakebazaarmart.com for return or replacement assistance."}</p>}{activeTab === "reviews" && <ProductReviewsSection product={product} reviews={reviews} />}{activeTab === "faqs" && <div className="grid gap-3">{faqs.length ? faqs.map((faq) => <details key={faq.id} className="rounded-xl border border-line/70 p-4"><summary className="cursor-pointer font-bold text-navy">{faq.question}</summary><p className="mt-3">{faq.answer}</p></details>) : <p>Frequently asked questions will be available soon.</p>}</div>}</div></section>
 
     </div>
   );

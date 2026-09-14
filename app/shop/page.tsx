@@ -1,6 +1,13 @@
+import type { Metadata } from "next";
 import { getCategories, getProducts } from "@/lib/storefront";
 import { ShopBrowser } from "@/components/storefront/shop-browser";
 import type { Category } from "@/lib/types";
+
+export const metadata: Metadata = {
+  title: "Shop All Products | Bake Bazaar Mart Karachi",
+  description:
+    "Explore our complete collection of fresh bakery, celebration cakes, home decoration, kitchen essentials, daily essentials, and lifestyle goods. Fast delivery in Karachi and shipping all over Pakistan.",
+};
 
 function resolveCategoryName(slug: string | undefined, categories: Category[]): string {
   if (!slug || slug.toLowerCase() === "all") return "All";
@@ -50,4 +57,4 @@ export default async function ShopPage({ searchParams }: { searchParams: Promise
   const initialCategory = resolveCategoryName(params.category, categories);
   return <ShopBrowser categories={categories} products={products} initialCategory={initialCategory} initialQuery={params.q ?? ""} initialSaleOnly={params.sale === "1"} />;
 }
-export const dynamic = "force-dynamic";
+export const revalidate = 60;

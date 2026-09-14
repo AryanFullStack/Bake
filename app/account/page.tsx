@@ -31,7 +31,7 @@ export default async function AccountPage() {
             <Sparkles size={13} /> CUSTOMER PORTAL
           </div>
           <h1 className="font-display text-2xl sm:text-4xl lg:text-5xl font-bold text-navy">
-            {user ? `Welcome back, ${user.user_metadata?.full_name || "Valued Customer"}.` : "Hello, Guest Baker."}
+            {user ? `Welcome back, ${user.user_metadata?.full_name || "Valued Customer"}.` : "Hello, Valued Customer."}
           </h1>
           <p className="mt-2 text-sm text-muted font-medium">
             {user
@@ -67,7 +67,7 @@ export default async function AccountPage() {
             <LayoutDashboard size={24} />
           </div>
           <div>
-            <p className="font-bold text-base text-white">Bake Mart Admin Studio</p>
+            <p className="font-bold text-base text-white">Bake Bazaar Mart Admin Studio</p>
             <p className="mt-0.5 text-xs text-white/70">Manage orders, products, custom cake quotes & site settings</p>
           </div>
           <span className="ml-auto inline-flex items-center gap-1 text-xs font-extrabold text-orange">

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState, useCallback } from "react";
+import React, { useState, useCallback, useMemo } from "react";
 import { Check, Eye, Heart, Plus, ShoppingBag, Star, Zap } from "lucide-react";
 import type { Product } from "@/lib/types";
 import { formatPKR } from "@/lib/catalog";
@@ -40,8 +40,10 @@ export function ProductCard({ product, priority = false }: { product: Product; p
   const [hovering, setHovering] = useState(false);
   const [quickViewOpen, setQuickViewOpen] = useState(false);
 
+  const [hasHovered, setHasHovered] = useState(false);
+
   // Build de-duped image list: primary first, then gallery extras
-  const allImages: string[] = (() => {
+  const allImages = useMemo(() => {
     const seen = new Set<string>();
     const imgs: string[] = [];
     for (const rawSrc of [product.image, ...(product.images ?? [])]) {
@@ -49,7 +51,7 @@ export function ProductCard({ product, priority = false }: { product: Product; p
       if (src && !seen.has(src)) { seen.add(src); imgs.push(src); }
     }
     return imgs;
-  })();
+  }, [product.image, product.images]);
   const hasMultiple = allImages.length > 1;
 
   const hasDeal = Boolean(product.dealInfo?.isOnDeal);
@@ -93,7 +95,10 @@ export function ProductCard({ product, priority = false }: { product: Product; p
     <article
       className="group relative flex min-w-0 flex-col overflow-hidden border border-line/70 bg-white transition-all duration-300 hover:-translate-y-1.5 hover:shadow-[0_20px_50px_rgba(6,33,54,.13)] hover:border-orange/25"
       style={{ borderRadius: "var(--radius-card)" }}
-      onMouseEnter={() => setHovering(true)}
+      onMouseEnter={() => {
+        setHovering(true);
+        if (!hasHovered) setHasHovered(true);
+      }}
       onMouseLeave={() => setHovering(false)}
     >
       {/* ── Image area ───────────────────────────────── */}
@@ -109,11 +114,11 @@ export function ProductCard({ product, priority = false }: { product: Product; p
             priority={priority}
             loading={priority ? "eager" : "lazy"}
             className={`object-cover transition-all duration-700 ${
-              hovering && hasMultiple ? "opacity-0 scale-[1.05]" : "opacity-100 scale-100"
+              hovering && hasMultiple && hasHovered ? "opacity-0 scale-[1.05]" : "opacity-100 scale-100"
             }`}
           />
-          {/* Secondary (hover) image — always lazy, lower quality fine */}
-          {hasMultiple && (
+          {/* Secondary (hover) image — only mounted on first hover to avoid duplicate requests */}
+          {hasMultiple && hasHovered && (
             <SafeImage
               src={allImages[1]}
               alt={`${product.name} – alternate view`}
