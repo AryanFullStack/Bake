@@ -42,10 +42,10 @@ const SCENES: HeroScene[] = [
     title: "Beautiful Spaces",
     subtitle: "Curated home accents & décor that bring warmth to every corner.",
     cta: "Explore Home",
-    href: "/shop?category=home-decor",
+    href: "/category/home-decor",
     mobileImg: "/HomeM.webp",
     desktopImg: "/homeDisktop.webp",
-    alt: "Warm cosy living room interior with wooden shelves and décor",
+    alt: "Bake Bazaar Mart curated home décor and living room styling accents",
     mobileObjPos: "center center",
     desktopObjPos: "center center",
     blurDataURL: HOME_DECOR_BLUR,
@@ -59,10 +59,10 @@ const SCENES: HeroScene[] = [
     title: "Made to Celebrate",
     subtitle: "Artisan cakes & fresh treats handcrafted for every special moment.",
     cta: "Shop Cakes",
-    href: "/shop?category=bakery",
+    href: "/category/bakery",
     mobileImg: "/CakeM.webp",
     desktopImg: "/CakeD.webp",
-    alt: "Beautiful white celebration cake framed on a red velvet stand",
+    alt: "Handcrafted celebration cake baked fresh daily by Bake Bazaar Mart Karachi",
     mobileObjPos: "center 65%",
     desktopObjPos: "right center",
     blurDataURL: BAKERY_BLUR,
@@ -76,10 +76,10 @@ const SCENES: HeroScene[] = [
     title: "Timeless Style",
     subtitle: "Precision timepieces designed with luxury and everyday elegance.",
     cta: "Shop Watches",
-    href: "/shop?category=watches",
+    href: "/category/watches",
     mobileImg: "/WM.webp",
     desktopImg: "/WD.webp",
-    alt: "Luxury watch surrounded by rich burgundy silk backdrop",
+    alt: "Classic and contemporary wristwatches collection at Bake Bazaar Mart",
     mobileObjPos: "center center",
     desktopObjPos: "center center",
     blurDataURL: WATCH_BLUR,
@@ -274,15 +274,15 @@ export function MultiCategoryHero() {
                     </span>
                   </motion.div>
 
-                  {/* Main Title */}
-                  <motion.h1
+                  {/* Slide Title */}
+                  <motion.h2
                     initial={prefersReducedMotion ? false : { opacity: 0, y: 8 }}
                     animate={isActive ? { opacity: 1, y: 0 } : { opacity: 0, y: 8 }}
                     transition={{ duration: 0.2, delay: 0.03 }}
                     className="font-display font-black text-3.5xl sm:text-5xl lg:text-6xl text-white tracking-tight leading-[1.05] drop-shadow-xl"
                   >
                     {scene.title}
-                  </motion.h1>
+                  </motion.h2>
 
                   {/* Supporting Subtitle */}
                   <motion.p

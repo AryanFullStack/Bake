@@ -6,10 +6,41 @@ import {
   ShieldCheck, Sparkles, Truck, UtensilsCrossed, Watch,
 } from "lucide-react";
 
+import {
+  JsonLd,
+  buildBreadcrumbSchema,
+  SITE_URL,
+} from "@/components/seo/json-ld";
+
 export const metadata: Metadata = {
-  title: "About Us",
+  title: "About Us - Our Story & Karachi Family Store",
   description:
     "Learn about Bake Bazaar Mart — your trusted online family and general store based in Karachi, Pakistan, delivering fresh bakery, custom cakes, home décor, kitchen essentials, and everyday products.",
+  alternates: {
+    canonical: "/about",
+  },
+  openGraph: {
+    title: "About Us | Bake Bazaar Mart",
+    description:
+      "Your online family and general store in Karachi, Pakistan. Fresh bakery, custom cakes, home décor, kitchen essentials, and everyday products.",
+    url: `${SITE_URL}/about`,
+    type: "website",
+    images: [
+      {
+        url: "/homeDisktop.webp",
+        width: 1200,
+        height: 630,
+        alt: "About Bake Bazaar Mart Karachi",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "About Us | Bake Bazaar Mart",
+    description:
+      "Discover the story of Bake Bazaar Mart — fresh bakery, custom celebration cakes, home decoration, and everyday essentials in Karachi.",
+    images: ["/homeDisktop.webp"],
+  },
 };
 
 const CATEGORIES = [
@@ -49,8 +80,37 @@ const STORE_HIGHLIGHTS = [
 ];
 
 export default function AboutPage() {
+  const breadcrumbs = [
+    { name: "Home", url: "/" },
+    { name: "About Us", url: "/about" },
+  ];
+  const breadcrumbSchema = buildBreadcrumbSchema(breadcrumbs);
+
+  const aboutSchema = {
+    "@context": "https://schema.org",
+    "@type": "AboutPage",
+    name: "About Bake Bazaar Mart",
+    url: `${SITE_URL}/about`,
+    description:
+      "Bake Bazaar Mart is an online family and general store based in Karachi, Pakistan, offering bakery, custom cakes, home decoration, kitchen essentials, watches, and daily products.",
+    mainEntity: {
+      "@type": "Organization",
+      name: "Bake Bazaar Mart",
+      url: SITE_URL,
+      email: "info@bakebazaarmart.com",
+      address: {
+        "@type": "PostalAddress",
+        addressLocality: "Karachi",
+        addressRegion: "Sindh",
+        addressCountry: "PK",
+      },
+    },
+  };
+
   return (
     <div className="flex flex-col gap-0">
+      <JsonLd data={breadcrumbSchema} />
+      <JsonLd data={aboutSchema} />
 
       {/* ── Hero ─────────────────────────────────────────────── */}
       <section className="relative overflow-hidden bg-navy py-20 md:py-32">
@@ -98,8 +158,8 @@ export default function AboutPage() {
         </div>
       </section>
 
-      {/* ── What We Offer ─────────────────────────────────────── */}
-      <section className="container-shell py-16 md:py-24">
+      {/* ── What We Offer (Our Story Anchor) ─────────────────── */}
+      <section id="story" className="container-shell py-16 md:py-24">
         <div className="text-center mb-12">
           <p className="eyebrow text-orange">Convenience & Product Variety</p>
           <h2 className="section-heading mt-2">What We Offer</h2>
@@ -287,6 +347,9 @@ export default function AboutPage() {
               </Link>
               <Link href="/custom-cake" className="button-secondary border-white/25 bg-white/10 text-white hover:bg-white hover:text-navy">
                 Custom Cake Studio
+              </Link>
+              <Link href="/contact" className="button-secondary border-white/25 bg-white/10 text-white hover:bg-white hover:text-navy">
+                Contact Our Team
               </Link>
             </div>
           </div>

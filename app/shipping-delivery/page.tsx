@@ -2,15 +2,45 @@ import { Clock, MapPin, ShieldCheck, Sparkles, Truck, Package, CheckCircle2 } fr
 import Link from "next/link";
 import type { Metadata } from "next";
 
+import {
+  JsonLd,
+  buildBreadcrumbSchema,
+  SITE_URL,
+} from "@/components/seo/json-ld";
+
 export const metadata: Metadata = {
-  title: "Shipping & Delivery Information",
+  title: "Shipping & Delivery Information - Karachi & Nationwide Pakistan",
   description:
-    "Bake Bazaar Mart shipping and delivery guidelines — fast local delivery in Karachi and nationwide online delivery all across Pakistan.",
+    "Bake Bazaar Mart delivery and shipping policy — same-day local delivery across Karachi and reliable nationwide courier delivery all across Pakistan.",
+  alternates: {
+    canonical: "/shipping-delivery",
+  },
+  openGraph: {
+    title: "Shipping & Delivery Information | Bake Bazaar Mart",
+    description:
+      "Bake Bazaar Mart shipping guidelines, rates, and coverage — fast local delivery in Karachi and nationwide shipping across Pakistan.",
+    url: `${SITE_URL}/shipping-delivery`,
+    type: "website",
+    images: ["/homeDisktop.webp"],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Shipping & Delivery Information | Bake Bazaar Mart",
+    description:
+      "Local Karachi doorstep delivery and nationwide courier shipping across Pakistan.",
+    images: ["/homeDisktop.webp"],
+  },
 };
 
 export default function ShippingDeliveryPage() {
+  const breadcrumbSchema = buildBreadcrumbSchema([
+    { name: "Home", url: "/" },
+    { name: "Delivery Information", url: "/shipping-delivery" },
+  ]);
+
   return (
     <div className="container-shell py-12 md:py-20">
+      <JsonLd data={breadcrumbSchema} />
       <div className="mx-auto max-w-3xl">
         <div className="inline-flex items-center gap-2 rounded-full bg-orange/10 px-3.5 py-1.5 text-xs font-bold text-orange border border-orange/20 mb-3">
           <Truck size={14} /> DELIVERY & LOGISTICS POLICY

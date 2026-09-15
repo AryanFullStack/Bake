@@ -1,6 +1,8 @@
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { getCustomCakeStepIndex, getStandardOrderStepIndex } from "./tracking-status";
+import { parseCakeSpecifications, parseQuotationBreakdown } from "./custom-cake";
+import { resolveCakeImageUrl } from "./custom-cake-media";
 
 export { getCustomCakeStepIndex, getStandardOrderStepIndex };
 
@@ -14,32 +16,25 @@ export interface TrackResult {
 
 export async function findUnifiedTrackOrder(
   rawReference: string,
-  rawPhone: string
+  rawPhoneOrEmail: string
 ): Promise<TrackResult> {
   const ref = (rawReference || "").trim();
-  const phone = (rawPhone || "").trim();
+  const verification = (rawPhoneOrEmail || "").trim();
 
   if (!ref) {
-    return { found: false, error: "Please enter an order or request reference number." };
+    return { found: false, error: "Please enter an order or custom cake request reference number." };
   }
-  if (!phone || phone.replace(/\D/g, "").length < 7) {
-    return { found: false, error: "Please enter a valid phone number (at least 7 digits)." };
+  if (!verification) {
+    return { found: false, error: "Please enter your phone number or email for verification." };
   }
 
-  const phoneDigits = phone.replace(/\D/g, "");
+  const isEmail = verification.includes("@");
+  const phoneDigits = verification.replace(/\D/g, "");
   const last10Phone = phoneDigits.slice(-10);
 
-  // Generate phone variants for database RPC lookups
-  const phoneVariants = Array.from(
-    new Set([
-      phone,
-      phoneDigits,
-      `0${last10Phone}`,
-      `92${last10Phone}`,
-      `+92${last10Phone}`,
-      phoneDigits.slice(-11),
-    ])
-  ).filter(Boolean);
+  if (!isEmail && phoneDigits.length < 7) {
+    return { found: false, error: "Please enter a valid phone number (at least 7 digits) or email address." };
+  }
 
   const cleanRef = ref.toUpperCase();
 
@@ -63,120 +58,184 @@ export async function findUnifiedTrackOrder(
         ? `BM-${cleanRef}`
         : `BM-CR-${cleanRef.replace(/^BM-/, "")}`,
       `BM-CR-${cleanRef}`,
+      cleanRef,
     ])
   );
 
-  const supabase = await createSupabaseServerClient();
-
-  // 1. Check RPC track_order
-  for (const oRef of orderRefVariants) {
-    for (const pVar of phoneVariants) {
-      try {
-        const { data } = await supabase.rpc("track_order", {
-          p_order_number: oRef,
-          p_phone: pVar,
-        });
-        if (data && data.order_number) {
-          return {
-            found: true,
-            type: "standard",
-            order: data,
-          };
-        }
-      } catch {
-        // continue
-      }
-    }
-  }
-
-  // 2. Check RPC track_custom_cake
-  for (const cRef of cakeRefVariants) {
-    for (const pVar of phoneVariants) {
-      try {
-        const { data } = await supabase.rpc("track_custom_cake", {
-          p_request_number: cRef,
-          p_phone: pVar,
-        });
-        if (data && data.request_number) {
-          const req = {
-            ...data,
-            full_name: data.customer_name || data.full_name,
-            price_quote: data.quote?.amount ?? data.price_quote,
-            admin_notes: data.quote?.note ?? data.admin_notes,
-          };
-          return {
-            found: true,
-            type: "custom_cake",
-            request: req,
-          };
-        }
-      } catch {
-        // continue
-      }
-    }
-  }
-
-  // 3. Fallback: Query direct database via Admin client if available to handle phone format variations
   const admin = createSupabaseAdminClient();
-  if (admin) {
-    // Search standard orders
-    for (const oRef of orderRefVariants) {
-      const { data: orderRows } = await admin
-        .from("orders")
-        .select("*, order_status_history(*), order_items(product_id, product_name, variation_title, variation_attributes, image_path, sku, unit_price, quantity, line_total), couriers(*)")
-        .ilike("order_number", oRef);
+  const supabase = await createSupabaseServerClient();
+  const dbClient = admin ?? supabase;
 
-      if (orderRows && orderRows.length > 0) {
-        for (const orderRow of orderRows) {
-          const rowDigits = (orderRow.customer_phone || "").replace(/\D/g, "");
-          if (
-            rowDigits === phoneDigits ||
-            (last10Phone.length >= 7 && rowDigits.slice(-10) === last10Phone) ||
-            rowDigits.endsWith(phoneDigits) ||
-            phoneDigits.endsWith(rowDigits)
-          ) {
-            return {
-              found: true,
-              type: "standard",
-              order: {
-                ...orderRow,
-                history: orderRow.order_status_history || [],
-              },
-            };
-          }
-        }
-      }
-    }
+  // 1. If it looks like a custom cake reference (BM-CR or CR), check custom cakes first
+  const isCakeRef = cleanRef.startsWith("BM-CR") || cleanRef.startsWith("CR");
 
-    // Search custom cake requests
+  if (isCakeRef) {
     for (const cRef of cakeRefVariants) {
-      const { data: cakeRows } = await admin
+      const { data: cakeRows } = await dbClient
         .from("custom_cake_requests")
-        .select("*, custom_cake_status_history(*), custom_cake_quotes(*)")
+        .select(`
+          *,
+          custom_cake_status_history(*),
+          custom_cake_quotes(*),
+          custom_cake_images(*),
+          orders:linked_order_id(id, order_number, status)
+        `)
         .ilike("request_number", cRef);
 
       if (cakeRows && cakeRows.length > 0) {
         for (const cakeRow of cakeRows) {
-          const rowDigits = (cakeRow.phone || "").replace(/\D/g, "");
-          if (
-            rowDigits === phoneDigits ||
-            (last10Phone.length >= 7 && rowDigits.slice(-10) === last10Phone) ||
-            rowDigits.endsWith(phoneDigits) ||
-            phoneDigits.endsWith(rowDigits)
-          ) {
-            const quote = Array.isArray(cakeRow.custom_cake_quotes)
+          let verified = false;
+          if (isEmail) {
+            verified = (cakeRow.email || "").toLowerCase() === verification.toLowerCase();
+          } else {
+            const rowDigits = (cakeRow.phone || "").replace(/\D/g, "");
+            verified =
+              rowDigits === phoneDigits ||
+              (last10Phone.length >= 7 && rowDigits.slice(-10) === last10Phone) ||
+              rowDigits.endsWith(phoneDigits) ||
+              phoneDigits.endsWith(rowDigits);
+          }
+
+          if (verified) {
+            const quoteRow = Array.isArray(cakeRow.custom_cake_quotes)
               ? cakeRow.custom_cake_quotes[0]
               : cakeRow.custom_cake_quotes;
+            const quote = parseQuotationBreakdown(quoteRow, cakeRow);
+            const specs = parseCakeSpecifications(cakeRow);
+
+            const images = (cakeRow.custom_cake_images || []).map((img: any) => ({
+              id: img.id,
+              url: resolveCakeImageUrl(img.storage_path),
+              created_at: img.created_at,
+            }));
+
+            const sortedHistory = (cakeRow.custom_cake_status_history || []).sort(
+              (a: any, b: any) =>
+                new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+            );
+
             return {
               found: true,
               type: "custom_cake",
               request: {
                 ...cakeRow,
                 full_name: cakeRow.customer_name,
+                specs,
                 quote,
-                price_quote: quote?.amount,
-                admin_notes: quote?.note,
-                history: cakeRow.custom_cake_status_history || [],
+                price_quote: quote?.final_price ?? quoteRow?.amount,
+                deposit_required: quote?.deposit_amount ?? quoteRow?.deposit_amount ?? 0,
+                admin_notes: quote?.note ?? quoteRow?.note,
+                images,
+                history: sortedHistory,
+                linked_order: cakeRow.orders || null,
+              },
+            };
+          }
+        }
+      }
+    }
+  }
+
+  // 2. Check Standard Orders
+  for (const oRef of orderRefVariants) {
+    const { data: orderRows } = await dbClient
+      .from("orders")
+      .select("*, order_status_history(*), order_items(*), couriers(*), payments(*)")
+      .ilike("order_number", oRef);
+
+    if (orderRows && orderRows.length > 0) {
+      for (const orderRow of orderRows) {
+        let verified = false;
+        if (isEmail) {
+          verified = (orderRow.customer_email || "").toLowerCase() === verification.toLowerCase();
+        } else {
+          const rowDigits = (orderRow.customer_phone || "").replace(/\D/g, "");
+          verified =
+            rowDigits === phoneDigits ||
+            (last10Phone.length >= 7 && rowDigits.slice(-10) === last10Phone) ||
+            rowDigits.endsWith(phoneDigits) ||
+            phoneDigits.endsWith(rowDigits);
+        }
+
+        if (verified) {
+          const sortedHistory = (orderRow.order_status_history || []).sort(
+            (a: any, b: any) =>
+              new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+          );
+
+          return {
+            found: true,
+            type: "standard",
+            order: {
+              ...orderRow,
+              history: sortedHistory,
+            },
+          };
+        }
+      }
+    }
+  }
+
+  // 3. Fallback: Check custom cakes if not checked earlier
+  if (!isCakeRef) {
+    for (const cRef of cakeRefVariants) {
+      const { data: cakeRows } = await dbClient
+        .from("custom_cake_requests")
+        .select(`
+          *,
+          custom_cake_status_history(*),
+          custom_cake_quotes(*),
+          custom_cake_images(*),
+          orders:linked_order_id(id, order_number, status)
+        `)
+        .ilike("request_number", cRef);
+
+      if (cakeRows && cakeRows.length > 0) {
+        for (const cakeRow of cakeRows) {
+          let verified = false;
+          if (isEmail) {
+            verified = (cakeRow.email || "").toLowerCase() === verification.toLowerCase();
+          } else {
+            const rowDigits = (cakeRow.phone || "").replace(/\D/g, "");
+            verified =
+              rowDigits === phoneDigits ||
+              (last10Phone.length >= 7 && rowDigits.slice(-10) === last10Phone) ||
+              rowDigits.endsWith(phoneDigits) ||
+              phoneDigits.endsWith(rowDigits);
+          }
+
+          if (verified) {
+            const quoteRow = Array.isArray(cakeRow.custom_cake_quotes)
+              ? cakeRow.custom_cake_quotes[0]
+              : cakeRow.custom_cake_quotes;
+            const quote = parseQuotationBreakdown(quoteRow, cakeRow);
+            const specs = parseCakeSpecifications(cakeRow);
+
+            const images = (cakeRow.custom_cake_images || []).map((img: any) => ({
+              id: img.id,
+              url: resolveCakeImageUrl(img.storage_path),
+              created_at: img.created_at,
+            }));
+
+            const sortedHistory = (cakeRow.custom_cake_status_history || []).sort(
+              (a: any, b: any) =>
+                new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+            );
+
+            return {
+              found: true,
+              type: "custom_cake",
+              request: {
+                ...cakeRow,
+                full_name: cakeRow.customer_name,
+                specs,
+                quote,
+                price_quote: quote?.final_price ?? quoteRow?.amount,
+                deposit_required: quote?.deposit_amount ?? quoteRow?.deposit_amount ?? 0,
+                admin_notes: quote?.note ?? quoteRow?.note,
+                images,
+                history: sortedHistory,
+                linked_order: cakeRow.orders || null,
               },
             };
           }
@@ -187,6 +246,6 @@ export async function findUnifiedTrackOrder(
 
   return {
     found: false,
-    error: "Order or custom cake request not found. Check both details and try again.",
+    error: "Order or custom cake request not found. Check both reference number and phone/email and try again.",
   };
 }

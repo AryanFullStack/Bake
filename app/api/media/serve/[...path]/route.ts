@@ -67,6 +67,39 @@ export async function GET(
       }
     }
 
+    // 3. Fallback: Check Supabase Storage private buckets (custom-cake-references, payment-receipts)
+    if (process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY) {
+      try {
+        const { createClient } = await import("@supabase/supabase-js");
+        const admin = createClient(
+          process.env.NEXT_PUBLIC_SUPABASE_URL,
+          process.env.SUPABASE_SERVICE_ROLE_KEY,
+          { auth: { autoRefreshToken: false, persistSession: false } }
+        );
+
+        const cleanPath = relativePath.replace(/^\/+/, "");
+        const buckets = ["custom-cake-references", "payment-receipts", "product-images"];
+        for (const bucket of buckets) {
+          const pathToCheck = cleanPath.startsWith(`${bucket}/`) ? cleanPath.substring(bucket.length + 1) : cleanPath;
+          const { data: supaBlob } = await admin.storage.from(bucket).download(pathToCheck);
+          if (supaBlob) {
+            const buffer = Buffer.from(await supaBlob.arrayBuffer());
+            return new NextResponse(new Uint8Array(buffer), {
+              status: 200,
+              headers: {
+                "Content-Type": supaBlob.type || "image/jpeg",
+                "Content-Length": buffer.length.toString(),
+                "Cache-Control": "public, max-age=86400, immutable",
+                "X-Content-Type-Options": "nosniff",
+              },
+            });
+          }
+        }
+      } catch (supaErr) {
+        console.warn("[API media/serve] Supabase storage fallback check error:", supaErr);
+      }
+    }
+
     return new NextResponse("Image Not Found", { status: 404 });
   } catch (error) {
     console.error("[API media/serve] Error serving image:", error);

@@ -18,6 +18,13 @@ const manrope = Manrope({
   display: "swap",
 });
 
+import {
+  JsonLd,
+  buildOrganizationSchema,
+  buildWebSiteSchema,
+  buildLocalBusinessSchema,
+} from "@/components/seo/json-ld";
+
 export const metadata: Metadata = {
   title: {
     default: "Bake Bazaar Mart | Cakes, Home Décor, Kitchen & Everyday Essentials",
@@ -39,6 +46,9 @@ export const metadata: Metadata = {
     "online shopping Pakistan"
   ],
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "https://bakebazaarmart.com"),
+  alternates: {
+    canonical: "/",
+  },
   openGraph: {
     title: "Bake Bazaar Mart | Cakes, Home Décor, Kitchen & Everyday Essentials",
     description: "Your trusted online family and general store in Karachi, Pakistan. Fresh cakes & bakery, custom cakes, home décor, kitchen essentials, watches & daily products delivered across Karachi and nationwide.",
@@ -46,11 +56,26 @@ export const metadata: Metadata = {
     siteName: "Bake Bazaar Mart",
     locale: "en_PK",
     type: "website",
+    images: [
+      {
+        url: "/homeDisktop.webp",
+        width: 1200,
+        height: 630,
+        alt: "Bake Bazaar Mart — Cakes, Home Décor & Everyday Essentials",
+      },
+      {
+        url: "/logobake-01.png",
+        width: 600,
+        height: 315,
+        alt: "Bake Bazaar Mart Official Logo",
+      },
+    ],
   },
   twitter: {
     card: "summary_large_image",
     title: "Bake Bazaar Mart | Cakes, Home Décor, Kitchen & Everyday Essentials",
     description: "Online family store in Karachi, Pakistan. Fresh bakery, custom cakes, home décor, kitchen essentials, watches & everyday essentials delivered across Pakistan.",
+    images: ["/homeDisktop.webp"],
   },
   icons: {
     icon: "/logomainficonocns-01.png",
@@ -60,8 +85,17 @@ export const metadata: Metadata = {
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+  const organizationSchema = buildOrganizationSchema();
+  const webSiteSchema = buildWebSiteSchema();
+  const localBusinessSchema = buildLocalBusinessSchema();
+
   return (
     <html lang="en" suppressHydrationWarning className={`${playfair.variable} ${manrope.variable}`}>
+      <head>
+        <JsonLd data={organizationSchema} />
+        <JsonLd data={webSiteSchema} />
+        <JsonLd data={localBusinessSchema} />
+      </head>
       <body suppressHydrationWarning className="min-h-screen flex flex-col antialiased bg-cream text-ink font-sans">
         <LenisProvider>
           <CartProvider>

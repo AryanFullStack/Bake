@@ -2,11 +2,37 @@ import type { Metadata } from "next";
 import { getCategories, getProducts } from "@/lib/storefront";
 import { ShopBrowser } from "@/components/storefront/shop-browser";
 import type { Category } from "@/lib/types";
+import { JsonLd, buildBreadcrumbSchema } from "@/components/seo/json-ld";
 
 export const metadata: Metadata = {
-  title: "Shop All Products | Bake Bazaar Mart Karachi",
+  title: "Shop All Products - Bakery, Home Décor & Essentials",
   description:
     "Explore our complete collection of fresh bakery, celebration cakes, home decoration, kitchen essentials, daily essentials, and lifestyle goods. Fast delivery in Karachi and shipping all over Pakistan.",
+  alternates: {
+    canonical: "/shop",
+  },
+  openGraph: {
+    title: "Shop All Products | Bake Bazaar Mart",
+    description:
+      "Explore our complete collection of fresh bakery, celebration cakes, home decoration, kitchen essentials, daily essentials, and lifestyle goods. Fast delivery in Karachi and shipping all over Pakistan.",
+    url: "https://bakebazaarmart.com/shop",
+    type: "website",
+    images: [
+      {
+        url: "/homeDisktop.webp",
+        width: 1200,
+        height: 630,
+        alt: "Shop All Products at Bake Bazaar Mart Karachi",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Shop All Products | Bake Bazaar Mart",
+    description:
+      "Explore our complete collection of fresh bakery, celebration cakes, home decoration, kitchen essentials, daily essentials, and lifestyle goods.",
+    images: ["/homeDisktop.webp"],
+  },
 };
 
 function resolveCategoryName(slug: string | undefined, categories: Category[]): string {
@@ -48,13 +74,36 @@ function resolveCategoryName(slug: string | undefined, categories: Category[]): 
   return "All";
 }
 
-export default async function ShopPage({ searchParams }: { searchParams: Promise<{ category?: string; q?: string; sale?: string }> }) {
+export default async function ShopPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ category?: string; q?: string; sale?: string }>;
+}) {
   const params = await searchParams;
   const [categories, products] = await Promise.all([
     getCategories(),
-    getProducts({ search: params.q, saleOnly: params.sale === "1", limit: 100 })
+    getProducts({ search: params.q, saleOnly: params.sale === "1", limit: 100 }),
   ]);
   const initialCategory = resolveCategoryName(params.category, categories);
-  return <ShopBrowser categories={categories} products={products} initialCategory={initialCategory} initialQuery={params.q ?? ""} initialSaleOnly={params.sale === "1"} />;
+
+  const breadcrumbs = [
+    { name: "Home", url: "/" },
+    { name: "Shop", url: "/shop" },
+  ];
+  const breadcrumbSchema = buildBreadcrumbSchema(breadcrumbs);
+
+  return (
+    <>
+      <JsonLd data={breadcrumbSchema} />
+      <ShopBrowser
+        categories={categories}
+        products={products}
+        initialCategory={initialCategory}
+        initialQuery={params.q ?? ""}
+        initialSaleOnly={params.sale === "1"}
+      />
+    </>
+  );
 }
+
 export const revalidate = 60;

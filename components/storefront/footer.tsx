@@ -88,7 +88,7 @@ export function Footer() {
                   ["Our Story",          "/about#story"],
                   ["Custom Cake Studio", "/custom-cake"],
                   ["Delivery & Coverage", "/shipping-delivery"],
-                  ["Admin Portal",       "/admin"],
+                  ["Return & Refund Policy", "/refund-cancellation"],
                 ] as [string, string][]).map(([label, href]) => (
                   <Link key={href} href={href} className="transition-colors hover:text-orange">{label}</Link>
                 ))}
@@ -135,7 +135,6 @@ export function Footer() {
             <span className="rounded bg-white/10 px-2 py-0.5 text-[10px] font-bold text-white/60">Bank Transfer</span>
             <span className="rounded bg-white/10 px-2 py-0.5 text-[10px] font-bold text-white/60">JazzCash</span>
           </div>
-          <Link href="/admin" className="text-white/20 hover:text-white transition-colors">Admin</Link>
         </div>
       </div>
     </footer>

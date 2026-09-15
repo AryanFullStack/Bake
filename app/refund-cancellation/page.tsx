@@ -2,15 +2,45 @@ import { ShieldCheck, Sparkles, RefreshCw, AlertCircle } from "lucide-react";
 import Link from "next/link";
 import type { Metadata } from "next";
 
+import {
+  JsonLd,
+  buildBreadcrumbSchema,
+  SITE_URL,
+} from "@/components/seo/json-ld";
+
 export const metadata: Metadata = {
-  title: "Refund & Cancellation Policy",
+  title: "Return & Refund Policy - Customer Guarantee",
   description:
-    "Bake Bazaar Mart customer return, exchange, cancellation, and refund policies for bakery and general store merchandise.",
+    "Review Bake Bazaar Mart's return, exchange, cancellation, and refund policies for bakery items in Karachi and general merchandise shipped nationwide.",
+  alternates: {
+    canonical: "/refund-cancellation",
+  },
+  openGraph: {
+    title: "Return & Refund Policy | Bake Bazaar Mart",
+    description:
+      "Bake Bazaar Mart customer return, exchange, cancellation, and refund policies.",
+    url: `${SITE_URL}/refund-cancellation`,
+    type: "website",
+    images: ["/homeDisktop.webp"],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Return & Refund Policy | Bake Bazaar Mart",
+    description:
+      "Review Bake Bazaar Mart return, cancellation, and refund policies.",
+    images: ["/homeDisktop.webp"],
+  },
 };
 
 export default function RefundCancellationPage() {
+  const breadcrumbSchema = buildBreadcrumbSchema([
+    { name: "Home", url: "/" },
+    { name: "Return & Refund Policy", url: "/refund-cancellation" },
+  ]);
+
   return (
     <div className="container-shell py-12 md:py-20">
+      <JsonLd data={breadcrumbSchema} />
       <div className="mx-auto max-w-3xl">
         <div className="inline-flex items-center gap-2 rounded-full bg-orange/10 px-3.5 py-1.5 text-xs font-bold text-orange border border-orange/20 mb-3">
           <RefreshCw size={14} /> CUSTOMER PROTECTION POLICY

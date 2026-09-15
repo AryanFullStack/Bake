@@ -138,6 +138,10 @@ export default async function HomePage() {
 
   return (
     <div className="overflow-x-clip">
+      {/* ── Semantic SEO Primary H1 ─────────────────────────── */}
+      <h1 className="sr-only">
+        Bake Bazaar Mart — Fresh Cakes, Home Décor, Kitchen & Everyday Essentials in Karachi
+      </h1>
 
       {/* ── Hero Section ────────────────────────────────────── */}
       <MultiCategoryHero />
@@ -171,13 +175,13 @@ export default async function HomePage() {
               return (
                 <Link
                   key={cat.id}
-                  href={`/shop?category=${cat.slug}`}
+                  href={`/category/${cat.slug}`}
                   className="group shrink-0 w-[165px] sm:w-auto rounded-2xl border border-line bg-white p-3 text-center shadow-xs transition-all duration-300 hover:-translate-y-1 hover:border-orange/30 hover:shadow-md flex flex-col items-center justify-between"
                 >
                   <div className="relative aspect-square w-full overflow-hidden rounded-xl bg-cream-deep">
                     <Image
                       src={catImg}
-                      alt={cat.name}
+                      alt={`${cat.name} — Shop online at Bake Bazaar Mart`}
                       fill
                       sizes="(max-width: 640px) 165px, (max-width: 1024px) 33vw, 18vw"
                       className="object-cover transition-transform duration-500 group-hover:scale-110"
@@ -219,7 +223,7 @@ export default async function HomePage() {
                 <div className="relative aspect-[1.6] w-full overflow-hidden rounded-2xl mb-6 shadow-md bg-navy-dark">
                   <Image
                     src="/cake.webp"
-                    alt="Freshly baked cakes and pastries"
+                    alt="Freshly baked artisan cakes and pastries prepared in small batches daily by Bake Bazaar Mart"
                     fill
                     sizes="(max-width: 768px) 100vw, 50vw"
                     placeholder="blur"
@@ -256,7 +260,7 @@ export default async function HomePage() {
               </div>
 
               <div className="mt-8 pt-4 border-t border-white/10">
-                <Link href="/shop?category=bakery" className="button-primary text-xs sm:text-sm px-6 w-full justify-center">
+                <Link href="/category/bakery" className="button-primary text-xs sm:text-sm px-6 w-full justify-center">
                   Shop Fresh Bakery <ArrowRight size={15} />
                 </Link>
               </div>
@@ -271,7 +275,7 @@ export default async function HomePage() {
                   <div className="hidden md:block absolute inset-0 w-full h-full">
                     <Image
                       src="/custoemcake2.webp"
-                      alt="Custom celebration cake finished in frosting"
+                      alt="Custom celebration cake finished in frosting by Bake Bazaar Mart Karachi"
                       fill
                       sizes="50vw"
                       placeholder="blur"
@@ -283,7 +287,7 @@ export default async function HomePage() {
                   <div className="md:hidden absolute inset-0 w-full h-full">
                     <Image
                       src="/CakeM.webp"
-                      alt="Custom celebration cake mobile visual"
+                      alt="Artisan custom birthday cake decorated by Bake Bazaar Mart"
                       fill
                       sizes="100vw"
                       placeholder="blur"
@@ -600,7 +604,7 @@ export default async function HomePage() {
             <div className="relative aspect-[1.15] overflow-hidden rounded-[28px] shadow-lg">
               <Image
                 src="/cakechake.webp"
-                alt="Bake Bazaar Mart — More than a bakery"
+                alt="Bake Bazaar Mart — Karachi online family store for cakes, home décor and everyday essentials"
                 fill
                 placeholder="blur"
                 blurDataURL={BAKERY_BLUR}

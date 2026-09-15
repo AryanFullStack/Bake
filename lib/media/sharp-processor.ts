@@ -25,7 +25,7 @@ export interface ImageDimensionResult {
   format?: string;
 }
 
-const MAX_FILE_SIZE_BYTES = 5 * 1024 * 1024; // 5 MB
+const MAX_FILE_SIZE_BYTES = 25 * 1024 * 1024; // 25 MB
 
 const FOLDER_DIMENSION_PRESETS: Record<string, { width: number; height: number }> = {
   products: { width: 1200, height: 1200 },
@@ -53,7 +53,7 @@ export function validateImageMagicBytes(buffer: Buffer): { valid: boolean; detec
   }
 
   if (buffer.length > MAX_FILE_SIZE_BYTES) {
-    return { valid: false, error: "File size exceeds maximum allowed limit of 5 MB." };
+    return { valid: false, error: "File size exceeds maximum allowed limit of 25 MB." };
   }
 
   // JPEG: FF D8 FF
@@ -87,6 +87,11 @@ export function validateImageMagicBytes(buffer: Buffer): { valid: boolean; detec
     buffer[11] === 0x50
   ) {
     return { valid: true, detectedType: "image/webp" };
+  }
+
+  // GIF: 47 49 46 38
+  if (buffer[0] === 0x47 && buffer[1] === 0x49 && buffer[2] === 0x46 && buffer[3] === 0x38) {
+    return { valid: true, detectedType: "image/gif" };
   }
 
   return {
