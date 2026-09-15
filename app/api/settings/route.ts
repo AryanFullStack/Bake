@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { createSupabasePublicClient } from "@/lib/supabase/server";
 
 // Cache for 60 seconds to avoid hammering Supabase on every page render
@@ -7,7 +6,6 @@ export const revalidate = 60;
 
 export async function GET() {
   try {
-    const supabase = await createSupabaseServerClient();
     const supabase = createSupabasePublicClient();
     const { data, error } = await supabase
       .from("site_settings")

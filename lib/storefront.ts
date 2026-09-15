@@ -1,4 +1,3 @@
-import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { createSupabasePublicClient } from "@/lib/supabase/server";
 import { mapProduct } from "@/lib/catalog";
 import type { Category, Product } from "@/lib/types";
@@ -11,7 +10,6 @@ function configured() {
 
 export async function getCategories(): Promise<Category[]> {
   if (!configured()) return [];
-  const supabase = await createSupabaseServerClient();
   const supabase = createSupabasePublicClient();
   const { data } = await supabase.from("categories").select("id,name,slug,description,image_path,parent_id").order("sort_order").limit(100);
   
@@ -79,7 +77,6 @@ export async function getCategories(): Promise<Category[]> {
 
 export async function getProducts(options: { featured?: boolean; bestseller?: boolean; category?: string; search?: string; saleOnly?: boolean; limit?: number } = {}): Promise<Product[]> {
   if (!configured()) return [];
-  const supabase = await createSupabaseServerClient();
   const supabase = createSupabasePublicClient();
   let categoryIds: string[] | undefined;
   if (options.category) {
@@ -149,7 +146,6 @@ export async function getProducts(options: { featured?: boolean; bestseller?: bo
 
 export async function getProductBySlug(slug: string) {
   if (!configured()) return null;
-  const supabase = await createSupabaseServerClient();
   const supabase = createSupabasePublicClient();
   
   const rawSlug = decodeURIComponent(slug).trim();
@@ -250,7 +246,6 @@ export async function getHomeContent() {
 
 export async function getFeaturedReviews() {
   if (!configured()) return [];
-  const supabase = await createSupabaseServerClient();
   const supabase = createSupabasePublicClient();
   const { data } = await supabase.from("reviews").select("id,rating,body,created_at,reviewer_name,guest_name,products(name)").or("status.eq.approved,is_approved.eq.true").order("created_at", { ascending: false }).limit(3);
   return data ?? [];
@@ -258,7 +253,6 @@ export async function getFeaturedReviews() {
 
 export async function getBanners() {
   if (!configured()) return [];
-  const supabase = await createSupabaseServerClient();
   const supabase = createSupabasePublicClient();
   const { data } = await supabase.from("banners").select("id,title,body,image_path,cta_label,cta_href").eq("is_active", true).order("sort_order").limit(10);
   return (data ?? []).map((row: any) => ({ ...row, image_path: row.image_path ? resolveMediaUrl(row.image_path) : "/placeholder-bake.svg" }));
@@ -266,7 +260,6 @@ export async function getBanners() {
 
 export async function getFaqs() {
   if (!configured()) return [];
-  const supabase = await createSupabaseServerClient();
   const supabase = createSupabasePublicClient();
   const { data } = await supabase.from("faqs").select("id,question,answer").eq("is_published", true).order("sort_order").limit(100);
   return data ?? [];
@@ -278,7 +271,6 @@ export async function getFaqs() {
  */
 export async function getRelatedProducts(categoryId: string | undefined, excludeId: string, limit = 4): Promise<Product[]> {
   if (!configured()) return [];
-  const supabase = await createSupabaseServerClient();
   const supabase = createSupabasePublicClient();
 
   // Build a targeted query — only fetch what we need for product cards
