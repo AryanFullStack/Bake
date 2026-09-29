@@ -1,4 +1,5 @@
 import { createSupabasePublicClient } from "@/lib/supabase/server";
+import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { mapProduct } from "@/lib/catalog";
 import type { Category, Product } from "@/lib/types";
 import { getActiveDeals, getStorefrontDeals, getFeaturedDeal, attachDealPricingToProduct } from "@/lib/deals";
@@ -130,7 +131,15 @@ export async function getProducts(options: { featured?: boolean; bestseller?: bo
   const rows = data ?? [];
   const ids = rows.map((row: any) => row.id);
   if (!ids.length) return [];
-  const { data: reviews } = await supabase.from("reviews").select("product_id,rating").in("product_id", ids).eq("is_approved", true);
+  const dbClient = createSupabaseAdminClient() ?? supabase;
+  const { data: reviews, error: revError } = await dbClient
+    .from("reviews")
+    .select("product_id,rating")
+    .in("product_id", ids)
+    .or("status.eq.approved,is_approved.eq.true");
+  if (revError) {
+    console.error("[getProducts] reviews error:", revError.message);
+  }
   const summary = new Map<string, { total: number; count: number }>();
   for (const review of reviews ?? []) {
     const current = summary.get(review.product_id) ?? { total: 0, count: 0 };
@@ -185,24 +194,26 @@ export async function getProductBySlug(slug: string) {
   const row = rows.find((r: any) => r.is_published || r.status === "published") ?? rows[0];
   const productId = row.id;
 
+  const dbClient = createSupabaseAdminClient() ?? supabase;
+
   // Step 2: Safely fetch attributes, variations, faqs, and reviews in separate resilient queries
   const [attrRes, varRes, faqRes, reviewRes, activeDeals] = await Promise.all([
-    supabase
+    dbClient
       .from("product_attributes")
       .select("id,name,slug,display_type,sort_order,is_required,controls_images,product_attribute_values(id,label,slug,sort_order,swatch_color,swatch_image,is_active,product_attribute_images(id,storage_path,sort_order,product_image_id))")
       .eq("product_id", productId)
       .order("sort_order"),
-    supabase
+    dbClient
       .from("product_variations")
       .select("id,combination_key,name,title,description,sku,barcode,regular_price,sale_price,stock_quantity,low_stock_threshold,attributes,status,weight,dimensions,specifications,product_variation_images(storage_path,alt_text,sort_order,is_featured)")
       .eq("product_id", productId),
-    supabase
+    dbClient
       .from("product_faqs")
       .select("id,question,answer,sort_order")
       .eq("product_id", productId)
       .eq("is_published", true)
       .order("sort_order"),
-    supabase
+    dbClient
       .from("reviews")
       .select("id,product_id,order_id,user_id,rating,body,status,is_approved,is_verified_purchase,reviewer_name,guest_name,guest_email,created_at")
       .eq("product_id", productId)
@@ -212,10 +223,29 @@ export async function getProductBySlug(slug: string) {
     getActiveDeals(),
   ]);
 
-  const productAttributes = attrRes.data ?? [];
+  let productAttributes: any = attrRes.data;
+  if (!productAttributes || attrRes.error) {
+    const fallbackAttrRes = await dbClient
+      .from("product_attributes")
+      .select("id,name,slug,display_type,sort_order,is_required,controls_images,product_attribute_values(id,label,slug,sort_order,swatch_color,swatch_image,is_active)")
+      .eq("product_id", productId)
+      .order("sort_order");
+    productAttributes = fallbackAttrRes.data ?? [];
+  }
   const productVariations = varRes.data ?? [];
   const faqs = faqRes.data ?? [];
-  const reviews = reviewRes.data ?? [];
+  const rawReviews = reviewRes.data ?? [];
+  const seenReviewers = new Set<string>();
+  const seenBodies = new Set<string>();
+  const reviews = rawReviews.filter((r: any) => {
+    const nameKey = (r.reviewer_name || r.guest_name || "").trim().toLowerCase();
+    const bodyKey = (r.body || "").trim().toLowerCase();
+    if (nameKey && seenReviewers.has(nameKey)) return false;
+    if (bodyKey && seenBodies.has(bodyKey)) return false;
+    if (nameKey) seenReviewers.add(nameKey);
+    if (bodyKey) seenBodies.add(bodyKey);
+    return true;
+  });
 
   const fullRow = {
     ...row,
@@ -247,7 +277,13 @@ export async function getHomeContent() {
 export async function getFeaturedReviews() {
   if (!configured()) return [];
   const supabase = createSupabasePublicClient();
-  const { data } = await supabase.from("reviews").select("id,rating,body,created_at,reviewer_name,guest_name,products(name)").or("status.eq.approved,is_approved.eq.true").order("created_at", { ascending: false }).limit(3);
+  const dbClient = createSupabaseAdminClient() ?? supabase;
+  const { data } = await dbClient
+    .from("reviews")
+    .select("id,rating,body,created_at,reviewer_name,guest_name,products(name)")
+    .or("status.eq.approved,is_approved.eq.true")
+    .order("created_at", { ascending: false })
+    .limit(3);
   return data ?? [];
 }
 
@@ -293,9 +329,31 @@ export async function getRelatedProducts(categoryId: string | undefined, exclude
   const rows = data ?? [];
   if (!rows.length) return [];
 
+  const dbClient = createSupabaseAdminClient() ?? supabase;
+  const { data: reviews } = await dbClient
+    .from("reviews")
+    .select("product_id,rating")
+    .in("product_id", rows.map((r: any) => r.id))
+    .or("status.eq.approved,is_approved.eq.true");
+
+  const summary = new Map<string, { total: number; count: number }>();
+  for (const review of reviews ?? []) {
+    const current = summary.get(review.product_id) ?? { total: 0, count: 0 };
+    current.total += review.rating;
+    current.count += 1;
+    summary.set(review.product_id, current);
+  }
+
   const activeDeals = await getActiveDeals();
   return rows.map((row: any) => {
-    const mapped = mapProduct({ ...row, average_rating: 0, review_count: 0, product_attributes: [], product_variations: [] });
+    const s = summary.get(row.id);
+    const mapped = mapProduct({
+      ...row,
+      average_rating: s ? s.total / s.count : 0,
+      review_count: s?.count ?? 0,
+      product_attributes: [],
+      product_variations: [],
+    });
     return attachDealPricingToProduct(mapped, activeDeals);
   });
 }

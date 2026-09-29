@@ -104,6 +104,16 @@ export function DealsDashboardClient({ initialSummary, initialDeals }: DealsDash
     setPage(1);
   }, [searchQuery, selectedStatus, selectedType]);
 
+  // Close 3-dots menu on Escape key
+  useEffect(() => {
+    if (!activeMenu) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setActiveMenu(null);
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [activeMenu]);
+
   const handleAction = async (id: string, action: "pause" | "resume" | "end_now" | "duplicate" | "delete", name: string) => {
     setActiveMenu(null);
     if (action === "delete" && !confirm(`Are you sure you want to delete "${name}" permanently?`)) return;
@@ -279,8 +289,17 @@ export function DealsDashboardClient({ initialSummary, initialDeals }: DealsDash
           </div>
         ) : (
           <>
+            {/* Backdrop for 3-dots action dropdown */}
+            {activeMenu && (
+              <div
+                className="fixed inset-0 z-30 bg-transparent cursor-default"
+                onClick={() => setActiveMenu(null)}
+                aria-hidden="true"
+              />
+            )}
+
             {/* Desktop Table View (≥768px) */}
-            <div className="hidden md:block overflow-x-auto">
+            <div className="hidden md:block overflow-x-auto min-h-[300px] pb-16">
               <table className="w-full text-left">
                 <thead className="border-b border-admin-border bg-admin-bg text-[11px] font-extrabold uppercase tracking-wider text-admin-muted">
                   <tr>
@@ -303,7 +322,7 @@ export function DealsDashboardClient({ initialSummary, initialDeals }: DealsDash
                     return (
                       <tr
                         key={deal.id}
-                        className="transition-colors hover:bg-admin-bg/60 cursor-pointer"
+                        className={`transition-colors hover:bg-admin-bg/60 cursor-pointer ${activeMenu === deal.id ? "relative z-40" : ""}`}
                         onClick={() => router.push(`/admin/deals/${deal.id}`)}
                       >
                         {/* Deal Name & Banner */}
@@ -389,11 +408,23 @@ export function DealsDashboardClient({ initialSummary, initialDeals }: DealsDash
                         </td>
 
                         {/* Quick Actions */}
-                        <td className="p-4 text-right" onClick={(e) => e.stopPropagation()}>
-                          <div className="relative inline-block">
+                        <td className={`p-4 text-right ${activeMenu === deal.id ? "relative z-40" : ""}`} onClick={(e) => e.stopPropagation()}>
+                          <div className="relative inline-block text-left">
                             <button
-                              onClick={() => setActiveMenu(activeMenu === deal.id ? null : deal.id)}
-                              className="rounded-lg p-1.5 text-admin-muted hover:bg-admin-bg hover:text-navy transition-colors"
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                e.nativeEvent?.stopImmediatePropagation?.();
+                                setActiveMenu(prev => prev === deal.id ? null : deal.id);
+                              }}
+                              className={`rounded-lg p-1.5 transition-colors ${
+                                activeMenu === deal.id
+                                  ? "bg-admin-bg text-navy ring-1 ring-admin-border"
+                                  : "text-admin-muted hover:bg-admin-bg hover:text-navy"
+                              }`}
+                              title="More actions"
+                              aria-haspopup="true"
+                              aria-expanded={activeMenu === deal.id}
                             >
                               <MoreVertical size={16} />
                             </button>

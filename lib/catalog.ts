@@ -111,13 +111,35 @@ export function publicStorageUrl(path: string | null | undefined, bucket = "prod
 }
 
 export function mapProduct(row: any) {
-  const galleryImages = (row.product_images ?? []).sort((a: any, b: any) => a.sort_order - b.sort_order).map((image: any) => publicStorageUrl(image.storage_path));
+  const isFood = isFoodOrBakeryProduct({
+    category: row.categories?.name,
+    categorySlug: row.categories?.slug,
+    name: row.name,
+    tags: row.tags,
+  });
+
+  const rawGalleryImages = (row.product_images ?? [])
+    .sort((a: any, b: any) => a.sort_order - b.sort_order)
+    .map((image: any) => publicStorageUrl(image.storage_path))
+    .filter(Boolean);
+
+  // Filter out any rogue unsplash cake/bakery images for non-food products
+  const galleryImages = rawGalleryImages.filter((imgUrl: string) => {
+    if (!isFood && typeof imgUrl === "string" && imgUrl.includes("images.unsplash.com")) {
+      return false;
+    }
+    return true;
+  });
+
   // featured_image is the primary image, fall back to first gallery image, then placeholder
-  const primaryImage = row.featured_image
-    ? publicStorageUrl(row.featured_image)
-    : galleryImages[0] ?? "/placeholder-bake.svg";
-  const images = row.featured_image
-    ? [publicStorageUrl(row.featured_image), ...galleryImages.filter((u: string) => u !== publicStorageUrl(row.featured_image))]
+  const rawFeatured = row.featured_image ? publicStorageUrl(row.featured_image) : null;
+  const validFeatured = (!isFood && rawFeatured && rawFeatured.includes("images.unsplash.com"))
+    ? null
+    : rawFeatured;
+
+  const primaryImage = validFeatured || galleryImages[0] || "/placeholder-bake.svg";
+  const images = validFeatured
+    ? [validFeatured, ...galleryImages.filter((u: string) => u !== validFeatured)]
     : galleryImages;
   const rating = Number(row.review_summary?.[0]?.average_rating ?? row.average_rating ?? 0);
   const reviews = Number(row.review_summary?.[0]?.review_count ?? row.review_count ?? 0);

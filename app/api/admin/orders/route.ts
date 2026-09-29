@@ -26,7 +26,8 @@ export async function GET(request: Request) {
   // 1. Calculate overall stats across all orders in database
   const { data: allOrdersForStats, error: statsErr } = await dbClient
     .from("orders")
-    .select("id, total, subtotal, delivery_fee, discount, status, payment_method, created_at, payments(status)");
+    .select("id, total, subtotal, delivery_fee, discount, status, payment_method, created_at, payments(status)")
+    .not("order_number", "like", "SEED-REF-%");
 
   if (statsErr) {
     console.error("[Admin Orders API] Stats query error:", statsErr);
@@ -84,7 +85,8 @@ export async function GET(request: Request) {
   // 2. Build filtered query for table display
   let query = dbClient
     .from("orders")
-    .select("*, order_items(*), payments(*), order_status_history(*), couriers(*)", { count: "exact" });
+    .select("*, order_items(*), payments(*), order_status_history(*), couriers(*)", { count: "exact" })
+    .not("order_number", "like", "SEED-REF-%");
 
   if (search) {
     query = query.or(

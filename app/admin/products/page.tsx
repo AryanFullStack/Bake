@@ -9,9 +9,12 @@ export default async function AdminProductsPage() {
   const [products, categories, brands] = await Promise.all([
     supabase
       .from("products")
-      .select("id, name, slug, sku, barcode, product_type, description, short_description, price, sale_price, stock_quantity, low_stock_threshold, is_published, is_featured, is_bestseller, category_id, brand_id, tags, created_at, updated_at, categories:category_id(id,name,slug), brands(id,name,slug), product_images(id,storage_path,alt_text,sort_order), product_attributes(id,name,slug,display_type,sort_order,is_required,product_attribute_values(id,label,slug,sort_order,swatch_color,swatch_image,is_active)), product_variations(id,combination_key,name,title,description,sku,barcode,regular_price,sale_price,stock_quantity,low_stock_threshold,status,attributes,weight,dimensions,specifications,product_variation_images(storage_path,sort_order,is_featured))")
+      .select(
+        "id, name, slug, sku, barcode, product_type, price, sale_price, stock_quantity, low_stock_threshold, status, is_published, is_featured, is_bestseller, category_id, featured_image, updated_at, categories:category_id(id,name,slug), brands(id,name,slug), product_images(id,storage_path,sort_order), product_variations(id,regular_price,sale_price,status,stock_quantity)",
+        { count: "exact" }
+      )
       .order("created_at", { ascending: false })
-      .limit(100),
+      .range(0, 19),
     supabase.from("categories").select("id,name,slug").order("sort_order"),
     supabase.from("brands").select("id,name,slug").order("name"),
   ]);
@@ -21,6 +24,7 @@ export default async function AdminProductsPage() {
       <Suspense fallback={<div className="p-8 text-center text-sm font-bold text-navy">Loading products...</div>}>
         <AdminProductsManager
           initialProducts={products.data ?? []}
+          initialTotal={products.count ?? products.data?.length ?? 0}
           categories={categories.data ?? []}
           brands={brands.data ?? []}
         />

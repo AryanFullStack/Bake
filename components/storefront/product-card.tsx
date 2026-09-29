@@ -9,6 +9,7 @@ import { useCart } from "./cart-provider";
 import { QuickViewModal } from "./quick-view-modal";
 import { SafeImage } from "@/components/safe-image";
 import { resolveMediaUrl } from "@/lib/media-url";
+import { resolveColorSwatch } from "@/lib/colors";
 
 /* ── Product Card Skeleton ──────────────────────────────────── */
 export function ProductCardSkeleton() {
@@ -48,11 +49,53 @@ export function ProductCard({ product, priority = false }: { product: Product; p
     const imgs: string[] = [];
     for (const rawSrc of [product.image, ...(product.images ?? [])]) {
       const src = resolveMediaUrl(rawSrc);
-      if (src && !seen.has(src)) { seen.add(src); imgs.push(src); }
+      if (src && !seen.has(src) && !src.includes("placeholder-bake.svg")) {
+        seen.add(src);
+        imgs.push(src);
+      }
     }
-    return imgs;
+    return imgs.length > 0 ? imgs : [resolveMediaUrl(product.image) || "/placeholder-bake.svg"];
   }, [product.image, product.images]);
   const hasMultiple = allImages.length > 1;
+
+  const colorSwatches = useMemo(() => {
+    const colorAttr = product.attributes?.find(
+      (a) => a.displayType === "color" || a.name.toLowerCase().includes("color")
+    );
+    if (colorAttr && colorAttr.values.length > 0) {
+      return colorAttr.values.map((v) => ({
+        slug: v.slug,
+        label: v.label,
+        color: resolveColorSwatch(v.swatchColor, v.label, v.slug),
+      }));
+    }
+
+    if (product.variations?.length) {
+      const seen = new Set<string>();
+      const swatches: Array<{ slug: string; label: string; color: string }> = [];
+      for (const v of product.variations) {
+        if (!v.attributes) continue;
+        for (const [key, val] of Object.entries(v.attributes)) {
+          if (!val) continue;
+          if (key.toLowerCase().includes("color")) {
+            const valStr = String(val).trim();
+            const s = valStr.toLowerCase().replace(/[^a-z0-9]+/g, "-");
+            if (!seen.has(s)) {
+              seen.add(s);
+              swatches.push({
+                slug: s,
+                label: valStr,
+                color: resolveColorSwatch(null, valStr, s),
+              });
+            }
+          }
+        }
+      }
+      if (swatches.length > 0) return swatches;
+    }
+
+    return [];
+  }, [product]);
 
   const hasDeal = Boolean(product.dealInfo?.isOnDeal);
   const effectiveRegularPrice = hasDeal ? product.dealInfo!.regularPrice : product.price;
@@ -114,7 +157,11 @@ export function ProductCard({ product, priority = false }: { product: Product; p
             priority={priority}
             loading={priority ? "eager" : "lazy"}
             className={`object-cover transition-all duration-700 ${
-              hovering && hasMultiple && hasHovered ? "opacity-0 scale-[1.05]" : "opacity-100 scale-100"
+              hovering && hasMultiple && hasHovered
+                ? "opacity-0 scale-[1.05]"
+                : hovering && !hasMultiple
+                ? "opacity-100 scale-[1.05]"
+                : "opacity-100 scale-100"
             }`}
           />
           {/* Secondary (hover) image — only mounted on first hover to avoid duplicate requests */}
@@ -192,11 +239,16 @@ export function ProductCard({ product, priority = false }: { product: Product; p
           <span className="truncate text-[10px] font-extrabold uppercase tracking-[.14em] text-orange">
             {product.category}
           </span>
-          <span className="flex shrink-0 items-center gap-1 text-xs font-bold text-navy">
-            <Star size={11} fill="currentColor" className="text-orange" />
-            {product.rating ? product.rating.toFixed(1) : "New"}
-            {product.reviews > 0 && (
-              <span className="text-muted font-normal">({product.reviews})</span>
+          <span
+            className="flex shrink-0 items-center gap-1 text-xs font-bold text-navy"
+            title={product.reviews > 0 ? `${(product.rating || 5.0).toFixed(1)} rating (${product.reviews} reviews)` : "New arrival"}
+          >
+            <Star size={11} fill="currentColor" className="text-orange shrink-0" />
+            <span>{product.rating ? product.rating.toFixed(1) : "5.0"}</span>
+            {product.reviews > 0 ? (
+              <span className="text-muted font-normal text-[11px]">({product.reviews})</span>
+            ) : (
+              <span className="text-muted font-normal text-[10px]">(New)</span>
             )}
           </span>
         </div>
@@ -215,11 +267,11 @@ export function ProductCard({ product, priority = false }: { product: Product; p
               {product.variations.length} options available
             </span>
             {/* Color swatch dots preview if color attribute exists */}
-            {product.attributes?.find(a => a.displayType === "color")?.values.slice(0, 4).map(v => (
+            {colorSwatches.slice(0, 5).map(v => (
               <span
                 key={v.slug}
-                className="h-3 w-3 rounded-full border border-black/10"
-                style={{ backgroundColor: v.swatchColor || "#ccc" }}
+                className="h-3 w-3 rounded-full border border-black/15 shadow-xs"
+                style={{ backgroundColor: v.color }}
                 title={v.label}
               />
             ))}

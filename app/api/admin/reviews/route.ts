@@ -30,7 +30,7 @@ export async function GET(request: NextRequest) {
       .select("*, products(id, name, slug), profiles(full_name), orders(order_number, customer_email)", { count: "exact" });
 
     if (status === "pending") {
-      query = query.or("status.eq.pending,status.is.null");
+      query = query.eq("status", "pending").eq("is_approved", false);
     } else if (status === "approved") {
       query = query.or("status.eq.approved,is_approved.eq.true");
     } else if (status === "rejected") {

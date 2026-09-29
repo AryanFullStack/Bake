@@ -29,6 +29,7 @@ export async function GET(request: Request) {
     const { data: orders } = await dbClient
       .from("orders")
       .select("*, order_items(*), payments(*), couriers(*)")
+      .not("order_number", "like", "SEED-REF-%")
       .gte("created_at", startDate.toISOString())
       .order("created_at", { ascending: true });
 

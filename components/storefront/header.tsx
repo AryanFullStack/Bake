@@ -6,7 +6,7 @@ import { Suspense, useEffect, useRef, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
   Cake, ChevronDown, ChevronRight, Grid3x3, Heart, Home, Mail, Menu,
-  Search, ShoppingBag, ShoppingBasket, ShoppingCart, Sparkles,
+  Phone, Search, ShoppingBag, ShoppingBasket, ShoppingCart, Sparkles,
   Truck, UserRound, UtensilsCrossed, Watch, X,
 } from "lucide-react";
 import { useCart } from "./cart-provider";
@@ -235,12 +235,22 @@ export function Header() {
             <span className="truncate">Fresh Bakery · Home & Kitchen · Delivery Across Karachi & All Pakistan Online</span>
           </p>
           <div className="flex items-center gap-3 shrink-0 text-[10.5px]">
-            <Link href="/track-order" className="flex items-center gap-1 hover:text-orange transition-colors">
-              <Truck size={12} className="text-orange" /> <span className="hidden sm:inline">Track Order</span><span className="sm:hidden">Track</span>
+            <a
+              href="https://wa.me/923124516997"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-1 text-white hover:text-orange transition-colors font-bold"
+            >
+              <Phone size={11} className="text-orange" />
+              <span>+92 312 4516997</span>
+            </a>
+            <span className="hidden sm:inline text-white/30">·</span>
+            <Link href="/track-order" className="hidden sm:flex items-center gap-1 hover:text-orange transition-colors">
+              <Truck size={12} className="text-orange" /> <span>Track Order</span>
             </Link>
             <span className="text-white/30">·</span>
             <a href="mailto:info@bakebazaarmart.com" className="flex items-center gap-1 text-white hover:text-orange transition-colors font-bold">
-              <Mail size={11} className="text-orange" /> info@bakebazaarmart.com
+              <Mail size={11} className="text-orange" /> <span className="hidden md:inline">info@bakebazaarmart.com</span><span className="md:hidden">Email</span>
             </a>
           </div>
         </div>
@@ -387,9 +397,20 @@ export function Header() {
             </nav>
 
             {/* Contact strip */}
-            <div className="border-t border-line bg-cream-deep px-5 py-4 text-xs text-muted sticky bottom-0">
+            <div className="border-t border-line bg-cream-deep px-5 py-4 text-xs text-muted sticky bottom-0 space-y-2.5">
               <div className="flex items-center justify-between">
-                <span>Support:</span>
+                <span>Call / WhatsApp:</span>
+                <a
+                  className="font-bold text-navy hover:text-orange flex items-center gap-1.5"
+                  href="https://wa.me/923124516997"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  <Phone size={12} className="text-orange" /> +92 312 4516997
+                </a>
+              </div>
+              <div className="flex items-center justify-between">
+                <span>Email Support:</span>
                 <a className="font-bold text-navy hover:text-orange" href="mailto:info@bakebazaarmart.com">info@bakebazaarmart.com</a>
               </div>
             </div>

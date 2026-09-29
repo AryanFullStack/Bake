@@ -31,7 +31,7 @@ export async function GET() {
       store: {
         name: store.name ?? "Bake Bazaar Mart",
         email: store.email ?? "info@bakebazaarmart.com",
-        phone: store.phone ?? "",
+        phone: store.phone || "+92 312 4516997",
         city: store.city ?? "Karachi",
       },
     });
@@ -40,7 +40,7 @@ export async function GET() {
     // Return safe defaults so storefront never crashes
     return NextResponse.json({
       delivery: { fee: 250, free_threshold: 3000, same_day_cutoff: "13:00", cities: [] },
-      store: { name: "Bake Bazaar Mart", email: "info@bakebazaarmart.com", phone: "", city: "Karachi" },
+      store: { name: "Bake Bazaar Mart", email: "info@bakebazaarmart.com", phone: "+92 312 4516997", city: "Karachi" },
     });
   }
 }

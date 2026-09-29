@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { mapProduct } from "@/lib/catalog";
 
 export async function GET(request: Request) {
@@ -16,8 +17,9 @@ export async function GET(request: Request) {
   }
 
   const supabase = await createSupabaseServerClient();
+  const dbClient = createSupabaseAdminClient() ?? supabase;
 
-  let query = supabase
+  let query = dbClient
     .from("products")
     .select("id,slug,sku,name,description,short_description,specifications,ingredients,care_instructions,delivery_information,return_policy,price,sale_price,stock_quantity,low_stock_threshold,is_published,status,is_featured,is_bestseller,seo_title,seo_description,tags,category_id,brand_id,featured_image,product_type,categories:category_id(name,slug),brands(name,slug),product_images(storage_path,alt_text,sort_order)");
 
@@ -37,21 +39,21 @@ export async function GET(request: Request) {
   const productId = row.id;
 
   const [attrRes, varRes, reviewRes] = await Promise.all([
-    supabase
+    dbClient
       .from("product_attributes")
       .select("id,name,slug,display_type,sort_order,is_required,controls_images,product_attribute_values(id,label,slug,sort_order,swatch_color,swatch_image,is_active)")
       .eq("product_id", productId)
       .order("sort_order"),
-    supabase
+    dbClient
       .from("product_variations")
       .select("id,combination_key,name,title,description,sku,barcode,regular_price,sale_price,stock_quantity,low_stock_threshold,attributes,status,weight,dimensions,specifications,product_variation_images(storage_path,alt_text,sort_order,is_featured)")
       .eq("product_id", productId)
       .eq("status", "active"),
-    supabase
+    dbClient
       .from("reviews")
       .select("product_id,rating")
       .eq("product_id", productId)
-      .eq("is_approved", true),
+      .or("status.eq.approved,is_approved.eq.true"),
   ]);
 
   const productAttributes = attrRes.data ?? [];

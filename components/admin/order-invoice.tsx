@@ -58,7 +58,7 @@ export function OrderInvoice({ order, onClose }: OrderInvoiceProps) {
             <div>
               <div className="flex items-center gap-3">
                 <img
-                  src="/brand/bakebazaar-logo.png"
+                  src="/logobake-01.png"
                   alt="Bake Bazaar Mart"
                   className="h-12 w-auto object-contain"
                 />
@@ -68,7 +68,7 @@ export function OrderInvoice({ order, onClose }: OrderInvoiceProps) {
               </div>
               <div className="mt-3 text-xs leading-relaxed text-muted">
                 <p>Karachi, Pakistan</p>
-                <p>Email: info@bakebazaarmart.com • Web: bakebazaarmart.com</p>
+                <p>Tel / WhatsApp: +92 312 4516997 • Email: info@bakebazaarmart.com</p>
               </div>
             </div>
 
@@ -154,6 +154,11 @@ export function OrderInvoice({ order, onClose }: OrderInvoiceProps) {
               <div>
                 <p className="text-[11px] font-black uppercase tracking-wider text-muted">Payment Information</p>
                 <p className="text-xs font-bold text-navy mt-1 capitalize">Method: {order.payment_method.replace(/_/g, " ")}</p>
+                {order.payment_method === "bank_transfer" && (
+                  <p className="text-[10px] text-muted font-medium mt-0.5">
+                    Bank Alfalah · Muhammad Zahid · PK33ALFH0830001010430311
+                  </p>
+                )}
                 <p className="text-xs font-semibold text-orange mt-0.5 capitalize">Status: {paymentRecord?.status || "Pending"}</p>
                 {paymentRecord?.transaction_reference && (
                   <p className="text-xs text-muted mt-0.5">Ref: <span className="font-mono font-bold text-navy">{paymentRecord.transaction_reference}</span></p>

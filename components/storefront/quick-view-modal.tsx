@@ -8,6 +8,7 @@ import { ArrowRight, Check, ChevronLeft, ChevronRight, Info, Minus, Plus, Rotate
 import type { Product, ProductAttribute, ProductVariation } from "@/lib/types";
 import { formatPKR } from "@/lib/catalog";
 import { resolveProductGallery } from "@/lib/gallery-resolver";
+import { resolveColorSwatch, prettifyAttributeLabel } from "@/lib/colors";
 import { useCart } from "./cart-provider";
 
 interface QuickViewModalProps {
@@ -99,7 +100,15 @@ export function QuickViewModal({ product: initialProduct, onClose }: QuickViewMo
 
   const attributes = useMemo(() => {
     if (!product) return [];
-    if (product.attributes?.length) return product.attributes;
+    if (product.attributes?.length) {
+      return product.attributes.map((attr) => ({
+        ...attr,
+        values: attr.values.map((v) => ({
+          ...v,
+          swatchColor: resolveColorSwatch(v.swatchColor, v.label, v.slug),
+        })),
+      }));
+    }
 
     const attrMap = new Map<string, Set<string>>();
     for (const v of variations) {
@@ -116,14 +125,16 @@ export function QuickViewModal({ product: initialProduct, onClose }: QuickViewMo
 
     return Array.from(attrMap.entries()).map(([name, valuesSet], index) => {
       const slug = normalizeKey(name);
+      const isColorAttr = name.toLowerCase().includes("color") || slug.includes("color");
       return {
         id: `attr-${index}`,
-        name: name,
+        name: prettifyAttributeLabel(name),
         slug: slug,
-        displayType: name.toLowerCase().includes("color") ? ("color" as const) : ("button" as const),
+        displayType: isColorAttr ? ("color" as const) : ("button" as const),
         values: Array.from(valuesSet).map((val) => ({
-          label: val,
+          label: prettifyAttributeLabel(val),
           slug: normalizeKey(val),
+          swatchColor: isColorAttr ? resolveColorSwatch(null, val, normalizeKey(val)) : null,
           isActive: true,
         })),
       };
@@ -300,9 +311,13 @@ export function QuickViewModal({ product: initialProduct, onClose }: QuickViewMo
             {/* Rating & Stock */}
             <div className="mt-2 flex flex-wrap items-center gap-3 text-xs">
               <span className="flex items-center gap-1 font-bold text-navy">
-                <Star size={13} fill="currentColor" className="text-orange" />
-                {product.rating ? product.rating.toFixed(1) : "New"}
-                {product.reviews > 0 && <span className="text-muted font-normal">({product.reviews})</span>}
+                <Star size={13} fill="currentColor" className="text-orange shrink-0" />
+                <span>{product.rating ? product.rating.toFixed(1) : "5.0"}</span>
+                {product.reviews > 0 ? (
+                  <span className="text-muted font-normal">({product.reviews})</span>
+                ) : (
+                  <span className="text-muted font-normal">(New)</span>
+                )}
               </span>
               <span className="text-line">•</span>
               {!hasRequiredSelection ? (
@@ -421,7 +436,7 @@ export function QuickViewModal({ product: initialProduct, onClose }: QuickViewMo
                               {attribute.displayType === "color" && (
                                 <span
                                   className="h-4 w-4 rounded-full border border-black/15 shadow-xs"
-                                  style={{ backgroundColor: (value as any).swatchColor ?? "#e6ddd0" }}
+                                  style={{ backgroundColor: resolveColorSwatch((value as any).swatchColor, value.label, value.slug) }}
                                 />
                               )}
                               <span>{value.label}</span>

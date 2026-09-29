@@ -541,12 +541,12 @@ function TrackCustomCakeContent() {
                 <div className="rounded-2xl bg-cream/70 p-4 border border-line text-xs space-y-2">
                   <div className="flex items-center justify-between">
                     <span className="font-bold text-navy flex items-center gap-1.5">
-                      <Building2 size={16} className="text-orange" /> Bank Transfer (Meezan Bank)
+                      <Building2 size={16} className="text-orange" /> Bank Transfer (Bank Alfalah)
                     </span>
                     <button
                       type="button"
                       onClick={() => {
-                        navigator.clipboard.writeText("01020304050607");
+                        navigator.clipboard.writeText("PK33ALFH0830001010430311");
                         setCopiedBank(true);
                         setTimeout(() => setCopiedBank(false), 2000);
                       }}
@@ -555,18 +555,18 @@ function TrackCustomCakeContent() {
                       <Copy size={12} /> {copiedBank ? "Copied" : "Copy"}
                     </button>
                   </div>
-                  <p className="text-muted"><strong>Account Title:</strong> Bake Bazaar Mart</p>
-                  <p className="text-muted"><strong>Account Number:</strong> 0102 0304 0506 07</p>
-                  <p className="text-muted"><strong>IBAN:</strong> PK65 MEZN 0001 0203 0405 0607</p>
+                  <p className="text-muted"><strong>Bank:</strong> Bank Alfalah</p>
+                  <p className="text-muted"><strong>Account Title:</strong> Muhammad Zahid</p>
+                  <p className="text-muted"><strong>IBAN:</strong> PK33ALFH0830001010430311</p>
                 </div>
 
                 <div className="rounded-2xl bg-cream/70 p-4 border border-line text-xs space-y-2">
                   <span className="font-bold text-navy flex items-center gap-1.5">
-                    <Sparkles size={16} className="text-orange" /> JazzCash Mobile Wallet
+                    <Sparkles size={16} className="text-orange" /> WhatsApp & Mobile Support
                   </span>
-                  <p className="text-muted"><strong>Account Title:</strong> Bake Bazaar Mart</p>
-                  <p className="text-muted"><strong>Mobile Number:</strong> 0300 1234567</p>
-                  <p className="text-muted"><strong>Instructions:</strong> Please include your Request # in the transfer remark.</p>
+                  <p className="text-muted"><strong>Account Title:</strong> Muhammad Zahid</p>
+                  <p className="text-muted"><strong>WhatsApp / Mobile:</strong> +92 312 4516997</p>
+                  <p className="text-muted"><strong>Instructions:</strong> Include Request # in transfer remarks or send receipt via WhatsApp.</p>
                 </div>
               </div>
 

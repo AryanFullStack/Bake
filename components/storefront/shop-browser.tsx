@@ -61,27 +61,13 @@ export function ShopBrowser({
   const [pageSize, setPageSize] = useState(20);
   const [mobileFilters, setMobileFilters] = useState(false);
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
-  const toolbarRef = useRef<HTMLDivElement>(null);
   const listTopRef = useRef<HTMLDivElement>(null);
-  const [toolbarStuck, setToolbarStuck] = useState(false);
   // Track whether the deferred query has caught up — while lagging, show subtle indicator
   const isSearchPending = query !== deferredQuery;
 
   useEffect(() => {
     setPage(1);
   }, [deferredQuery, category, saleOnly, sortBy]);
-
-  // Sticky toolbar detection
-  useEffect(() => {
-    const el = toolbarRef.current;
-    if (!el) return;
-    const obs = new IntersectionObserver(
-      ([entry]) => setToolbarStuck(!entry.isIntersecting),
-      { threshold: 1, rootMargin: "-65px 0px 0px 0px" }
-    );
-    obs.observe(el);
-    return () => obs.disconnect();
-  }, []);
 
   const filtered = useMemo(() => {
     let result = products.filter(p => {
@@ -197,84 +183,75 @@ export function ShopBrowser({
         </div>
       </div>
 
-      {/* ── Sticky Controls Bar ──────────────────────── */}
-      <div
-        ref={toolbarRef}
-        className={`sticky top-[64px] sm:top-[76px] z-30 transition-all duration-300 ${
-          toolbarStuck
-            ? "border-b border-line/80 bg-cream/95 shadow-sm backdrop-blur-md"
-            : "bg-transparent"
-        }`}
-      >
-        <div className="container-shell py-3">
-          <div className={`flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between rounded-2xl border border-line/70 bg-white p-3 shadow-xs transition-all duration-300 ${toolbarStuck ? "rounded-none border-0 bg-transparent shadow-none p-0" : ""}`}>
-            {/* Search */}
-            <div className="relative flex-1 sm:max-w-sm">
-              <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted pointer-events-none" />
-              <input
-                value={query}
-                onChange={e => setQuery(e.target.value)}
-                placeholder="Search cakes, cookies, gifts…"
-                className="w-full rounded-xl border border-line bg-cream/60 py-2.5 pl-10 pr-8 text-sm outline-none transition focus:border-orange focus:bg-white focus:shadow-[0_0_0_3px_rgba(253,118,0,.1)] placeholder:text-muted/70"
-              />
-              {query && (
-                <button onClick={() => setQuery("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted hover:text-navy">
-                  <X size={14} />
-                </button>
-              )}
-            </div>
-
-            <div className="flex items-center gap-3 justify-between sm:justify-end">
-              <span className={`text-xs font-semibold shrink-0 transition-colors ${isSearchPending ? "text-orange" : "text-muted"}`}>
-                {isSearchPending ? "Searching…" : `${filtered.length} products`}
-              </span>
-
-              <select
-                value={sortBy}
-                onChange={e => setSortBy(e.target.value as SortKey)}
-                className="rounded-xl border border-line bg-cream/60 px-3 py-2 text-xs font-bold text-navy outline-none focus:border-orange cursor-pointer appearance-none pr-8 pl-3"
-                style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236d777d' stroke-width='2.5'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E")`, backgroundRepeat: "no-repeat", backgroundPosition: "right 10px center" }}
-              >
-                <option value="featured">Featured</option>
-                <option value="newest">Newest</option>
-                <option value="price_asc">Price: Low → High</option>
-                <option value="price_desc">Price: High → Low</option>
-                <option value="rating">Top Rated</option>
-              </select>
-            </div>
+      {/* ── Controls Bar (Non-sticky) ──────────────────────── */}
+      <div className="container-shell py-2">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between rounded-2xl border border-line/70 bg-white p-3.5 shadow-xs">
+          {/* Search */}
+          <div className="relative flex-1 sm:max-w-sm">
+            <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted pointer-events-none" />
+            <input
+              value={query}
+              onChange={e => setQuery(e.target.value)}
+              placeholder="Search cakes, cookies, gifts…"
+              className="w-full rounded-xl border border-line bg-cream/60 py-2.5 pl-10 pr-8 text-sm outline-none transition focus:border-orange focus:bg-white focus:shadow-[0_0_0_3px_rgba(253,118,0,.1)] placeholder:text-muted/70"
+            />
+            {query && (
+              <button onClick={() => setQuery("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted hover:text-navy">
+                <X size={14} />
+              </button>
+            )}
           </div>
 
-          {/* Active filter chips */}
-          {activeFilterCount > 0 && (
-            <div className="flex flex-wrap items-center gap-2 mt-2.5">
-              {query && (
-                <button onClick={() => setQuery("")} className="inline-flex items-center gap-1.5 rounded-full bg-orange/10 border border-orange/25 px-3 py-1 text-[11px] font-bold text-orange hover:bg-orange hover:text-white transition-colors">
-                  <Search size={10} /> "{query}" <X size={10} />
-                </button>
-              )}
-              {category !== "All" && (
-                <button onClick={() => setCategory("All")} className="inline-flex items-center gap-1.5 rounded-full bg-navy/8 border border-navy/15 px-3 py-1 text-[11px] font-bold text-navy hover:bg-navy hover:text-white transition-colors">
-                  <Tag size={10} /> {category} <X size={10} />
-                </button>
-              )}
-              {saleOnly && (
-                <button onClick={() => setSaleOnly(false)} className="inline-flex items-center gap-1.5 rounded-full bg-green-light border border-green/25 px-3 py-1 text-[11px] font-bold text-green-dark hover:bg-green hover:text-white transition-colors">
-                  <Sparkles size={10} /> Deals only <X size={10} />
-                </button>
-              )}
-              <button onClick={() => { setQuery(""); setCategory("All"); setSaleOnly(false); }} className="text-[11px] font-bold text-muted hover:text-orange underline">
-                Clear all
-              </button>
-            </div>
-          )}
+          <div className="flex items-center gap-3 justify-between sm:justify-end">
+            <span className={`text-xs font-semibold shrink-0 transition-colors ${isSearchPending ? "text-orange" : "text-muted"}`}>
+              {isSearchPending ? "Searching…" : `${filtered.length} products`}
+            </span>
+
+            <select
+              value={sortBy}
+              onChange={e => setSortBy(e.target.value as SortKey)}
+              className="rounded-xl border border-line bg-cream/60 px-3 py-2 text-xs font-bold text-navy outline-none focus:border-orange cursor-pointer appearance-none pr-8 pl-3"
+              style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236d777d' stroke-width='2.5'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E")`, backgroundRepeat: "no-repeat", backgroundPosition: "right 10px center" }}
+            >
+              <option value="featured">Featured</option>
+              <option value="newest">Newest</option>
+              <option value="price_asc">Price: Low → High</option>
+              <option value="price_desc">Price: High → Low</option>
+              <option value="rating">Top Rated</option>
+            </select>
+          </div>
         </div>
+
+        {/* Active filter chips */}
+        {activeFilterCount > 0 && (
+          <div className="flex flex-wrap items-center gap-2 mt-2.5">
+            {query && (
+              <button onClick={() => setQuery("")} className="inline-flex items-center gap-1.5 rounded-full bg-orange/10 border border-orange/25 px-3 py-1 text-[11px] font-bold text-orange hover:bg-orange hover:text-white transition-colors">
+                <Search size={10} /> "{query}" <X size={10} />
+              </button>
+            )}
+            {category !== "All" && (
+              <button onClick={() => setCategory("All")} className="inline-flex items-center gap-1.5 rounded-full bg-navy/8 border border-navy/15 px-3 py-1 text-[11px] font-bold text-navy hover:bg-navy hover:text-white transition-colors">
+                <Tag size={10} /> {category} <X size={10} />
+              </button>
+            )}
+            {saleOnly && (
+              <button onClick={() => setSaleOnly(false)} className="inline-flex items-center gap-1.5 rounded-full bg-green-light border border-green/25 px-3 py-1 text-[11px] font-bold text-green-dark hover:bg-green hover:text-white transition-colors">
+                <Sparkles size={10} /> Deals only <X size={10} />
+              </button>
+            )}
+            <button onClick={() => { setQuery(""); setCategory("All"); setSaleOnly(false); }} className="text-[11px] font-bold text-muted hover:text-orange underline">
+              Clear all
+            </button>
+          </div>
+        )}
       </div>
 
       {/* ── Main Content ─────────────────────────────── */}
       <div className="container-shell py-6 md:py-8">
         <div className="grid gap-8 md:grid-cols-[240px_1fr]">
           {/* Sidebar */}
-          <aside className="hidden md:flex md:flex-col gap-4 sticky top-[136px] h-fit">
+          <aside className="hidden md:flex md:flex-col gap-4 sticky top-24 h-fit">
             <div className="rounded-2xl bg-white p-5 border border-line/70 shadow-xs">
               <FilterPanel categories={categories} category={category} setCategory={setCategory} saleOnly={saleOnly} setSaleOnly={setSaleOnly} products={products} />
             </div>

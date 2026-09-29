@@ -5,11 +5,14 @@ import Link from "next/link";
 import { SafeImage } from "@/components/safe-image";
 import {
   ArrowRight,
+  Building2,
   Check,
   ChevronRight,
+  Copy,
   Edit2,
   LockKeyhole,
   MapPin,
+  MessageCircle,
   Plus,
   ShieldCheck,
   ShoppingBag,
@@ -38,6 +41,7 @@ export function CheckoutClient() {
   const [status, setStatus] = useState<"idle" | "loading" | "error" | "success">("idle");
   const [orderNumber, setOrderNumber] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
+  const [copiedIban, setCopiedIban] = useState(false);
 
   // Delivery settings from admin
   const [deliveryFeeAmount, setDeliveryFeeAmount] = useState(250);
@@ -232,6 +236,61 @@ export function CheckoutClient() {
               <span className="font-bold text-green">Placed & Pending Dispatch</span>
             </div>
           </div>
+
+          {payment === "bank_transfer" && (
+            <div className="mt-6 rounded-2xl bg-amber-500/10 p-5 sm:p-6 border-2 border-amber-500/30 text-left text-xs space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="font-extrabold text-amber-950 text-sm flex items-center gap-2">
+                  <Building2 size={18} className="text-orange shrink-0" /> Bank Transfer Payment Required
+                </span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    navigator.clipboard.writeText("PK33ALFH0830001010430311");
+                    setCopiedIban(true);
+                    setTimeout(() => setCopiedIban(false), 2000);
+                  }}
+                  className="inline-flex items-center gap-1 rounded-lg bg-white px-3 py-1.5 text-xs font-bold text-navy border border-line shadow-2xs hover:border-orange hover:text-orange transition-colors"
+                >
+                  {copiedIban ? <Check size={13} className="text-green-600" /> : <Copy size={13} />}
+                  {copiedIban ? "Copied IBAN" : "Copy IBAN"}
+                </button>
+              </div>
+
+              <p className="text-muted leading-relaxed">
+                Please transfer your order amount to the following Bank Alfalah account and share the payment receipt or transaction screenshot via WhatsApp to confirm your order dispatch:
+              </p>
+
+              <div className="rounded-xl bg-white p-4 border border-amber-200/80 space-y-2 text-xs text-navy">
+                <div className="flex justify-between">
+                  <span className="text-muted font-medium">Bank Name:</span>
+                  <span className="font-bold">Bank Alfalah</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted font-medium">Account Title:</span>
+                  <span className="font-bold">Muhammad Zahid</span>
+                </div>
+                <div className="flex justify-between items-center gap-2 pt-1 border-t border-line/60">
+                  <span className="text-muted font-medium">IBAN / Account:</span>
+                  <span className="font-mono font-black select-all text-sm tracking-tight text-navy">
+                    PK33ALFH0830001010430311
+                  </span>
+                </div>
+              </div>
+
+              <a
+                href={`https://wa.me/923124516997?text=${encodeURIComponent(
+                  `Hello Bake Bazaar Mart! I have transferred the payment for Order #${orderNumber}. Customer: ${fullName}. Here is my transfer screenshot.`
+                )}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center justify-center gap-2 rounded-xl bg-[#25D366] py-3.5 px-4 text-xs sm:text-sm font-extrabold text-white shadow-md hover:bg-[#20ba59] active:scale-[0.98] transition-all"
+              >
+                <MessageCircle size={17} />
+                <span>Send Payment Proof to WhatsApp (+92 312 4516997)</span>
+              </a>
+            </div>
+          )}
 
           <div className="mt-8 grid gap-3 sm:grid-cols-2">
             <Link
@@ -605,10 +664,44 @@ export function CheckoutClient() {
               </div>
 
               {payment === "bank_transfer" && (
-                <div className="mt-4 rounded-2xl bg-orange/5 p-4 border border-orange/20 text-xs leading-relaxed text-navy">
-                  <p className="font-bold text-orange">Official Bank Account Details:</p>
-                  <p className="mt-1">Bank: Meezan Bank Ltd. | Title: Bake Bazaar Mart</p>
-                  <p>Account No: 01010102938475 | IBAN: PK36MEZN0001010102938475</p>
+                <div className="mt-4 rounded-2xl bg-orange/5 p-5 border border-orange/20 text-xs leading-relaxed text-navy space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="font-extrabold text-orange flex items-center gap-1.5 uppercase tracking-wider text-[11px]">
+                      <Building2 size={16} /> Official Bank Account Details
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        navigator.clipboard.writeText("PK33ALFH0830001010430311");
+                        setCopiedIban(true);
+                        setTimeout(() => setCopiedIban(false), 2000);
+                      }}
+                      className="inline-flex items-center gap-1 font-bold text-orange hover:underline text-[11px]"
+                    >
+                      {copiedIban ? <Check size={13} className="text-green-600" /> : <Copy size={13} />}
+                      {copiedIban ? "Copied!" : "Copy IBAN"}
+                    </button>
+                  </div>
+                  <div className="rounded-xl bg-white/90 p-3.5 border border-orange/20 space-y-1.5 text-xs">
+                    <div className="flex justify-between">
+                      <span className="text-muted font-medium">Bank Name:</span>
+                      <strong className="text-navy font-bold">Bank Alfalah</strong>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted font-medium">Account Title:</span>
+                      <strong className="text-navy font-bold">Muhammad Zahid</strong>
+                    </div>
+                    <div className="flex justify-between items-center gap-2 pt-1 border-t border-line/60">
+                      <span className="text-muted font-medium">IBAN / Account:</span>
+                      <span className="font-mono font-black text-navy select-all tracking-tight">
+                        PK33ALFH0830001010430311
+                      </span>
+                    </div>
+                  </div>
+                  <p className="text-[11px] text-muted">
+                    After placing your order, please transfer the total amount and send your transfer screenshot with Order ID to WhatsApp at{" "}
+                    <strong className="text-navy font-bold">+92 312 4516997</strong> for instant dispatch verification.
+                  </p>
                 </div>
               )}
             </div>

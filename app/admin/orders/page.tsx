@@ -12,6 +12,7 @@ export default async function AdminOrdersPage() {
   const { data } = await dbClient
     .from("orders")
     .select("*,order_items(*),payments(*),order_status_history(*)")
+    .not("order_number", "like", "SEED-REF-%")
     .order("created_at", { ascending: false })
     .limit(1000);
 

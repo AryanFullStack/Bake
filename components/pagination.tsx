@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from "lucide-react";
 
 export interface PaginationControlsProps {
   currentPage: number;
@@ -115,15 +115,29 @@ export function PaginationControls({
       {/* Right side: Page Navigation */}
       {totalPages > 1 && (
         <div className="flex items-center gap-1.5">
+          {/* First Button */}
+          <button
+            type="button"
+            onClick={() => onPageChange(1)}
+            disabled={safePage <= 1}
+            aria-label="First page"
+            title="First page"
+            className={`flex items-center justify-center p-2 rounded-xl transition-all disabled:opacity-40 disabled:hover:bg-transparent disabled:cursor-not-allowed ${navButtonClasses}`}
+          >
+            <ChevronsLeft className="w-4 h-4" />
+          </button>
+
           {/* Previous Button */}
           <button
             type="button"
             onClick={() => onPageChange(safePage - 1)}
             disabled={safePage <= 1}
             aria-label="Previous page"
-            className={`flex items-center justify-center p-2 rounded-xl transition-all disabled:opacity-40 disabled:hover:bg-transparent disabled:cursor-not-allowed ${navButtonClasses}`}
+            title="Previous page"
+            className={`flex items-center gap-1 px-2.5 py-2 rounded-xl transition-all disabled:opacity-40 disabled:hover:bg-transparent disabled:cursor-not-allowed ${navButtonClasses}`}
           >
             <ChevronLeft className="w-4 h-4" />
+            <span className="hidden sm:inline text-xs font-bold">Prev</span>
           </button>
 
           {/* Page Numbers */}
@@ -159,9 +173,23 @@ export function PaginationControls({
             onClick={() => onPageChange(safePage + 1)}
             disabled={safePage >= totalPages}
             aria-label="Next page"
+            title="Next page"
+            className={`flex items-center gap-1 px-2.5 py-2 rounded-xl transition-all disabled:opacity-40 disabled:hover:bg-transparent disabled:cursor-not-allowed ${navButtonClasses}`}
+          >
+            <span className="hidden sm:inline text-xs font-bold">Next</span>
+            <ChevronRight className="w-4 h-4" />
+          </button>
+
+          {/* Last Button */}
+          <button
+            type="button"
+            onClick={() => onPageChange(totalPages)}
+            disabled={safePage >= totalPages}
+            aria-label="Last page"
+            title="Last page"
             className={`flex items-center justify-center p-2 rounded-xl transition-all disabled:opacity-40 disabled:hover:bg-transparent disabled:cursor-not-allowed ${navButtonClasses}`}
           >
-            <ChevronRight className="w-4 h-4" />
+            <ChevronsRight className="w-4 h-4" />
           </button>
         </div>
       )}

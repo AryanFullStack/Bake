@@ -1932,7 +1932,7 @@ on conflict do nothing;
 
 -- SEED SITE SETTINGS
 insert into public.site_settings (key, value) values
-  ('store', '{"name":"Bake Mart Bazaar","email":"hello@bakemartbazaar.pk","phone":"0321-1234567","city":"Lahore, Pakistan"}'),
+  ('store', '{"name":"Bake Bazaar Mart","email":"info@bakebazaarmart.com","phone":"+92 312 4516997","city":"Karachi, Pakistan"}'),
   ('delivery', '{"free_threshold":3000,"fee":250,"same_day_cutoff":"13:00","cities":["Lahore","Islamabad","Rawalpindi","Karachi"]}')
 on conflict (key) do update set value = excluded.value;
 

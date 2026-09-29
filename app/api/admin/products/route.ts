@@ -134,6 +134,26 @@ export async function GET(req: NextRequest) {
     }
 
     const { searchParams } = new URL(req.url);
+    const id = searchParams.get("id");
+
+    const supabase = await createSupabaseServerClient();
+
+    // Single product fetch for Full Edit / Wizard
+    if (id) {
+      const { data: product, error } = await supabase
+        .from("products")
+        .select(
+          "id, name, slug, sku, barcode, product_type, description, short_description, specifications, ingredients, care_instructions, delivery_information, return_policy, price, sale_price, cost_price, stock_quantity, low_stock_threshold, is_published, is_featured, is_bestseller, category_id, brand_id, tags, seo_title, seo_description, featured_image, created_at, updated_at, categories:category_id(id, name, slug), brands:brand_id(id, name, slug), product_images(id, storage_path, sort_order, alt_text), product_attributes(id,name,slug,display_type,sort_order,is_required,controls_images,product_attribute_values(id,label,slug,sort_order,swatch_color,swatch_image,is_active,product_attribute_images(id,storage_path,sort_order,product_image_id))), product_variations(id,combination_key,name,title,description,sku,barcode,regular_price,sale_price,cost_price,stock_quantity,low_stock_threshold,status,attributes,weight,dimensions,specifications,product_variation_images(storage_path,sort_order,is_featured))"
+        )
+        .eq("id", id)
+        .single();
+
+      if (error || !product) {
+        return NextResponse.json({ error: error?.message || "Product not found" }, { status: 404 });
+      }
+      return NextResponse.json({ success: true, product });
+    }
+
     const page = parseInt(searchParams.get("page") || "1", 10);
     const limit = parseInt(searchParams.get("limit") || "20", 10);
     const search = searchParams.get("search") || "";
@@ -142,16 +162,19 @@ export async function GET(req: NextRequest) {
     const status = searchParams.get("status") || "";
     const productType = searchParams.get("product_type") || "";
 
-    const supabase = await createSupabaseServerClient();
+    // Fast, lean query for table listing
     let query = supabase
       .from("products")
       .select(
-        "id, name, slug, sku, barcode, product_type, description, short_description, specifications, ingredients, care_instructions, delivery_information, return_policy, price, sale_price, stock_quantity, low_stock_threshold, is_published, is_featured, is_bestseller, category_id, brand_id, tags, seo_title, seo_description, created_at, updated_at, categories:category_id(id, name, slug), brands:brand_id(id, name, slug), product_images(id, storage_path, sort_order, alt_text), product_attributes(id,name,slug,display_type,sort_order,is_required,controls_images,product_attribute_values(id,label,slug,sort_order,swatch_color,swatch_image,is_active,product_attribute_images(id,storage_path,sort_order,product_image_id))), product_variations(id,combination_key,name,title,description,sku,barcode,regular_price,sale_price,stock_quantity,low_stock_threshold,status,attributes,weight,dimensions,specifications,product_variation_images(storage_path,sort_order,is_featured))",
+        "id, name, slug, sku, barcode, product_type, price, sale_price, stock_quantity, low_stock_threshold, status, is_published, is_featured, is_bestseller, category_id, featured_image, updated_at, categories:category_id(id, name, slug), product_images(id, storage_path, sort_order), product_variations(id, regular_price, sale_price, status, stock_quantity)",
         { count: "exact" }
       );
 
     if (search) {
-      query = query.or(`name.ilike.%${search}%,sku.ilike.%${search}%,barcode.ilike.%${search}%`);
+      const cleanTerm = search.replace(/[,()]/g, " ").trim();
+      if (cleanTerm) {
+        query = query.or(`name.ilike.%${cleanTerm}%,sku.ilike.%${cleanTerm}%,barcode.ilike.%${cleanTerm}%`);
+      }
     }
 
     if (categoryId) {
@@ -379,7 +402,7 @@ export async function PATCH(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { id, gallery_images, variations, attributes, categories, brands, product_images, product_variations, product_attributes, ...updates } = body;
+    const { id, gallery_images, variations, attributes, categories, brands, product_images, product_variations, product_attributes, created_at, ...updates } = body;
 
     if (!id) {
       return NextResponse.json({ error: "Product ID is required." }, { status: 400 });
@@ -487,6 +510,17 @@ export async function DELETE(req: NextRequest) {
 
     // 2. Clean child tables explicitly to ensure FK constraints do not block deletion
     try {
+      // 2a. Remove cart items for this product
+      await supabase.from("cart_items").delete().eq("product_id", productId);
+      // 2b. Nullify order_items product_id so historical order data is preserved
+      await supabase.from("order_items").update({ product_id: null }).eq("product_id", productId);
+      // 2c. Clear related catalog references
+      await supabase.from("wishlist_items").delete().eq("product_id", productId);
+      await supabase.from("recently_viewed").delete().eq("product_id", productId);
+      await supabase.from("deal_items").delete().eq("product_id", productId);
+      await supabase.from("product_cross_sells").delete().eq("source_product_id", productId);
+      await supabase.from("product_cross_sells").delete().eq("target_product_id", productId);
+      await supabase.from("inventory_logs").delete().eq("product_id", productId);
       await supabase.from("product_images").delete().eq("product_id", productId);
       await supabase.from("product_faqs").delete().eq("product_id", productId);
       await supabase.from("reviews").delete().eq("product_id", productId);
@@ -494,6 +528,8 @@ export async function DELETE(req: NextRequest) {
       const { data: vars } = await supabase.from("product_variations").select("id").eq("product_id", productId);
       if (vars && vars.length > 0) {
         const vIds = vars.map((v: any) => v.id);
+        await supabase.from("order_items").update({ variation_id: null }).in("variation_id", vIds);
+        await supabase.from("cart_items").delete().in("variation_id", vIds);
         await supabase.from("product_variation_images").delete().in("variation_id", vIds);
         await supabase.from("product_variations").delete().eq("product_id", productId);
       }

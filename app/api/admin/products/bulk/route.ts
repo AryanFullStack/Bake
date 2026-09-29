@@ -26,53 +26,88 @@ export async function POST(req: NextRequest) {
     if (action === "publish") {
       const { error } = await supabase
         .from("products")
-        .update({ status: "published", is_published: true })
+        .update({ status: "published", is_published: true, updated_at: new Date().toISOString() })
         .in("id", ids);
 
       if (error) return NextResponse.json({ error: error.message }, { status: 400 });
-      return NextResponse.json({ success: true, message: `${ids.length} products published.` });
+      return NextResponse.json({ success: true, message: `${ids.length} product(s) published.` });
     }
 
     if (action === "draft") {
       const { error } = await supabase
         .from("products")
-        .update({ status: "draft", is_published: false })
+        .update({ status: "draft", is_published: false, updated_at: new Date().toISOString() })
         .in("id", ids);
 
       if (error) return NextResponse.json({ error: error.message }, { status: 400 });
-      return NextResponse.json({ success: true, message: `${ids.length} products moved to draft.` });
+      return NextResponse.json({ success: true, message: `${ids.length} product(s) moved to draft.` });
+    }
+
+    if (action === "hidden") {
+      const { error } = await supabase
+        .from("products")
+        .update({ status: "hidden", is_published: false, updated_at: new Date().toISOString() })
+        .in("id", ids);
+
+      if (error) return NextResponse.json({ error: error.message }, { status: 400 });
+      return NextResponse.json({ success: true, message: `${ids.length} product(s) hidden.` });
     }
 
     if (action === "stock_update") {
-      const newStock = Number(stockValue) || 0;
+      const newStock = Math.max(0, parseInt(stockValue, 10) || 0);
       const { error } = await supabase
         .from("products")
-        .update({ stock_quantity: newStock })
+        .update({ stock_quantity: newStock, updated_at: new Date().toISOString() })
         .in("id", ids);
 
       if (error) return NextResponse.json({ error: error.message }, { status: 400 });
-      return NextResponse.json({ success: true, message: `Stock updated for ${ids.length} products.` });
+
+      // Also update variation stocks if any products are variable
+      try {
+        await supabase
+          .from("product_variations")
+          .update({ stock_quantity: newStock, updated_at: new Date().toISOString() })
+          .in("product_id", ids);
+      } catch (vErr) {
+        console.warn("[API bulk stock_update] Variations stock update warning:", vErr);
+      }
+
+      return NextResponse.json({ success: true, message: `Stock updated to ${newStock} for ${ids.length} product(s).` });
     }
 
     if (action === "delete") {
       // Fetch associated images for disk cleanup before bulk deletion
-      const { data: products } = await supabase
-        .from("products")
-        .select("featured_image, product_images(storage_path)")
-        .in("id", ids);
+      try {
+        const { data: products } = await supabase
+          .from("products")
+          .select("featured_image, product_images(storage_path)")
+          .in("id", ids);
 
-      if (Array.isArray(products)) {
-        for (const p of products) {
-          if (p.featured_image) await mediaService.deleteImage(p.featured_image);
-          if (Array.isArray(p.product_images)) {
-            for (const img of p.product_images) {
-              if (img.storage_path) await mediaService.deleteImage(img.storage_path);
+        if (Array.isArray(products)) {
+          for (const p of products) {
+            if (p.featured_image) await mediaService.deleteImage(p.featured_image).catch(() => {});
+            if (Array.isArray(p.product_images)) {
+              for (const img of p.product_images) {
+                if (img.storage_path) await mediaService.deleteImage(img.storage_path).catch(() => {});
+              }
             }
           }
         }
+      } catch (err) {
+        console.warn("[API bulk DELETE] Image cleanup error:", err);
       }
 
       try {
+        // Unlink or clean relations so foreign key constraints never block deletion
+        await supabase.from("cart_items").delete().in("product_id", ids);
+        await supabase.from("order_items").update({ product_id: null }).in("product_id", ids);
+        await supabase.from("wishlist_items").delete().in("product_id", ids);
+        await supabase.from("recently_viewed").delete().in("product_id", ids);
+        await supabase.from("deal_items").delete().in("product_id", ids);
+        await supabase.from("product_cross_sells").delete().in("source_product_id", ids);
+        await supabase.from("product_cross_sells").delete().in("target_product_id", ids);
+        await supabase.from("inventory_logs").delete().in("product_id", ids);
+
         await supabase.from("product_images").delete().in("product_id", ids);
         await supabase.from("product_faqs").delete().in("product_id", ids);
         await supabase.from("reviews").delete().in("product_id", ids);
@@ -80,6 +115,8 @@ export async function POST(req: NextRequest) {
         const { data: vars } = await supabase.from("product_variations").select("id").in("product_id", ids);
         if (vars && vars.length > 0) {
           const vIds = vars.map((v: any) => v.id);
+          await supabase.from("order_items").update({ variation_id: null }).in("variation_id", vIds);
+          await supabase.from("cart_items").delete().in("variation_id", vIds);
           await supabase.from("product_variation_images").delete().in("variation_id", vIds);
           await supabase.from("product_variations").delete().in("product_id", ids);
         }
@@ -101,7 +138,7 @@ export async function POST(req: NextRequest) {
 
       const { error } = await supabase.from("products").delete().in("id", ids);
       if (error) return NextResponse.json({ error: error.message }, { status: 400 });
-      return NextResponse.json({ success: true, message: `${ids.length} products deleted.` });
+      return NextResponse.json({ success: true, message: `${ids.length} product(s) deleted permanently.` });
     }
 
     return NextResponse.json({ error: "Invalid bulk action." }, { status: 400 });

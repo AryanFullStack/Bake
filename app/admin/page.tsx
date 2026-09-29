@@ -14,7 +14,7 @@ export default async function AdminPage() {
   await requireAdmin();
   const supabase = await createSupabaseServerClient();
   const [orders, customers, products, categories, cakes, reviews, payments, lowStock, recent, topItems, activeDeals] = await Promise.all([
-    supabase.from("orders").select("id,total,status,customer_name,order_number,created_at,payment_method").order("created_at", { ascending: false }).limit(100),
+    supabase.from("orders").select("id,total,status,customer_name,order_number,created_at,payment_method").not("order_number", "like", "SEED-REF-%").order("created_at", { ascending: false }).limit(100),
     supabase.from("profiles").select("id", { count: "exact", head: true }),
     supabase.from("products").select("id", { count: "exact", head: true }),
     supabase.from("categories").select("id,name,slug,parent_id").order("sort_order"),
@@ -22,7 +22,7 @@ export default async function AdminPage() {
     supabase.from("reviews").select("id", { count: "exact", head: true }).eq("is_approved", false),
     supabase.from("payments").select("id", { count: "exact", head: true }).eq("status", "pending_verification"),
     supabase.from("products").select("id,name,stock_quantity,low_stock_threshold").order("stock_quantity").limit(1000),
-    supabase.from("orders").select("order_number,customer_name,total,status,payment_method,created_at").order("created_at", { ascending: false }).limit(8),
+    supabase.from("orders").select("order_number,customer_name,total,status,payment_method,created_at").not("order_number", "like", "SEED-REF-%").order("created_at", { ascending: false }).limit(8),
     supabase.from("order_items").select("product_name,quantity,line_total").limit(500),
     supabase.from("products").select("id,name,price,sale_price,is_published,featured_image,categories:category_id(name)").not("sale_price", "is", null).eq("is_published", true).order("sale_price").limit(5),
   ]);

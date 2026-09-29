@@ -4,12 +4,13 @@ import { SafeImage } from "@/components/safe-image";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
-  ArrowRight, Check, ChevronLeft, ChevronRight, Heart, Info, Minus, Package,
+  ArrowRight, Check, ChevronLeft, ChevronRight, Heart, Info, MessageCircle, Minus, Package,
   Plus, RotateCcw, Share2, ShieldCheck, Sparkles, Star, Truck, X, Zap, ZoomIn,
 } from "lucide-react";
 import type { Product, ProductAttribute, ProductVariation } from "@/lib/types";
 import { formatPKR, isFoodOrBakeryProduct } from "@/lib/catalog";
 import { resolveProductGallery } from "@/lib/gallery-resolver";
+import { resolveColorSwatch, prettifyAttributeLabel } from "@/lib/colors";
 import { useCart } from "./cart-provider";
 import { ProductReviewsSection } from "./product-reviews-section";
 import { DealsCountdown } from "./deals-countdown";
@@ -42,7 +43,7 @@ function attributeLabel(attribute: ProductAttribute, value: string) {
   const matched = attribute.values.find(
     (option) => normalizeKey(option.slug) === normVal || normalizeKey(option.label) === normVal
   );
-  return matched?.label ?? value;
+  return matched?.label ?? prettifyAttributeLabel(value);
 }
 
 export function ProductDetailClient({ product, reviews, faqs = [] }: { product: Product; reviews: any[]; faqs?: any[] }) {
@@ -50,7 +51,15 @@ export function ProductDetailClient({ product, reviews, faqs = [] }: { product: 
   const variations = useMemo(() => product.variations ?? [], [product]);
 
   const attributes = useMemo(() => {
-    if (product.attributes?.length) return product.attributes;
+    if (product.attributes?.length) {
+      return product.attributes.map((attr) => ({
+        ...attr,
+        values: attr.values.map((v) => ({
+          ...v,
+          swatchColor: resolveColorSwatch(v.swatchColor, v.label, v.slug),
+        })),
+      }));
+    }
 
     const attrMap = new Map<string, Set<string>>();
     for (const v of variations) {
@@ -67,14 +76,16 @@ export function ProductDetailClient({ product, reviews, faqs = [] }: { product: 
 
     return Array.from(attrMap.entries()).map(([name, valuesSet], index) => {
       const slug = normalizeKey(name);
+      const isColorAttr = name.toLowerCase().includes("color") || slug.includes("color");
       return {
         id: `attr-${index}`,
-        name: name,
+        name: prettifyAttributeLabel(name),
         slug: slug,
-        displayType: name.toLowerCase().includes("color") ? ("color" as const) : ("button" as const),
+        displayType: isColorAttr ? ("color" as const) : ("button" as const),
         values: Array.from(valuesSet).map((val) => ({
-          label: val,
+          label: prettifyAttributeLabel(val),
           slug: normalizeKey(val),
+          swatchColor: isColorAttr ? resolveColorSwatch(null, val, normalizeKey(val)) : null,
           isActive: true,
         })),
       };
@@ -85,7 +96,7 @@ export function ProductDetailClient({ product, reviews, faqs = [] }: { product: 
   const [selection, setSelection] = useState<Record<string, string>>({});
   const [quantity, setQuantity] = useState(1);
   const [saved, setSaved] = useState(false);
-  const [activeTab, setActiveTab] = useState<Tab>("description");
+  const [activeTab, setActiveTab] = useState<Tab>("reviews");
   const [addedToast, setAddedToast] = useState(false);
   const [validationError, setValidationError] = useState<string | null>(null);
   const [activeImage, setActiveImage] = useState(0);
@@ -521,7 +532,7 @@ export function ProductDetailClient({ product, reviews, faqs = [] }: { product: 
                             {attribute.displayType === "color" ? (
                               <span
                                 className="h-5 w-5 rounded-full border border-black/15 shadow-xs"
-                                style={{ backgroundColor: (value as any).swatchColor ?? "#e6ddd0" }}
+                                style={{ backgroundColor: resolveColorSwatch((value as any).swatchColor, value.label, value.slug) }}
                                 title={value.label}
                               />
                             ) : attribute.displayType === "image" && imageSwatch ? (
@@ -578,6 +589,16 @@ export function ProductDetailClient({ product, reviews, faqs = [] }: { product: 
             >
               <Sparkles size={15} /> Buy now · Express checkout <ArrowRight size={15} />
             </Link>
+            <a
+              href={`https://wa.me/923124516997?text=${encodeURIComponent(
+                `Hello Bake Bazaar Mart! I am inquiring about: ${activeTitle} (${typeof window !== "undefined" ? window.location.href : ""}). Could you help me with this order?`
+              )}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center justify-center gap-2 rounded-2xl border border-[#25D366]/40 bg-[#25D366]/10 py-3 px-4 text-xs font-bold text-[#147e3a] hover:bg-[#25D366] hover:text-white transition-all duration-200"
+            >
+              <MessageCircle size={16} /> Order or Inquire via WhatsApp (+92 312 4516997)
+            </a>
           </div>
           {addedToast ? <div className="mt-3 flex items-center gap-3 rounded-xl border border-green/25 bg-green-light p-3.5 text-xs font-bold text-green"><Check size={15} /> Added {quantity} × {activeTitle}<Link href="/cart" className="ml-auto underline">View basket →</Link></div> : null}
           <div className="mt-7 grid grid-cols-3 gap-3 border-t border-line/60 pt-6">{[{ icon: Truck, label: "Same-day delivery", sub: "Order before 1 PM" }, { icon: ShieldCheck, label: "Secure checkout", sub: "SSL encrypted" }, { icon: RotateCcw, label: "Easy returns", sub: "Within 24 hours" }].map(({ icon: Icon, label, sub }) => <div key={label} className="flex flex-col items-center gap-1.5 rounded-xl bg-cream-deep/60 p-3 text-center"><Icon size={18} className="text-orange" /><span className="text-[11px] font-bold leading-tight text-navy">{label}</span><span className="text-[10px] text-muted">{sub}</span></div>)}</div><p className="mt-4 flex items-center gap-2 text-xs text-muted"><Package size={12} /><strong className="text-navy">SKU:</strong> {activeSku ?? "Assigned after selection"}</p>

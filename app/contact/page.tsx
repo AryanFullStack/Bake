@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import {
   Clock, Mail, MapPin, Sparkles, Truck, Cake, ArrowRight,
+  Phone, MessageCircle, Building2, Check,
 } from "lucide-react";
 import { ContactForm } from "@/components/storefront/contact-form";
 import { JsonLd, buildBreadcrumbSchema, SITE_URL } from "@/components/seo/json-ld";
@@ -54,6 +55,7 @@ export default function ContactPage() {
       "@type": "Organization",
       name: "Bake Bazaar Mart",
       email: "info@bakebazaarmart.com",
+      telephone: "+92 312 4516997",
       url: SITE_URL,
       address: {
         "@type": "PostalAddress",
@@ -84,6 +86,76 @@ export default function ContactPage() {
           </p>
 
           <div className="mt-8 flex flex-col gap-4 text-sm font-semibold text-navy">
+            {/* Phone & WhatsApp Card */}
+            <div className="rounded-2xl bg-white p-5 border border-line/80 shadow-xs space-y-3">
+              <div className="flex items-center gap-4">
+                <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-emerald-500/10 text-emerald-600">
+                  <Phone size={18} />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs text-muted font-bold">Call & WhatsApp Support</p>
+                  <p className="text-base sm:text-lg font-black text-navy font-mono">
+                    +92 312 4516997
+                  </p>
+                  <p className="text-[11px] text-muted font-normal mt-0.5">
+                    Fast response for orders, cake consultations & queries
+                  </p>
+                </div>
+              </div>
+              <div className="flex flex-wrap gap-2 pt-2 border-t border-line/60">
+                <a
+                  href="tel:+923124516997"
+                  className="inline-flex items-center gap-1.5 rounded-xl bg-orange/10 px-3.5 py-1.5 text-xs font-bold text-orange hover:bg-orange hover:text-white transition-colors"
+                >
+                  <Phone size={12} /> Call Now
+                </a>
+                <a
+                  href="https://wa.me/923124516997?text=Hello%20Bake%20Bazaar%20Mart,%20I%20have%20an%20inquiry."
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 rounded-xl bg-[#25D366]/10 px-3.5 py-1.5 text-xs font-bold text-[#1ea952] hover:bg-[#25D366] hover:text-white transition-colors"
+                >
+                  <MessageCircle size={12} /> Chat on WhatsApp
+                </a>
+              </div>
+            </div>
+
+            {/* Bank Transfer Details Card */}
+            <div className="rounded-2xl bg-amber-500/5 p-5 border border-amber-500/20 shadow-xs space-y-3">
+              <div className="flex items-center gap-4">
+                <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-orange/15 text-orange">
+                  <Building2 size={18} />
+                </div>
+                <div>
+                  <p className="text-xs font-bold uppercase tracking-wider text-orange">
+                    Official Bank Account Details
+                  </p>
+                  <p className="text-sm font-black text-navy mt-0.5">
+                    Bank Alfalah
+                  </p>
+                </div>
+              </div>
+              <div className="rounded-xl bg-white/80 p-3.5 border border-line/60 text-xs space-y-1.5">
+                <div className="flex justify-between">
+                  <span className="text-muted font-medium">Bank Name:</span>
+                  <span className="font-bold text-navy">Bank Alfalah</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted font-medium">Account Title:</span>
+                  <span className="font-bold text-navy">Muhammad Zahid</span>
+                </div>
+                <div className="flex justify-between items-center gap-2 pt-1 border-t border-line/50">
+                  <span className="text-muted font-medium">IBAN / Account:</span>
+                  <span className="font-mono font-black text-navy select-all tracking-tight">
+                    PK33ALFH0830001010430311
+                  </span>
+                </div>
+              </div>
+              <p className="text-[11px] text-muted leading-tight">
+                For bank transfer orders, please share your transfer screenshot with your Order ID via WhatsApp to <strong>+92 312 4516997</strong>.
+              </p>
+            </div>
+
             {/* Email Support Card */}
             <div className="flex items-center gap-4 rounded-2xl bg-white p-4 border border-line/80 shadow-xs">
               <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-orange/10 text-orange">

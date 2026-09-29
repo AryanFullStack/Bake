@@ -4,6 +4,8 @@ import type { Product } from "@/lib/types";
 export const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://bakebazaarmart.com";
 export const BRAND_NAME = "Bake Bazaar Mart";
 export const STORE_EMAIL = "info@bakebazaarmart.com";
+export const STORE_PHONE = "+92 312 4516997";
+export const STORE_WHATSAPP = "+92 312 4516997";
 export const STORE_CITY = "Karachi";
 export const STORE_COUNTRY = "Pakistan";
 
@@ -28,10 +30,12 @@ export function buildOrganizationSchema() {
     url: SITE_URL,
     logo: `${SITE_URL}/logobake-01.png`,
     email: STORE_EMAIL,
+    telephone: STORE_PHONE,
     contactPoint: [
       {
         "@type": "ContactPoint",
         contactType: "Customer Support",
+        telephone: STORE_PHONE,
         email: STORE_EMAIL,
         areaServed: "PK",
         availableLanguage: ["en", "ur"],
@@ -76,6 +80,7 @@ export function buildLocalBusinessSchema() {
     url: SITE_URL,
     image: `${SITE_URL}/logobake-01.png`,
     email: STORE_EMAIL,
+    telephone: STORE_PHONE,
     priceRange: "PKR",
     address: {
       "@type": "PostalAddress",

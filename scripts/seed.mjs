@@ -92,21 +92,24 @@ async function run() {
     'mango-cream-tres-leches': 'https://images.unsplash.com/photo-1551024506-0bccd828d307?auto=format&fit=crop&w=1200&q=88',
   };
 
-  const { data: insertedProducts } = await supabase.from('products').select('id, slug');
-  const productIds = insertedProducts.map((p) => p.id);
+  const targetSlugs = Object.keys(imageMap);
+  const { data: insertedProducts } = await supabase.from('products').select('id, slug').in('slug', targetSlugs);
+  if (insertedProducts && insertedProducts.length > 0) {
+    const productIds = insertedProducts.map((p) => p.id);
+    await supabase.from('product_images').delete().in('product_id', productIds);
 
-  // Delete existing images for these products so we can re-insert cleanly
-  await supabase.from('product_images').delete().in('product_id', productIds);
+    const images = insertedProducts.map((p) => ({
+      product_id: p.id,
+      storage_path: imageMap[p.slug],
+      alt_text: productRows.find((r) => r.slug === p.slug)?.name ?? p.slug,
+      sort_order: 0,
+    })).filter((img) => Boolean(img.storage_path));
 
-  const images = insertedProducts.map((p) => ({
-    product_id: p.id,
-    storage_path: imageMap[p.slug] ?? 'https://images.unsplash.com/photo-1586788680434-30d324b2d46f?auto=format&fit=crop&w=1200&q=88',
-    alt_text: productRows.find((r) => r.slug === p.slug)?.name ?? p.slug,
-    sort_order: 0,
-  }));
-
-  const { error: imgErr } = await supabase.from('product_images').insert(images);
-  if (imgErr) throw new Error('product_images: ' + imgErr.message);
+    if (images.length > 0) {
+      const { error: imgErr } = await supabase.from('product_images').insert(images);
+      if (imgErr) throw new Error('product_images: ' + imgErr.message);
+    }
+  }
   console.log('  ✔ product_images');
 
   // ── Banners ───────────────────────────────────────────────────────────────
@@ -142,7 +145,7 @@ async function run() {
     .from('site_settings')
     .upsert(
       [
-        { key: 'store', value: { name: 'Bake Mart Bazaar', email: 'hello@bakemartbazaar.pk', phone: '0321-1234567', city: 'Lahore, Pakistan' } },
+        { key: 'store', value: { name: 'Bake Bazaar Mart', email: 'info@bakebazaarmart.com', phone: '+92 312 4516997', city: 'Karachi, Pakistan' } },
         { key: 'delivery', value: { free_threshold: 3000, fee: 250, same_day_cutoff: '13:00', cities: ['Lahore', 'Islamabad', 'Rawalpindi', 'Karachi'] } },
         { key: 'seed_metadata', value: { source: 'demo-seed', replaceable: true, note: 'Replace with the client catalogue import.' } },
       ],

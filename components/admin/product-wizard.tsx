@@ -35,6 +35,7 @@ import { formatPKR, generateSKU, generateUniqueSlug, isFoodOrBakeryProduct, publ
 import { resolveProductGallery } from "@/lib/gallery-resolver";
 import { MediaPickerModal } from "@/components/admin/media-picker-modal";
 import { formatBytes } from "@/lib/media-url";
+import { resolveColorSwatch } from "@/lib/colors";
 
 
 type Category = { id: string; name: string; slug: string; parent_id?: string | null };
@@ -560,7 +561,7 @@ export function ProductWizard({ initialProduct, product, categories, brands, onC
       showToastMsg("Value already exists in this attribute", "error");
       return;
     }
-    const colorHex = newValueColor[targetAttr.slug] || "";
+    const colorHex = newValueColor[targetAttr.slug] || (targetAttr.displayType === "color" ? resolveColorSwatch(null, label, valSlug) : "");
     setAttributes(prev =>
       prev.map((a, idx) =>
         idx !== attrIndex
@@ -1510,12 +1511,35 @@ export function ProductWizard({ initialProduct, product, categories, brands, onC
                                   <div className="flex items-center justify-between gap-2">
                                     <div className="flex items-center gap-2">
                                       {attr.displayType === "color" && (
-                                        <span
-                                          className="h-4 w-4 rounded-full border border-black/15 shadow-xs"
-                                          style={{ backgroundColor: val.swatchColor || "#cccccc" }}
-                                        />
+                                        <div className="relative flex items-center gap-1.5" title="Click to change color swatch">
+                                          <input
+                                            type="color"
+                                            value={resolveColorSwatch(val.swatchColor, val.label, val.slug)}
+                                            onChange={(e) => {
+                                              const newColor = e.target.value;
+                                              setAttributes((prev) =>
+                                                prev.map((a, aI) =>
+                                                  aI !== attrIdx
+                                                    ? a
+                                                    : {
+                                                        ...a,
+                                                        values: a.values.map((v, vI) =>
+                                                          vI !== valIdx ? v : { ...v, swatchColor: newColor }
+                                                        ),
+                                                      }
+                                                )
+                                              );
+                                            }}
+                                            className="h-5 w-5 cursor-pointer rounded-full border border-black/20 p-0 shadow-xs"
+                                          />
+                                        </div>
                                       )}
                                       <span className="font-bold text-navy text-xs">{val.label}</span>
+                                      {attr.displayType === "color" && (
+                                        <span className="text-[10px] font-mono text-admin-muted">
+                                          {val.swatchColor || resolveColorSwatch(val.swatchColor, val.label, val.slug)}
+                                        </span>
+                                      )}
                                     </div>
 
                                     {/* Admin Image Status Indicator Badge */}
@@ -1586,7 +1610,16 @@ export function ProductWizard({ initialProduct, product, categories, brands, onC
                       <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-admin-border/40 pt-4">
                         <input
                           value={newValueLabel[attr.slug] || ""}
-                          onChange={e => setNewValueLabel(prev => ({ ...prev, [attr.slug]: e.target.value }))}
+                          onChange={e => {
+                            const val = e.target.value;
+                            setNewValueLabel(prev => ({ ...prev, [attr.slug]: val }));
+                            if (attr.displayType === "color" && val.trim()) {
+                              const autoHex = resolveColorSwatch(null, val, slugify(val));
+                              if (autoHex && autoHex !== "#e6ddd0") {
+                                setNewValueColor(prev => ({ ...prev, [attr.slug]: autoHex }));
+                              }
+                            }
+                          }}
                           onKeyDown={e => e.key === "Enter" && addAttributeValue(attrIdx)}
                           placeholder={`Add ${attr.name} option value (e.g. Red, Blue, Large)`}
                           className="field-shell max-w-xs text-xs"

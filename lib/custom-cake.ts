@@ -32,7 +32,7 @@ export const CUSTOM_CAKE_STEPS = [
 
 export const CUSTOM_CAKE_PAYMENT_METHODS = [
   { id: "cod", label: "Cash on Delivery", desc: "Pay cash upon arrival" },
-  { id: "bank_transfer", label: "Bank Transfer", desc: "Meezan Bank Ltd." },
+  { id: "bank_transfer", label: "Bank Transfer", desc: "Bank Alfalah" },
   { id: "jazzcash", label: "JazzCash", desc: "Mobile Wallet Transfer" },
 ] as const;
 

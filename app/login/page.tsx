@@ -43,7 +43,7 @@ export default function LoginPage() {
         {/* Left Side: Branded Bakery Imagery Panel */}
         <div className="relative hidden md:flex flex-col justify-between p-10 bg-navy text-white pattern-navy-dots">
           <Link href="/" className="inline-block w-fit rounded-xl bg-white p-2.5 shadow-md transition-transform hover:scale-[1.02]">
-            <Image src="/brand/bakebazaar-logo.png" alt="Bake Bazaar Mart" width={180} height={50} className="h-10 w-auto object-contain" />
+            <Image src="/logobake-01.png" alt="Bake Bazaar Mart" width={180} height={50} className="h-10 w-auto object-contain" />
           </Link>
 
           <div className="my-auto py-10">
