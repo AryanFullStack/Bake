@@ -99,7 +99,7 @@ export function ShopBrowser({
   const activeFilterCount = [query, category !== "All" && category, saleOnly].filter(Boolean).length;
 
   return (
-    <div className="min-h-screen bg-cream">
+    <div className="min-h-screen bg-cream overflow-x-hidden">
       {/* ── Page Header ─────────────────────────────── */}
       <div className="container-shell pt-10 pb-6 md:pt-14 md:pb-8">
         <div className="flex flex-col justify-between gap-5 md:flex-row md:items-end border-b border-line/60 pb-8">
@@ -248,8 +248,8 @@ export function ShopBrowser({
       </div>
 
       {/* ── Main Content ─────────────────────────────── */}
-      <div className="container-shell py-6 md:py-8">
-        <div className="grid gap-8 md:grid-cols-[240px_1fr]">
+      <div className="container-shell py-6 md:py-8 min-w-0">
+        <div className="grid gap-8 md:grid-cols-[240px_1fr] min-w-0">
           {/* Sidebar */}
           <aside className="hidden md:flex md:flex-col gap-4 sticky top-24 h-fit">
             <div className="rounded-2xl bg-white p-5 border border-line/70 shadow-xs">
@@ -258,12 +258,12 @@ export function ShopBrowser({
           </aside>
 
           {/* Grid */}
-          <section ref={listTopRef} className="flex flex-col gap-6">
+          <section ref={listTopRef} className="flex flex-col gap-6 min-w-0 w-full">
             {filtered.length === 0 ? (
               <EmptyState onReset={() => { setQuery(""); setCategory("All"); setSaleOnly(false); }} />
             ) : (
               <>
-                <div className={`grid gap-4 transition-opacity duration-150 ${isSearchPending ? "opacity-75" : "opacity-100"} ${viewMode === "grid" ? "grid-cols-2 sm:grid-cols-3 xl:grid-cols-4" : "grid-cols-1 sm:grid-cols-2"}`}>
+                <div className={`grid gap-3 sm:gap-4 transition-opacity duration-150 min-w-0 w-full ${isSearchPending ? "opacity-75" : "opacity-100"} ${viewMode === "grid" ? "grid-cols-2 sm:grid-cols-3 xl:grid-cols-4" : "grid-cols-1 sm:grid-cols-2"}`}>
                   {paginatedProducts.map((p, i) => (
                     <ProductCard key={p.id} product={p} priority={i < 4} />
                   ))}
@@ -279,7 +279,7 @@ export function ShopBrowser({
                     setPage(1);
                   }}
                   pageSizeOptions={[10, 20, 40, 60]}
-                  className="mt-4"
+                  className="mt-4 w-full min-w-0"
                 />
               </>
             )}

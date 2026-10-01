@@ -419,7 +419,7 @@ export function Header() {
       )}
 
       {/* ── Mobile Bottom Bar ── */}
-      <div className="fixed inset-x-0 bottom-0 z-30 border-t border-line bg-paper/95 px-4 py-2 shadow-[0_-8px_20px_rgba(6,33,54,.06)] backdrop-blur-md md:hidden">
+      <div className="fixed inset-x-0 bottom-0 z-30 w-full max-w-full border-t border-line bg-paper/95 px-4 py-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] shadow-[0_-8px_20px_rgba(6,33,54,.06)] backdrop-blur-md md:hidden">
         <div className="mx-auto flex max-w-md items-center justify-around text-[10px] font-extrabold text-navy">
           <Link href="/" className={`flex flex-col items-center gap-1 py-1 ${pathname === "/" ? "text-orange" : ""}`}>
             <Image src="/logomainficonocns-01.png" alt="Home" width={20} height={20} className="h-5 w-5 object-contain" />

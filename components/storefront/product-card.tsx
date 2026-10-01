@@ -136,7 +136,7 @@ export function ProductCard({ product, priority = false }: { product: Product; p
 
   return (
     <article
-      className="group relative flex min-w-0 flex-col overflow-hidden border border-line/70 bg-white transition-all duration-300 hover:-translate-y-1.5 hover:shadow-[0_20px_50px_rgba(6,33,54,.13)] hover:border-orange/25"
+      className="group relative flex w-full min-w-0 flex-col overflow-hidden border border-line/70 bg-white transition-all duration-300 hover:-translate-y-1.5 hover:shadow-[0_20px_50px_rgba(6,33,54,.13)] hover:border-orange/25"
       style={{ borderRadius: "var(--radius-card)" }}
       onMouseEnter={() => {
         setHovering(true);
@@ -181,96 +181,96 @@ export function ProductCard({ product, priority = false }: { product: Product; p
         </Link>
 
         {/* Badge stack — top-left */}
-        <div className="absolute left-3 top-3 flex flex-col gap-1.5 z-10">
+        <div className="absolute left-2.5 top-2.5 sm:left-3 sm:top-3 flex flex-col gap-1 sm:gap-1.5 z-10">
           {discount && (
-            <span className="badge badge-sale flex items-center gap-1 shadow-sm">
+            <span className="badge badge-sale flex items-center gap-1 shadow-sm text-[10px] sm:text-xs">
               <Zap size={10} className="fill-current" /> {badgeLabel}
             </span>
           )}
-          {product.bestseller && !discount && <span className="badge badge-bestseller">Bestseller</span>}
-          {isNew && !discount && !product.bestseller && <span className="badge badge-new">New</span>}
-          {isOutOfStock && <span className="badge badge-soldout">Sold out</span>}
+          {product.bestseller && !discount && <span className="badge badge-bestseller text-[10px] sm:text-xs">Bestseller</span>}
+          {isNew && !discount && !product.bestseller && <span className="badge badge-new text-[10px] sm:text-xs">New</span>}
+          {isOutOfStock && <span className="badge badge-soldout text-[10px] sm:text-xs">Sold out</span>}
         </div>
 
         {/* Wishlist — top-right */}
         <button
           onClick={toggleWishlist}
-          className={`absolute right-3 top-3 z-10 grid h-9 w-9 place-items-center rounded-full shadow-sm transition-all duration-200 ${
+          className={`absolute right-2.5 top-2.5 sm:right-3 sm:top-3 z-10 grid h-8 w-8 sm:h-9 sm:w-9 place-items-center rounded-full shadow-sm transition-all duration-200 ${
             saved
               ? "bg-orange text-white shadow-orange"
               : "bg-white/90 text-navy hover:bg-white hover:text-orange"
           }`}
           aria-label={`${saved ? "Remove from" : "Add to"} wishlist`}
         >
-          <Heart size={15} fill={saved ? "currentColor" : "none"} strokeWidth={2} />
+          <Heart size={14} fill={saved ? "currentColor" : "none"} strokeWidth={2} />
         </button>
 
         {/* Quick-add cart & Quick view — bottom-right */}
-        <div className="absolute bottom-3 right-3 z-10 flex gap-1.5 transition-all duration-300 max-sm:opacity-100 max-sm:translate-y-0 sm:opacity-0 sm:translate-y-3 group-hover:opacity-100 group-hover:translate-y-0">
+        <div className="absolute bottom-2 right-2 sm:bottom-3 sm:right-3 z-10 flex gap-1 sm:gap-1.5 transition-all duration-300 max-sm:opacity-100 max-sm:translate-y-0 sm:opacity-0 sm:translate-y-3 group-hover:opacity-100 group-hover:translate-y-0">
           <button
             onClick={(e) => {
               e.preventDefault(); e.stopPropagation();
               setQuickViewOpen(true);
             }}
-            className="grid h-9 w-9 place-items-center rounded-full bg-white/90 text-navy shadow-sm hover:bg-white hover:text-orange transition-colors"
+            className="grid h-8 w-8 sm:h-9 sm:w-9 place-items-center rounded-full bg-white/90 text-navy shadow-sm hover:bg-white hover:text-orange transition-colors"
             aria-label="Quick View"
             title="Quick View"
           >
-            <Eye size={14} />
+            <Eye size={13} />
           </button>
           <button
             onClick={addToCart}
             disabled={isOutOfStock}
-            className={`grid h-9 w-9 place-items-center rounded-full text-white shadow-lg transition-all disabled:cursor-not-allowed disabled:opacity-50 ${
+            className={`grid h-8 w-8 sm:h-9 sm:w-9 place-items-center rounded-full text-white shadow-lg transition-all disabled:cursor-not-allowed disabled:opacity-50 ${
               added ? "bg-green scale-110" : "bg-orange hover:bg-orange-dark hover:scale-105"
             }`}
             aria-label={`Add ${product.name} to basket`}
           >
-            {added ? <Check size={15} strokeWidth={3} /> : <Plus size={16} />}
+            {added ? <Check size={14} strokeWidth={3} /> : <Plus size={15} />}
           </button>
         </div>
       </div>
       {quickViewOpen && <QuickViewModal product={product} onClose={() => setQuickViewOpen(false)} />}
 
       {/* ── Info area ────────────────────────────────── */}
-      <div className="flex flex-1 flex-col p-4 sm:p-5">
+      <div className="flex flex-1 flex-col p-3 sm:p-5 min-w-0">
         {/* Category + Rating row */}
-        <div className="flex items-center justify-between gap-2">
-          <span className="truncate text-[10px] font-extrabold uppercase tracking-[.14em] text-orange">
+        <div className="flex items-center justify-between gap-1.5 sm:gap-2 min-w-0">
+          <span className="truncate text-[9.5px] sm:text-[10px] font-extrabold uppercase tracking-[.14em] text-orange min-w-0">
             {product.category}
           </span>
           <span
-            className="flex shrink-0 items-center gap-1 text-xs font-bold text-navy"
+            className="flex shrink-0 items-center gap-1 text-[11px] sm:text-xs font-bold text-navy"
             title={product.reviews > 0 ? `${(product.rating || 5.0).toFixed(1)} rating (${product.reviews} reviews)` : "New arrival"}
           >
             <Star size={11} fill="currentColor" className="text-orange shrink-0" />
             <span>{product.rating ? product.rating.toFixed(1) : "5.0"}</span>
             {product.reviews > 0 ? (
-              <span className="text-muted font-normal text-[11px]">({product.reviews})</span>
+              <span className="text-muted font-normal text-[10px] sm:text-[11px]">({product.reviews})</span>
             ) : (
-              <span className="text-muted font-normal text-[10px]">(New)</span>
+              <span className="text-muted font-normal text-[9px] sm:text-[10px]">(New)</span>
             )}
           </span>
         </div>
 
         {/* Product name */}
-        <Link href={`/products/${product.slug}`} className="mt-2 block">
-          <h3 className="line-clamp-2 text-[14px] font-extrabold leading-snug text-navy transition-colors group-hover:text-orange">
+        <Link href={`/products/${product.slug}`} className="mt-1.5 sm:mt-2 block min-w-0">
+          <h3 className="line-clamp-2 text-[13px] sm:text-[14px] font-extrabold leading-snug text-navy transition-colors group-hover:text-orange break-words">
             {product.name}
           </h3>
         </Link>
 
         {/* Options & Swatches preview */}
         {product.productType === "variable" && product.variations && product.variations.length > 0 && (
-          <div className="mt-1 flex flex-wrap items-center gap-1.5 text-[11px] font-semibold text-muted">
-            <span className="rounded-full bg-cream-deep px-2 py-0.5 text-[10px] font-bold text-navy">
-              {product.variations.length} options available
+          <div className="mt-1 flex flex-wrap items-center gap-1 sm:gap-1.5 text-[10.5px] sm:text-[11px] font-semibold text-muted">
+            <span className="rounded-full bg-cream-deep px-1.5 sm:px-2 py-0.5 text-[9.5px] sm:text-[10px] font-bold text-navy">
+              {product.variations.length} options
             </span>
             {/* Color swatch dots preview if color attribute exists */}
-            {colorSwatches.slice(0, 5).map(v => (
+            {colorSwatches.slice(0, 4).map(v => (
               <span
                 key={v.slug}
-                className="h-3 w-3 rounded-full border border-black/15 shadow-xs"
+                className="h-2.5 w-2.5 sm:h-3 sm:w-3 rounded-full border border-black/15 shadow-xs shrink-0"
                 style={{ backgroundColor: v.color }}
                 title={v.label}
               />
@@ -279,9 +279,9 @@ export function ProductCard({ product, priority = false }: { product: Product; p
         )}
 
         {/* Stock status */}
-        <p className="mt-1.5 text-[11px] font-semibold">
+        <p className="mt-1 sm:mt-1.5 text-[10.5px] sm:text-[11px] font-semibold">
           {isOutOfStock ? (
-            <span className="text-red-500">Currently unavailable</span>
+            <span className="text-red-500">Unavailable</span>
           ) : product.stock <= (product.lowStockThreshold ?? 5) ? (
             <span className="text-amber-600">Only {product.stock} left</span>
           ) : (
@@ -290,12 +290,12 @@ export function ProductCard({ product, priority = false }: { product: Product; p
         </p>
 
         {/* Price + CTA */}
-        <div className="mt-auto flex items-end justify-between gap-2 border-t border-line/60 pt-3 mt-3">
-          <div>
-            <span className="block text-[15px] font-extrabold text-navy">
+        <div className="mt-auto flex items-end justify-between gap-1.5 sm:gap-2 border-t border-line/60 pt-2.5 sm:pt-3 mt-2.5 sm:mt-3 min-w-0">
+          <div className="min-w-0 flex-1">
+            <span className="block text-[13.5px] sm:text-[15px] font-extrabold text-navy truncate">
               {product.priceRange && !hasDeal ? (
                 product.priceRange.includes("–") ? (
-                  <span className="text-xs font-bold text-navy">{product.priceRange}</span>
+                  <span className="text-[11px] sm:text-xs font-bold text-navy truncate block">{product.priceRange}</span>
                 ) : (
                   formatPKR(effectiveSalePrice ?? effectiveRegularPrice)
                 )
@@ -304,14 +304,14 @@ export function ProductCard({ product, priority = false }: { product: Product; p
               )}
             </span>
             {effectiveSalePrice && effectiveSalePrice < effectiveRegularPrice && (
-              <span className="text-[11px] font-medium text-muted line-through">
+              <span className="text-[10px] sm:text-[11px] font-medium text-muted line-through truncate block">
                 {formatPKR(effectiveRegularPrice)}
               </span>
             )}
           </div>
           <Link
             href={`/products/${product.slug}`}
-            className="inline-flex items-center gap-1 rounded-full bg-navy/5 px-3 py-1.5 text-[11px] font-extrabold text-navy hover:bg-orange hover:text-white transition-all duration-200"
+            className="inline-flex shrink-0 items-center gap-1 rounded-full bg-navy/5 px-2.5 py-1 sm:px-3 sm:py-1.5 text-[10.5px] sm:text-[11px] font-extrabold text-navy hover:bg-orange hover:text-white transition-all duration-200"
           >
             <ShoppingBag size={11} /> {product.productType === "variable" ? "Options" : "View"}
           </Link>

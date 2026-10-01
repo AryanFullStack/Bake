@@ -35,7 +35,7 @@ export function PaginationControls({
   // Generate page numbers array with ellipses
   const getPageNumbers = () => {
     const pages: (number | string)[] = [];
-    if (totalPages <= 7) {
+    if (totalPages <= 5) {
       for (let i = 1; i <= totalPages; i++) pages.push(i);
     } else {
       pages.push(1);
@@ -82,10 +82,10 @@ export function PaginationControls({
     : "bg-orange text-white font-extrabold shadow-md shadow-orange/30 scale-105 border-transparent";
 
   return (
-    <div className={`flex flex-col sm:flex-row items-center justify-between gap-4 py-3.5 px-5 text-xs sm:text-sm ${containerClasses} ${className}`}>
+    <div className={`flex flex-col sm:flex-row items-center justify-between gap-3 sm:gap-4 py-3 sm:py-3.5 px-3 sm:px-5 text-xs sm:text-sm max-w-full w-full min-w-0 ${containerClasses} ${className}`}>
       {/* Left side: Item Count & Page Size Selector */}
-      <div className="flex flex-wrap items-center gap-3">
-        <span className="flex items-center gap-1.5 flex-wrap">
+      <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 sm:gap-3 text-center sm:text-left min-w-0">
+        <span className="flex items-center gap-1.5 flex-wrap justify-center sm:justify-start">
           Showing <span className={badgeClasses}>{startItem}</span>–
           <span className={badgeClasses}>{endItem}</span> of{" "}
           <span className={badgeClasses}>{totalItems}</span> {itemLabel}
@@ -114,15 +114,15 @@ export function PaginationControls({
 
       {/* Right side: Page Navigation */}
       {totalPages > 1 && (
-        <div className="flex items-center gap-1.5">
-          {/* First Button */}
+        <div className="flex items-center justify-center gap-1 sm:gap-1.5 max-w-full min-w-0 overflow-x-auto py-1">
+          {/* First Button - hidden on mobile */}
           <button
             type="button"
             onClick={() => onPageChange(1)}
             disabled={safePage <= 1}
             aria-label="First page"
             title="First page"
-            className={`flex items-center justify-center p-2 rounded-xl transition-all disabled:opacity-40 disabled:hover:bg-transparent disabled:cursor-not-allowed ${navButtonClasses}`}
+            className={`hidden sm:flex items-center justify-center p-2 rounded-xl transition-all disabled:opacity-40 disabled:hover:bg-transparent disabled:cursor-not-allowed shrink-0 ${navButtonClasses}`}
           >
             <ChevronsLeft className="w-4 h-4" />
           </button>
@@ -134,18 +134,18 @@ export function PaginationControls({
             disabled={safePage <= 1}
             aria-label="Previous page"
             title="Previous page"
-            className={`flex items-center gap-1 px-2.5 py-2 rounded-xl transition-all disabled:opacity-40 disabled:hover:bg-transparent disabled:cursor-not-allowed ${navButtonClasses}`}
+            className={`flex items-center gap-1 p-2 sm:px-2.5 sm:py-2 rounded-xl transition-all disabled:opacity-40 disabled:hover:bg-transparent disabled:cursor-not-allowed shrink-0 ${navButtonClasses}`}
           >
             <ChevronLeft className="w-4 h-4" />
             <span className="hidden sm:inline text-xs font-bold">Prev</span>
           </button>
 
           {/* Page Numbers */}
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-1 shrink-0">
             {getPageNumbers().map((p, idx) => {
               if (p === "...") {
                 return (
-                  <span key={`ellipsis-${idx}`} className={`px-2 font-bold ${isAmber ? "text-amber-200/40" : "text-slate-400"}`}>
+                  <span key={`ellipsis-${idx}`} className={`px-1 sm:px-2 font-bold shrink-0 ${isAmber ? "text-amber-200/40" : "text-slate-400"}`}>
                     ...
                   </span>
                 );
@@ -157,7 +157,7 @@ export function PaginationControls({
                   key={`page-${p}`}
                   type="button"
                   onClick={() => onPageChange(Number(p))}
-                  className={`min-w-[2.25rem] h-9 px-2 rounded-xl text-xs font-bold transition-all ${
+                  className={`min-w-[2rem] sm:min-w-[2.25rem] h-8 sm:h-9 px-1.5 sm:px-2 rounded-xl text-xs font-bold transition-all shrink-0 ${
                     isCurrent ? activePageClasses : navButtonClasses
                   }`}
                 >
@@ -174,20 +174,20 @@ export function PaginationControls({
             disabled={safePage >= totalPages}
             aria-label="Next page"
             title="Next page"
-            className={`flex items-center gap-1 px-2.5 py-2 rounded-xl transition-all disabled:opacity-40 disabled:hover:bg-transparent disabled:cursor-not-allowed ${navButtonClasses}`}
+            className={`flex items-center gap-1 p-2 sm:px-2.5 sm:py-2 rounded-xl transition-all disabled:opacity-40 disabled:hover:bg-transparent disabled:cursor-not-allowed shrink-0 ${navButtonClasses}`}
           >
             <span className="hidden sm:inline text-xs font-bold">Next</span>
             <ChevronRight className="w-4 h-4" />
           </button>
 
-          {/* Last Button */}
+          {/* Last Button - hidden on mobile */}
           <button
             type="button"
             onClick={() => onPageChange(totalPages)}
             disabled={safePage >= totalPages}
             aria-label="Last page"
             title="Last page"
-            className={`flex items-center justify-center p-2 rounded-xl transition-all disabled:opacity-40 disabled:hover:bg-transparent disabled:cursor-not-allowed ${navButtonClasses}`}
+            className={`hidden sm:flex items-center justify-center p-2 rounded-xl transition-all disabled:opacity-40 disabled:hover:bg-transparent disabled:cursor-not-allowed shrink-0 ${navButtonClasses}`}
           >
             <ChevronsRight className="w-4 h-4" />
           </button>
