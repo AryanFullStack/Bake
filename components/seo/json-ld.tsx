@@ -4,8 +4,8 @@ import type { Product } from "@/lib/types";
 export const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://bakebazaarmart.com";
 export const BRAND_NAME = "Bake Bazaar Mart";
 export const STORE_EMAIL = "info@bakebazaarmart.com";
-export const STORE_PHONE = "+92 312 4516997";
-export const STORE_WHATSAPP = "+92 312 4516997";
+export const STORE_PHONE = "+92 370 0408546";
+export const STORE_WHATSAPP = "+92 370 0408546";
 export const STORE_CITY = "Karachi";
 export const STORE_COUNTRY = "Pakistan";
 

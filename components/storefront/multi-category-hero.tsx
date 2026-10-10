@@ -99,45 +99,46 @@ export function MultiCategoryHero() {
 
   /*
    * 3D Stacked Deck Scroll Transformations:
-   * Optimized height: 180vh (short, snappy, user-friendly scroll distance)
-   * Scene 0: Fixed at base (y: 0%). Scales down 1.0 -> 0.95 as Scene 1 enters.
-   * Scene 1: Slides up 100% -> 0% between 0.05 and 0.45. Scales down 1.0 -> 0.95 as Scene 2 enters.
-   * Scene 2: Slides up 100% -> 0% between 0.50 and 0.90.
+   * Intentional 3-slide scroll track: 300svh total height (100svh viewport + 200svh scroll track)
+   * Slide 0 (Home & Décor): visible at rest (0-8%), scales down 1.0 -> 0.95 as Slide 1 enters.
+   * Slide 1 (Fresh Bakery): slides up 100% -> 0% (8% - 48%), rests in view (48% - 52%), scales down as Slide 2 enters.
+   * Slide 2 (Watches & Accessories): slides up 100% -> 0% (52% - 92%), rests in view (92% - 100%).
+   * After 100%, the hero naturally unpins and the next section enters without gaps.
    */
 
   // Slide translation transforms
   const scene1Y = useTransform(
     scrollYProgress,
-    [0, 0.05, 0.45, 1],
+    [0, 0.08, 0.48, 1],
     ["100%", "100%", "0%", "0%"]
   );
   const scene2Y = useTransform(
     scrollYProgress,
-    [0, 0.50, 0.90, 1],
+    [0, 0.52, 0.92, 1],
     ["100%", "100%", "0%", "0%"]
   );
 
   // Depth scaling for underlying deck layers
-  const scene0Scale = useTransform(scrollYProgress, [0.08, 0.45], [1, 0.95]);
-  const scene0Dim = useTransform(scrollYProgress, [0.08, 0.45], [0, 0.5]);
+  const scene0Scale = useTransform(scrollYProgress, [0.08, 0.48], [1, 0.95]);
+  const scene0Dim = useTransform(scrollYProgress, [0.08, 0.48], [0, 0.5]);
 
-  const scene1Scale = useTransform(scrollYProgress, [0.50, 0.90], [1, 0.95]);
-  const scene1Dim = useTransform(scrollYProgress, [0.50, 0.90], [0, 0.5]);
+  const scene1Scale = useTransform(scrollYProgress, [0.52, 0.92], [1, 0.95]);
+  const scene1Dim = useTransform(scrollYProgress, [0.52, 0.92], [0, 0.5]);
 
   // Fast background image parallax zoom
-  const img0Zoom = useTransform(scrollYProgress, [0, 0.45], [1, 1.04]);
-  const img1Zoom = useTransform(scrollYProgress, [0.05, 0.90], [1, 1.04]);
-  const img2Zoom = useTransform(scrollYProgress, [0.50, 1], [1, 1.04]);
+  const img0Zoom = useTransform(scrollYProgress, [0, 0.48], [1, 1.05]);
+  const img1Zoom = useTransform(scrollYProgress, [0.08, 0.92], [1, 1.05]);
+  const img2Zoom = useTransform(scrollYProgress, [0.52, 1], [1, 1.05]);
 
   // Progress fill calculations for indicator bars
-  const progress0 = useTransform(scrollYProgress, [0, 0.38], [0, 1]);
-  const progress1 = useTransform(scrollYProgress, [0.05, 0.72], [0, 1]);
-  const progress2 = useTransform(scrollYProgress, [0.50, 1.0], [0, 1]);
+  const progress0 = useTransform(scrollYProgress, [0, 0.45], [0, 1]);
+  const progress1 = useTransform(scrollYProgress, [0.15, 0.75], [0, 1]);
+  const progress2 = useTransform(scrollYProgress, [0.55, 1.0], [0, 1]);
 
   // Track active scene state cleanly
   useMotionValueEvent(scrollYProgress, "change", (v) => {
-    if (v < 0.38) setActiveScene(0);
-    else if (v < 0.72) setActiveScene(1);
+    if (v < 0.35) setActiveScene(0);
+    else if (v < 0.70) setActiveScene(1);
     else setActiveScene(2);
   });
 
@@ -150,7 +151,7 @@ export function MultiCategoryHero() {
     const containerTop = rect.top + scrollTop;
     const scrollableHeight = container.clientHeight - window.innerHeight;
 
-    const targets = [0, 0.50, 0.95];
+    const targets = [0, 0.50, 0.96];
     const targetScroll = containerTop + targets[index] * scrollableHeight;
 
     window.scrollTo({
@@ -186,12 +187,12 @@ export function MultiCategoryHero() {
   return (
     <section
       ref={containerRef}
-      className="relative w-full bg-navy-dark"
-      style={{ height: "180vh" }}
+      className="relative w-full"
+      style={{ height: "300svh" }}
       aria-label="Hero Banners"
     >
       {/* Sticky Fullscreen Hero Viewport */}
-      <div className="sticky top-0 h-[100dvh] w-full overflow-hidden bg-black">
+      <div className="sticky top-0 h-[100svh] w-full overflow-hidden bg-black z-10">
         {SCENES.map((scene, idx) => {
           const { y, deckScale, dimOpacity, imgScale, zIndex } = sceneTransforms[idx];
           const isActive = activeScene === idx;
@@ -201,11 +202,13 @@ export function MultiCategoryHero() {
               key={scene.id}
               style={{
                 y: prefersReducedMotion ? "0%" : y,
+                opacity: prefersReducedMotion ? (isActive ? 1 : 0) : 1,
                 scale: prefersReducedMotion ? 1 : deckScale,
                 zIndex,
                 willChange: "transform",
                 pointerEvents: isActive ? "auto" : "none",
               }}
+              transition={prefersReducedMotion ? { duration: 0.35 } : undefined}
               className="absolute inset-0 w-full h-full transform-gpu origin-bottom shadow-2xl transition-shadow duration-200"
             >
               {/* Card Container */}
@@ -260,7 +263,7 @@ export function MultiCategoryHero() {
                 />
 
                 {/* Editorial Typography & Centered CTA */}
-                <div className="relative z-20 w-full max-w-[640px] px-6 text-center flex flex-col items-center justify-center">
+                <div className="relative z-20 w-full max-w-[640px] px-6 text-center flex flex-col items-center justify-center pt-16 md:pt-20">
                   {/* Eyebrow Badge */}
                   <motion.div
                     initial={prefersReducedMotion ? false : { opacity: 0, y: -6 }}

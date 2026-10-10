@@ -55,7 +55,7 @@ export default function ContactPage() {
       "@type": "Organization",
       name: "Bake Bazaar Mart",
       email: "info@bakebazaarmart.com",
-      telephone: "+92 312 4516997",
+      telephone: "+92 370 0408546",
       url: SITE_URL,
       address: {
         "@type": "PostalAddress",
@@ -95,7 +95,7 @@ export default function ContactPage() {
                 <div className="flex-1 min-w-0">
                   <p className="text-xs text-muted font-bold">Call & WhatsApp Support</p>
                   <p className="text-base sm:text-lg font-black text-navy font-mono">
-                    +92 312 4516997
+                    0370 0408546
                   </p>
                   <p className="text-[11px] text-muted font-normal mt-0.5">
                     Fast response for orders, cake consultations & queries
@@ -104,13 +104,13 @@ export default function ContactPage() {
               </div>
               <div className="flex flex-wrap gap-2 pt-2 border-t border-line/60">
                 <a
-                  href="tel:+923124516997"
+                  href="tel:+923700408546"
                   className="inline-flex items-center gap-1.5 rounded-xl bg-orange/10 px-3.5 py-1.5 text-xs font-bold text-orange hover:bg-orange hover:text-white transition-colors"
                 >
                   <Phone size={12} /> Call Now
                 </a>
                 <a
-                  href="https://wa.me/923124516997?text=Hello%20Bake%20Bazaar%20Mart,%20I%20have%20an%20inquiry."
+                  href="https://wa.me/923700408546?text=Hello%20Bake%20Bazaar%20Mart,%20I%20have%20an%20inquiry."
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-flex items-center gap-1.5 rounded-xl bg-[#25D366]/10 px-3.5 py-1.5 text-xs font-bold text-[#1ea952] hover:bg-[#25D366] hover:text-white transition-colors"
@@ -152,7 +152,7 @@ export default function ContactPage() {
                 </div>
               </div>
               <p className="text-[11px] text-muted leading-tight">
-                For bank transfer orders, please share your transfer screenshot with your Order ID via WhatsApp to <strong>+92 312 4516997</strong>.
+                For bank transfer orders, please share your transfer screenshot with your Order ID via WhatsApp to <strong>0370 0408546</strong>.
               </p>
             </div>
 

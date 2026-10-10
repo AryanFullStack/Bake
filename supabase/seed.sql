@@ -93,7 +93,7 @@ on conflict do nothing;
 
 -- 7. SITE SETTINGS
 insert into public.site_settings (key, value) values
-  ('store', '{"name":"Bake Bazaar Mart","email":"info@bakebazaarmart.com","phone":"+92 312 4516997","city":"Karachi, Pakistan"}'),
+  ('store', '{"name":"Bake Bazaar Mart","email":"info@bakebazaarmart.com","phone":"0370 0408546","city":"Karachi, Pakistan"}'),
   ('delivery', '{"free_threshold":3000,"fee":250,"same_day_cutoff":"13:00","cities":["Karachi","Lahore","Islamabad","Rawalpindi"]}'),
   ('seed_metadata', '{"source":"demo-seed","replaceable":true,"note":"Production & verified reviews seed."}')
 on conflict (key) do update set value = excluded.value;

@@ -279,7 +279,7 @@ export function CheckoutClient() {
               </div>
 
               <a
-                href={`https://wa.me/923124516997?text=${encodeURIComponent(
+                href={`https://wa.me/923700408546?text=${encodeURIComponent(
                   `Hello Bake Bazaar Mart! I have transferred the payment for Order #${orderNumber}. Customer: ${fullName}. Here is my transfer screenshot.`
                 )}`}
                 target="_blank"
@@ -287,7 +287,7 @@ export function CheckoutClient() {
                 className="flex items-center justify-center gap-2 rounded-xl bg-[#25D366] py-3.5 px-4 text-xs sm:text-sm font-extrabold text-white shadow-md hover:bg-[#20ba59] active:scale-[0.98] transition-all"
               >
                 <MessageCircle size={17} />
-                <span>Send Payment Proof to WhatsApp (+92 312 4516997)</span>
+                <span>Send Payment Proof to WhatsApp (0370 0408546)</span>
               </a>
             </div>
           )}
@@ -700,7 +700,7 @@ export function CheckoutClient() {
                   </div>
                   <p className="text-[11px] text-muted">
                     After placing your order, please transfer the total amount and send your transfer screenshot with Order ID to WhatsApp at{" "}
-                    <strong className="text-navy font-bold">+92 312 4516997</strong> for instant dispatch verification.
+                    <strong className="text-navy font-bold">0370 0408546</strong> for instant dispatch verification.
                   </p>
                 </div>
               )}

@@ -68,7 +68,7 @@ export function OrderInvoice({ order, onClose }: OrderInvoiceProps) {
               </div>
               <div className="mt-3 text-xs leading-relaxed text-muted">
                 <p>Karachi, Pakistan</p>
-                <p>Tel / WhatsApp: +92 312 4516997 • Email: info@bakebazaarmart.com</p>
+                <p>Tel / WhatsApp: 0370 0408546 • Email: info@bakebazaarmart.com</p>
               </div>
             </div>
 

@@ -590,14 +590,14 @@ export function ProductDetailClient({ product, reviews, faqs = [] }: { product: 
               <Sparkles size={15} /> Buy now · Express checkout <ArrowRight size={15} />
             </Link>
             <a
-              href={`https://wa.me/923124516997?text=${encodeURIComponent(
+              href={`https://wa.me/923700408546?text=${encodeURIComponent(
                 `Hello Bake Bazaar Mart! I am inquiring about: ${activeTitle} (${typeof window !== "undefined" ? window.location.href : ""}). Could you help me with this order?`
               )}`}
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center justify-center gap-2 rounded-2xl border border-[#25D366]/40 bg-[#25D366]/10 py-3 px-4 text-xs font-bold text-[#147e3a] hover:bg-[#25D366] hover:text-white transition-all duration-200"
             >
-              <MessageCircle size={16} /> Order or Inquire via WhatsApp (+92 312 4516997)
+              <MessageCircle size={16} /> Order or Inquire via WhatsApp (0370 0408546)
             </a>
           </div>
           {addedToast ? <div className="mt-3 flex items-center gap-3 rounded-xl border border-green/25 bg-green-light p-3.5 text-xs font-bold text-green"><Check size={15} /> Added {quantity} × {activeTitle}<Link href="/cart" className="ml-auto underline">View basket →</Link></div> : null}

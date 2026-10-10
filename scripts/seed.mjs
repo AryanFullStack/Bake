@@ -145,7 +145,7 @@ async function run() {
     .from('site_settings')
     .upsert(
       [
-        { key: 'store', value: { name: 'Bake Bazaar Mart', email: 'info@bakebazaarmart.com', phone: '+92 312 4516997', city: 'Karachi, Pakistan' } },
+        { key: 'store', value: { name: 'Bake Bazaar Mart', email: 'info@bakebazaarmart.com', phone: '0370 0408546', city: 'Karachi, Pakistan' } },
         { key: 'delivery', value: { free_threshold: 3000, fee: 250, same_day_cutoff: '13:00', cities: ['Lahore', 'Islamabad', 'Rawalpindi', 'Karachi'] } },
         { key: 'seed_metadata', value: { source: 'demo-seed', replaceable: true, note: 'Replace with the client catalogue import.' } },
       ],

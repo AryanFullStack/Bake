@@ -27,16 +27,16 @@ export function Footer() {
               <span className="flex items-center gap-2">
                 <MapPin size={14} className="text-orange shrink-0" /> Karachi, Pakistan
               </span>
-              <a href="tel:+923124516997" className="flex items-center gap-2 hover:text-orange transition-colors">
-                <Phone size={14} className="text-orange shrink-0" /> Call: +92 312 4516997
+              <a href="tel:+923700408546" className="flex items-center gap-2 hover:text-orange transition-colors">
+                <Phone size={14} className="text-orange shrink-0" /> Call: 0370 0408546
               </a>
               <a
-                href="https://wa.me/923124516997"
+                href="https://wa.me/923700408546"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center gap-2 hover:text-emerald-300 transition-colors text-emerald-400 font-bold"
               >
-                <MessageCircle size={14} className="text-emerald-400 shrink-0" /> WhatsApp: +92 312 4516997
+                <MessageCircle size={14} className="text-emerald-400 shrink-0" /> WhatsApp: 0370 0408546
               </a>
               <a href="mailto:info@bakebazaarmart.com" className="flex items-center gap-2 hover:text-orange transition-colors">
                 <Mail size={14} className="text-orange shrink-0" /> info@bakebazaarmart.com

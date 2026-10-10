@@ -236,13 +236,13 @@ export function Header() {
           </p>
           <div className="flex items-center gap-3 shrink-0 text-[10.5px]">
             <a
-              href="https://wa.me/923124516997"
+              href="https://wa.me/923700408546"
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center gap-1 text-white hover:text-orange transition-colors font-bold"
             >
               <Phone size={11} className="text-orange" />
-              <span>+92 312 4516997</span>
+              <span>0370 0408546</span>
             </a>
             <span className="hidden sm:inline text-white/30">·</span>
             <Link href="/track-order" className="hidden sm:flex items-center gap-1 hover:text-orange transition-colors">
@@ -402,11 +402,11 @@ export function Header() {
                 <span>Call / WhatsApp:</span>
                 <a
                   className="font-bold text-navy hover:text-orange flex items-center gap-1.5"
-                  href="https://wa.me/923124516997"
+                  href="https://wa.me/923700408546"
                   target="_blank"
                   rel="noopener noreferrer"
                 >
-                  <Phone size={12} className="text-orange" /> +92 312 4516997
+                  <Phone size={12} className="text-orange" /> 0370 0408546
                 </a>
               </div>
               <div className="flex items-center justify-between">

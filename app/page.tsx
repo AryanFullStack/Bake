@@ -137,18 +137,20 @@ export default async function HomePage() {
     .slice(0, 6);
 
   return (
-    <div className="overflow-x-clip">
+    <>
       {/* ── Semantic SEO Primary H1 ─────────────────────────── */}
       <h1 className="sr-only">
         Bake Bazaar Mart — Fresh Cakes, Home Décor, Kitchen & Everyday Essentials in Karachi
       </h1>
 
-      {/* ── Hero Section ────────────────────────────────────── */}
+      {/* ── Hero Section (Full bleed, sticky scroll animation) ── */}
       <MultiCategoryHero />
 
-      {/* ── Shop by Category — hide if no DB categories ─────── */}
-      {shopCategories.length > 0 && (
-        <section id="categories" className="container-shell py-12 md:py-20">
+      {/* ── Content Sections (contained with horizontal clip to prevent page scrollbars) ── */}
+      <div className="w-full overflow-x-clip">
+        {/* ── Shop by Category — hide if no DB categories ─────── */}
+        {shopCategories.length > 0 && (
+          <section id="categories" className="container-shell py-12 md:py-20">
           <div className="flex flex-col justify-between gap-3 md:flex-row md:items-end mb-8">
             <div>
               <p className="eyebrow text-orange">Shop What You Need</p>
@@ -667,7 +669,8 @@ export default async function HomePage() {
         </div>
       </section>
 
-    </div>
+      </div>
+    </>
   );
 }
 
