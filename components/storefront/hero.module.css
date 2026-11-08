@@ -1,0 +1,107 @@
+.hero {
+  position: relative;
+  overflow: clip;
+  background: radial-gradient(ellipse at 85% 25%, #fff1df 0, transparent 52%), var(--cream);
+}
+.layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr);
+  align-items: center;
+  gap: clamp(24px, 4vw, 64px);
+  padding-top: 32px;
+  padding-bottom: 40px;
+}
+.copy { padding: 24px 0; }
+.eyebrow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: var(--orange-dark);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: .2em;
+  text-transform: uppercase;
+}
+.eyebrow > span { width: 28px; height: 1px; background: currentColor; }
+.title {
+  margin-top: 24px;
+  font-size: clamp(42px, 4.5vw, 68px);
+  font-weight: 600;
+  line-height: 1.1;
+  letter-spacing: -.045em;
+  color: var(--navy);
+}
+.title em { font-weight: 500; color: var(--orange-dark); }
+.description { max-width: 430px; margin-top: 24px; font-size: 16px; line-height: 1.85; color: var(--muted); }
+.actions { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 24px; margin-top: 30px; }
+.primary { border-radius: 999px; padding: 15px 24px; }
+.secondary { display: inline-flex; min-height: 48px; align-items: center; gap: 12px; font-size: 14px; font-weight: 800; color: var(--navy); }
+.secondary svg { transition: transform .3s ease; }
+.secondary:hover svg { transform: translateX(4px); }
+.delivery { display: flex; flex-wrap: wrap; gap: 12px 24px; margin-top: 32px; padding-top: 24px; border-top: 1px solid var(--line); color: var(--muted); font-size: 12px; font-weight: 600; }
+.delivery span { display: inline-flex; align-items: center; gap: 8px; }
+.delivery svg { color: var(--green-dark); }
+.visuals { min-width: 0; }
+.cakeScene { position: relative; display: block; aspect-ratio: 1.14; isolation: isolate; }
+.halo { position: absolute; z-index: -2; width: 79%; aspect-ratio: 1; border-radius: 50%; top: 8%; left: 12%; background: linear-gradient(140deg, #f8e4cb, #fff5e9 65%); }
+.orbit { position: absolute; z-index: -1; width: 89%; height: 80%; top: 7%; left: 6%; border: 1px solid #e9d6bd; border-radius: 50%; transform: rotate(-24deg); }
+.cakeImage { position: absolute; inset: 4% 3% 6%; transition: transform .7s cubic-bezier(.2,.65,.3,1); }
+.image { object-fit: contain; }
+.cakeScene:hover .cakeImage { transform: translateY(-7px) rotate(-1deg); }
+.sparkle { position: absolute; top: 13%; left: 7%; color: var(--orange); transform: rotate(-12deg); }
+.sceneNote { position: absolute; z-index: 1; top: 3%; right: 0; color: var(--navy); font-size: 12px; font-weight: 600; line-height: 1.6; transform: rotate(7deg); }
+.sceneNote em { font-family: var(--font-display); font-size: 21px; font-weight: 400; color: var(--orange-dark); }
+.cakeCaption { position: absolute; inset: auto 0 0; display: flex; justify-content: center; align-items: center; gap: 10px; font-size: 11px; font-weight: 700; letter-spacing: .07em; color: var(--navy); }
+.captionLine { width: 22px; height: 1px; background: var(--orange); }
+.kitchen { display: flex; align-items: center; gap: 16px; margin-top: 24px; padding: 16px 0 0; border-top: 1px solid #e9ddce; }
+.kitchenImage { position: relative; flex-shrink: 0; width: 120px; height: 112px; transition: transform .6s ease; }
+.kitchen:hover .kitchenImage { transform: translateY(-4px) rotate(-3deg); }
+.kitchenCopy { flex: 1; min-width: 0; }
+.kitchenCopy > span { font-size: 9px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; color: var(--orange-dark); }
+.kitchenCopy h2 { margin-top: 8px; font-family: var(--font-display); font-size: 23px; font-weight: 600; line-height: 1.2; color: var(--navy); }
+.kitchenCopy p { margin-top: 6px; font-size: 11px; line-height: 1.6; color: var(--muted); }
+.kitchenArrow { display: grid; width: 40px; height: 40px; flex-shrink: 0; place-items: center; border: 1px solid #e9d6bd; border-radius: 50%; color: var(--navy); transition: background .3s, color .3s; }
+.kitchen:hover .kitchenArrow { background: var(--navy); color: white; }
+.bottomLine { height: 1px; background: var(--line); }
+.bottomLine span { display: block; height: 1px; width: 100px; margin: 0 auto; background: var(--orange); }
+@media (prefers-reduced-motion: no-preference) {
+  .eyebrow { animation: reveal .65s ease-out both; }
+  .title { animation: reveal .8s .08s ease-out both; }
+  .description, .actions, .delivery { animation: reveal .8s .16s ease-out both; }
+  .cakeImage { animation: cakeReveal 1s .1s cubic-bezier(.2,.65,.3,1) both; }
+  .halo, .orbit { animation: backdropReveal 1.2s ease-out both; }
+  .kitchen { animation: reveal .85s .25s ease-out both; }
+}
+@keyframes reveal { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes cakeReveal { from { opacity: 0; translate: 0 18px; scale: .96; } to { opacity: 1; translate: 0 0; scale: 1; } }
+@keyframes backdropReveal { from { opacity: 0; } to { opacity: 1; } }
+@media (max-width: 1023px) {
+  .layout { grid-template-columns: 1fr; gap: 12px; max-width: 780px; padding-top: 32px; padding-bottom: 32px; }
+  .copy { padding: 0; }
+  .title { font-size: clamp(40px, 7vw, 62px); margin-top: 18px; }
+  .description { max-width: 520px; margin-top: 18px; }
+  .visuals { width: 100%; max-width: 580px; justify-self: center; }
+  .cakeScene { aspect-ratio: 1.18; }
+  .kitchen { margin-top: 16px; }
+}
+@media (max-width: 639px) {
+  .layout { gap: 20px; padding-top: 28px; padding-bottom: 24px; }
+  .title { font-size: clamp(36px, 10vw, 52px); }
+  .description { font-size: 14px; line-height: 1.75; }
+  .actions { margin-top: 22px; gap: 8px 18px; }
+  .primary { padding: 13px 20px; font-size: 13px; }
+  .secondary { font-size: 12px; gap: 6px; }
+  .delivery { margin-top: 20px; padding-top: 16px; font-size: 10px; gap: 10px 16px; }
+  .delivery svg { width: 15px; height: 15px; }
+  .sceneNote { font-size: 10px; }
+  .sceneNote em { font-size: 17px; }
+  .kitchen { gap: 10px; padding-top: 12px; }
+  .kitchenImage { width: 96px; height: 96px; }
+  .kitchenCopy h2 { font-size: 20px; }
+  .kitchenCopy > span { font-size: 8px; letter-spacing: .06em; }
+  .kitchenArrow { width: 32px; height: 32px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .hero *, .hero *::before, .hero *::after { animation: none !important; transition: none !important; }
+  .cakeScene:hover .cakeImage, .kitchen:hover .kitchenImage { transform: none; }
+}

@@ -9,10 +9,8 @@ const nextConfig = {
   compress: true,
   poweredByHeader: false,
   images: {
-    // Use our custom ImageKit loader so resizing is done by ImageKit's CDN
-    // directly — browsers hit ImageKit, bypassing the slow /_next/image proxy.
-    loader: "custom",
-    loaderFile: "./lib/imagekit-loader.ts",
+    // Local/public images use Next's cached resizing endpoint. SafeImage sends
+    // ImageKit media directly to its CDN with a per-image loader.
     qualities: [60, 70, 75, 80, 85, 90],
     deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048],
     imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],

@@ -138,12 +138,6 @@ export default async function HomePage() {
 
   return (
     <>
-      {/* ── Semantic SEO Primary H1 ─────────────────────────── */}
-      <h1 className="sr-only">
-        Bake Bazaar Mart — Fresh Cakes, Home Décor, Kitchen & Everyday Essentials in Karachi
-      </h1>
-
-      {/* ── Hero Section (Full bleed, sticky scroll animation) ── */}
       <MultiCategoryHero />
 
       {/* ── Content Sections (contained with horizontal clip to prevent page scrollbars) ── */}
@@ -155,8 +149,8 @@ export default async function HomePage() {
             <div>
               <p className="eyebrow text-orange">Shop What You Need</p>
               <h2 className="section-heading mt-1.5">
-                Explore everyday essentials,<br className="hidden sm:block" />
-                treats and home favourites.
+                For your kitchen, celebrations<br className="hidden sm:block" />
+                and everyday favourites.
               </h2>
             </div>
             <Link

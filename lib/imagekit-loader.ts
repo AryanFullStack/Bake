@@ -5,8 +5,7 @@
  * ImageKit handles all resizing / format conversion itself — the browser hits
  * ImageKit directly and the slow /_next/image proxy is bypassed entirely.
  *
- * For every other URL (local public files, Supabase, Unsplash…) the loader
- * returns a URL with width & quality query params to satisfy Next.js's loader contract.
+ * Other raster images use the cached Next.js optimizer for actual resizing.
  */
 export default function imagekitLoader({
   src,
@@ -32,8 +31,10 @@ export default function imagekitLoader({
     }
   }
 
-  // ── Non-ImageKit URLs (local public files, etc.) ─────────────────────────
-  // Next.js requires custom loaders to return a URL that reflects the requested width.
-  const join = src.includes("?") ? "&" : "?";
-  return `${src}${join}w=${width}&q=${quality ?? 75}`;
+  // Static SVGs do not benefit from raster optimization.
+  if (src.split(/[?#]/)[0].toLowerCase().endsWith(".svg")) return src;
+
+  // Local and supported remote images need real resizing, not ignored ?w= params.
+  // Keep ImageKit on its CDN above; use Next's cached optimizer for other sources.
+  return `/_next/image?url=${encodeURIComponent(src)}&w=${width}&q=${quality ?? 75}`;
 }

@@ -2,30 +2,12 @@
 
 import Image, { ImageProps } from "next/image";
 import { useState, useMemo } from "react";
+import imagekitLoader from "@/lib/imagekit-loader";
 import { resolveMediaUrl, isVpsMediaUrl, DEFAULT_FALLBACK_IMAGE } from "@/lib/media-url";
-import { DEFAULT_BLUR_PLACEHOLDER } from "@/lib/image-placeholders";
 
 export interface SafeImageProps extends Omit<ImageProps, "src"> {
   src: string | null | undefined;
   fallbackSrc?: string;
-}
-
-/**
- * Generates an ImageKit LQIP (Low Quality Image Placeholder) URL.
- * Uses a 20px-wide, heavily-blurred, q-1 version of the same image.
- * The browser fetches this tiny variant (<1 KB) immediately as the blur backdrop.
- */
-function getImageKitLqip(src: string): string | null {
-  if (!src || (!src.includes("ik.imagekit.io") && !src.includes("imagekit.io"))) {
-    return null;
-  }
-  try {
-    const url = new URL(src);
-    url.searchParams.set("tr", "w-20,q-1,bl-30,f-auto");
-    return url.toString();
-  } catch {
-    return null;
-  }
 }
 
 export function SafeImage({
@@ -50,20 +32,16 @@ export function SafeImage({
   const isVps = useMemo(() => isVpsMediaUrl(currentSrc), [currentSrc]);
   const shouldBeUnoptimized = unoptimized ?? isVps;
 
-  // Blur placeholder: use caller-supplied value OR auto-generate ImageKit LQIP URL
-  // OR fall back to our SVG colour placeholder.
-  const lqipUrl = useMemo(
-    () => blurDataURL ?? getImageKitLqip(currentSrc) ?? DEFAULT_BLUR_PLACEHOLDER,
-    [blurDataURL, currentSrc]
-  );
+  // Only use a blur when the caller supplies an actual image preview.
+  // Remote placeholders add a second request and generic colours hide the image.
   const activePlaceholder: ImageProps["placeholder"] =
-    placeholder ?? (lqipUrl ? "blur" : undefined);
-  const activeBlurDataURL =
-    activePlaceholder === "blur" ? lqipUrl : undefined;
+    placeholder ?? (blurDataURL ? "blur" : "empty");
+  const activeBlurDataURL = activePlaceholder === "blur" ? blurDataURL : undefined;
 
   return (
     <Image
       {...props}
+      loader={currentSrc.includes("imagekit.io") ? imagekitLoader : undefined}
       src={currentSrc}
       alt={alt}
       unoptimized={shouldBeUnoptimized}

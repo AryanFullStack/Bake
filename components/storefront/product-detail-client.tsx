@@ -96,11 +96,11 @@ export function ProductDetailClient({ product, reviews, faqs = [] }: { product: 
   const [selection, setSelection] = useState<Record<string, string>>({});
   const [quantity, setQuantity] = useState(1);
   const [saved, setSaved] = useState(false);
-  const [activeTab, setActiveTab] = useState<Tab>("reviews");
+  const [activeTab, setActiveTab] = useState<Tab>("description");
   const [addedToast, setAddedToast] = useState(false);
   const [validationError, setValidationError] = useState<string | null>(null);
   const [activeImage, setActiveImage] = useState(0);
-  const [touchStartX, setTouchStartX] = useState<number | null>(null);
+  const touchStart = useRef<{ x: number; y: number } | null>(null);
   const thumbsRef = useRef<HTMLDivElement>(null);
   const [isZoomed, setIsZoomed] = useState(false);
   const [zoomPos, setZoomPos] = useState({ x: 50, y: 50 });
@@ -113,17 +113,6 @@ export function ProductDetailClient({ product, reviews, faqs = [] }: { product: 
     const y = Math.max(0, Math.min(100, ((e.clientY - rect.top) / rect.height) * 100));
     setZoomPos({ x, y });
   };
-
-  const handleTouchMove = (e: React.TouchEvent<HTMLDivElement>) => {
-    if (!imgContainerRef.current || e.touches.length === 0) return;
-    const touch = e.touches[0];
-    const rect = imgContainerRef.current.getBoundingClientRect();
-    const x = Math.max(0, Math.min(100, ((touch.clientX - rect.left) / rect.width) * 100));
-    const y = Math.max(0, Math.min(100, ((touch.clientY - rect.top) / rect.height) * 100));
-    setZoomPos({ x, y });
-  };
-
-
 
   const activeVariation = useMemo(() => {
     if (!variations.length || Object.keys(selection).length !== attributes.length) return null;
@@ -304,22 +293,20 @@ export function ProductDetailClient({ product, reviews, faqs = [] }: { product: 
         <div className="flex flex-col gap-4 lg:sticky lg:top-24">
           <div
             ref={imgContainerRef}
-            className="group relative aspect-square overflow-hidden rounded-[28px] border border-line/60 bg-cream-deep shadow-md cursor-crosshair touch-none select-none"
+            className="group relative aspect-square overflow-hidden rounded-[28px] border border-line/60 bg-cream-deep shadow-md cursor-crosshair touch-pan-y select-none"
             onMouseEnter={() => setIsZoomed(true)}
             onMouseLeave={() => setIsZoomed(false)}
             onMouseMove={handleMouseMove}
             onTouchStart={(event) => {
-              setIsZoomed(true);
-              handleTouchMove(event);
-              setTouchStartX(event.touches[0].clientX);
+              touchStart.current = { x: event.touches[0].clientX, y: event.touches[0].clientY };
             }}
-            onTouchMove={handleTouchMove}
+            onTouchCancel={() => { touchStart.current = null; }}
             onTouchEnd={(event) => {
-              setIsZoomed(false);
-              if (touchStartX == null) return;
-              const delta = event.changedTouches[0].clientX - touchStartX;
-              if (Math.abs(delta) > 40) delta < 0 ? nextImage() : prevImage();
-              setTouchStartX(null);
+              if (!touchStart.current) return;
+              const dx = event.changedTouches[0].clientX - touchStart.current.x;
+              const dy = event.changedTouches[0].clientY - touchStart.current.y;
+              if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy)) dx < 0 ? nextImage() : prevImage();
+              touchStart.current = null;
             }}
             onClick={() => setIsZoomed((prev) => !prev)}
           >
@@ -334,7 +321,8 @@ export function ProductDetailClient({ product, reviews, faqs = [] }: { product: 
                 src={activeImages[activeImage] ?? product.image}
                 alt={activeTitle}
                 fill
-                sizes="(max-width: 1024px) 100vw, 52vw"
+                sizes="(max-width: 1023px) 100vw, 50vw"
+                quality={80}
                 priority
                 className="object-cover transition-opacity duration-300"
               />

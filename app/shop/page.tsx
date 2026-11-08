@@ -96,6 +96,7 @@ export default async function ShopPage({
     <>
       <JsonLd data={breadcrumbSchema} />
       <ShopBrowser
+        key={JSON.stringify([initialCategory, params.q ?? "", params.sale === "1"])}
         categories={categories}
         products={products}
         initialCategory={initialCategory}

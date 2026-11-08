@@ -42,6 +42,7 @@ export function ProductCard({ product, priority = false }: { product: Product; p
   const [quickViewOpen, setQuickViewOpen] = useState(false);
 
   const [hasHovered, setHasHovered] = useState(false);
+  const [loadedAlternate, setLoadedAlternate] = useState<string | null>(null);
 
   // Build de-duped image list: primary first, then gallery extras
   const allImages = useMemo(() => {
@@ -157,7 +158,7 @@ export function ProductCard({ product, priority = false }: { product: Product; p
             priority={priority}
             loading={priority ? "eager" : "lazy"}
             className={`object-cover transition-all duration-700 ${
-              hovering && hasMultiple && hasHovered
+              hovering && hasMultiple && hasHovered && loadedAlternate === allImages[1]
                 ? "opacity-0 scale-[1.05]"
                 : hovering && !hasMultiple
                 ? "opacity-100 scale-[1.05]"
@@ -172,9 +173,10 @@ export function ProductCard({ product, priority = false }: { product: Product; p
               fill
               sizes="(max-width: 480px) 50vw, (max-width: 768px) 40vw, (max-width: 1024px) 30vw, 22vw"
               quality={65}
+              onLoad={() => setLoadedAlternate(allImages[1])}
               loading="lazy"
               className={`object-cover transition-all duration-700 ${
-                hovering ? "opacity-100 scale-[1.04]" : "opacity-0 scale-100"
+                hovering && loadedAlternate === allImages[1] ? "opacity-100 scale-[1.04]" : "opacity-0 scale-100"
               }`}
             />
           )}

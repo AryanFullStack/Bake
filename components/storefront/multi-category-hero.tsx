@@ -1,393 +1,49 @@
-"use client";
-
-import React, { useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import {
-  motion,
-  useScroll,
-  useTransform,
-  useSpring,
-  useMotionValueEvent,
-  useReducedMotion,
-} from "framer-motion";
-import { ArrowRight, Sparkles, ChevronDown } from "lucide-react";
-import { HOME_DECOR_BLUR, BAKERY_BLUR, WATCH_BLUR } from "@/lib/image-placeholders";
+import { ArrowRight, Cake, Package, Sparkles } from "lucide-react";
+import styles from "./hero.module.css";
 
-/* ─────────────────────────────────────────────────────────────
-   Hero Scene Configuration
-   ───────────────────────────────────────────────────────────── */
-interface HeroScene {
-  id: string;
-  num: string;
-  eyebrow: string;
-  title: string;
-  subtitle: string;
-  cta: string;
-  href: string;
-  mobileImg: string;
-  desktopImg: string;
-  alt: string;
-  mobileObjPos: string;
-  desktopObjPos: string;
-  blurDataURL: string;
-}
-
-const SCENES: HeroScene[] = [
-  /* ── 1. HOME & DÉCOR ── */
-  {
-    id: "home",
-    num: "01",
-    eyebrow: "Home & Décor",
-    title: "Beautiful Spaces",
-    subtitle: "Curated home accents & décor that bring warmth to every corner.",
-    cta: "Explore Home",
-    href: "/category/home-decor",
-    mobileImg: "/HomeM.webp",
-    desktopImg: "/homeDisktop.webp",
-    alt: "Bake Bazaar Mart curated home décor and living room styling accents",
-    mobileObjPos: "center center",
-    desktopObjPos: "center center",
-    blurDataURL: HOME_DECOR_BLUR,
-  },
-
-  /* ── 2. CAKES & BAKERY ── */
-  {
-    id: "cakes",
-    num: "02",
-    eyebrow: "Fresh Bakery",
-    title: "Made to Celebrate",
-    subtitle: "Artisan cakes & fresh treats handcrafted for every special moment.",
-    cta: "Shop Cakes",
-    href: "/category/bakery",
-    mobileImg: "/CakeM.webp",
-    desktopImg: "/CakeD.webp",
-    alt: "Handcrafted celebration cake baked fresh daily by Bake Bazaar Mart Karachi",
-    mobileObjPos: "center 65%",
-    desktopObjPos: "right center",
-    blurDataURL: BAKERY_BLUR,
-  },
-
-  /* ── 3. WATCHES & ACCESSORIES ── */
-  {
-    id: "watches",
-    num: "03",
-    eyebrow: "Watches & Accessories",
-    title: "Timeless Style",
-    subtitle: "Precision timepieces designed with luxury and everyday elegance.",
-    cta: "Shop Watches",
-    href: "/category/watches",
-    mobileImg: "/WM.webp",
-    desktopImg: "/WD.webp",
-    alt: "Classic and contemporary wristwatches collection at Bake Bazaar Mart",
-    mobileObjPos: "center center",
-    desktopObjPos: "center center",
-    blurDataURL: WATCH_BLUR,
-  },
-];
-
+/** Server-rendered content; all animation is decorative and progressively enhanced. */
 export function MultiCategoryHero() {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const [activeScene, setActiveScene] = useState(0);
-  const prefersReducedMotion = useReducedMotion();
-
-  /* Direct scroll progress for zero-lag 1:1 scroll responsiveness */
-  const { scrollYProgress } = useScroll({
-    target: containerRef,
-    offset: ["start start", "end end"],
-  });
-
-  /*
-   * 3D Stacked Deck Scroll Transformations:
-   * Intentional 3-slide scroll track: 300svh total height (100svh viewport + 200svh scroll track)
-   * Slide 0 (Home & Décor): visible at rest (0-8%), scales down 1.0 -> 0.95 as Slide 1 enters.
-   * Slide 1 (Fresh Bakery): slides up 100% -> 0% (8% - 48%), rests in view (48% - 52%), scales down as Slide 2 enters.
-   * Slide 2 (Watches & Accessories): slides up 100% -> 0% (52% - 92%), rests in view (92% - 100%).
-   * After 100%, the hero naturally unpins and the next section enters without gaps.
-   */
-
-  // Slide translation transforms
-  const scene1Y = useTransform(
-    scrollYProgress,
-    [0, 0.08, 0.48, 1],
-    ["100%", "100%", "0%", "0%"]
-  );
-  const scene2Y = useTransform(
-    scrollYProgress,
-    [0, 0.52, 0.92, 1],
-    ["100%", "100%", "0%", "0%"]
-  );
-
-  // Depth scaling for underlying deck layers
-  const scene0Scale = useTransform(scrollYProgress, [0.08, 0.48], [1, 0.95]);
-  const scene0Dim = useTransform(scrollYProgress, [0.08, 0.48], [0, 0.5]);
-
-  const scene1Scale = useTransform(scrollYProgress, [0.52, 0.92], [1, 0.95]);
-  const scene1Dim = useTransform(scrollYProgress, [0.52, 0.92], [0, 0.5]);
-
-  // Fast background image parallax zoom
-  const img0Zoom = useTransform(scrollYProgress, [0, 0.48], [1, 1.05]);
-  const img1Zoom = useTransform(scrollYProgress, [0.08, 0.92], [1, 1.05]);
-  const img2Zoom = useTransform(scrollYProgress, [0.52, 1], [1, 1.05]);
-
-  // Progress fill calculations for indicator bars
-  const progress0 = useTransform(scrollYProgress, [0, 0.45], [0, 1]);
-  const progress1 = useTransform(scrollYProgress, [0.15, 0.75], [0, 1]);
-  const progress2 = useTransform(scrollYProgress, [0.55, 1.0], [0, 1]);
-
-  // Track active scene state cleanly
-  useMotionValueEvent(scrollYProgress, "change", (v) => {
-    if (v < 0.35) setActiveScene(0);
-    else if (v < 0.70) setActiveScene(1);
-    else setActiveScene(2);
-  });
-
-  /* Fast scroll to target scene */
-  const scrollToScene = (index: number) => {
-    if (!containerRef.current) return;
-    const container = containerRef.current;
-    const rect = container.getBoundingClientRect();
-    const scrollTop = window.scrollY || document.documentElement.scrollTop;
-    const containerTop = rect.top + scrollTop;
-    const scrollableHeight = container.clientHeight - window.innerHeight;
-
-    const targets = [0, 0.50, 0.96];
-    const targetScroll = containerTop + targets[index] * scrollableHeight;
-
-    window.scrollTo({
-      top: targetScroll,
-      behavior: "smooth",
-    });
-  };
-
-  const sceneTransforms = [
-    {
-      y: "0%" as const,
-      deckScale: scene0Scale,
-      dimOpacity: scene0Dim,
-      imgScale: img0Zoom,
-      zIndex: 10,
-    },
-    {
-      y: scene1Y,
-      deckScale: scene1Scale,
-      dimOpacity: scene1Dim,
-      imgScale: img1Zoom,
-      zIndex: 20,
-    },
-    {
-      y: scene2Y,
-      deckScale: 1 as const,
-      dimOpacity: 0 as const,
-      imgScale: img2Zoom,
-      zIndex: 30,
-    },
-  ];
-
   return (
-    <section
-      ref={containerRef}
-      className="relative w-full"
-      style={{ height: "300svh" }}
-      aria-label="Hero Banners"
-    >
-      {/* Sticky Fullscreen Hero Viewport */}
-      <div className="sticky top-0 h-[100svh] w-full overflow-hidden bg-black z-10">
-        {SCENES.map((scene, idx) => {
-          const { y, deckScale, dimOpacity, imgScale, zIndex } = sceneTransforms[idx];
-          const isActive = activeScene === idx;
-
-          return (
-            <motion.div
-              key={scene.id}
-              style={{
-                y: prefersReducedMotion ? "0%" : y,
-                opacity: prefersReducedMotion ? (isActive ? 1 : 0) : 1,
-                scale: prefersReducedMotion ? 1 : deckScale,
-                zIndex,
-                willChange: "transform",
-                pointerEvents: isActive ? "auto" : "none",
-              }}
-              transition={prefersReducedMotion ? { duration: 0.35 } : undefined}
-              className="absolute inset-0 w-full h-full transform-gpu origin-bottom shadow-2xl transition-shadow duration-200"
-            >
-              {/* Card Container */}
-              <div className="relative w-full h-full overflow-hidden bg-navy-dark flex items-center justify-center">
-                {/* Mobile Image (<768px) */}
-                <motion.div
-                  style={{ scale: prefersReducedMotion ? 1 : imgScale }}
-                  className="md:hidden absolute inset-0 w-full h-full"
-                >
-                  <Image
-                    src={scene.mobileImg}
-                    alt={scene.alt}
-                    fill
-                    sizes="100vw"
-                    priority={idx === 0}
-                    loading={idx === 0 ? "eager" : "lazy"}
-                    placeholder="blur"
-                    blurDataURL={scene.blurDataURL}
-                    quality={85}
-                    className="object-cover select-none"
-                    style={{ objectPosition: scene.mobileObjPos }}
-                  />
-                </motion.div>
-
-                {/* Desktop Image (≥768px) */}
-                <motion.div
-                  style={{ scale: prefersReducedMotion ? 1 : imgScale }}
-                  className="hidden md:block absolute inset-0 w-full h-full"
-                >
-                  <Image
-                    src={scene.desktopImg}
-                    alt={scene.alt}
-                    fill
-                    sizes="100vw"
-                    priority={idx === 0}
-                    loading={idx === 0 ? "eager" : "lazy"}
-                    placeholder="blur"
-                    blurDataURL={scene.blurDataURL}
-                    quality={85}
-                    className="object-cover select-none"
-                    style={{ objectPosition: scene.desktopObjPos }}
-                  />
-                </motion.div>
-
-                {/* Dark Vignette Overlay for Typography Contrast */}
-                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/35 to-black/55 pointer-events-none" />
-
-                {/* 3D Depth Dimming Overlay when covered by upper card */}
-                <motion.div
-                  style={{ opacity: dimOpacity }}
-                  className="absolute inset-0 bg-black pointer-events-none z-10 transition-opacity duration-100"
-                />
-
-                {/* Editorial Typography & Centered CTA */}
-                <div className="relative z-20 w-full max-w-[640px] px-6 text-center flex flex-col items-center justify-center pt-16 md:pt-20">
-                  {/* Eyebrow Badge */}
-                  <motion.div
-                    initial={prefersReducedMotion ? false : { opacity: 0, y: -6 }}
-                    animate={isActive ? { opacity: 1, y: 0 } : { opacity: 0, y: -6 }}
-                    transition={{ duration: 0.2 }}
-                    className="inline-flex items-center gap-2 rounded-full border border-white/25 bg-black/40 px-4 py-1.5 backdrop-blur-md mb-3.5 shadow-lg"
-                  >
-                    <Sparkles size={13} className="text-orange" />
-                    <span className="text-[11px] sm:text-xs font-extrabold uppercase tracking-[0.2em] text-white">
-                      {scene.eyebrow}
-                    </span>
-                  </motion.div>
-
-                  {/* Slide Title */}
-                  <motion.h2
-                    initial={prefersReducedMotion ? false : { opacity: 0, y: 8 }}
-                    animate={isActive ? { opacity: 1, y: 0 } : { opacity: 0, y: 8 }}
-                    transition={{ duration: 0.2, delay: 0.03 }}
-                    className="font-display font-black text-3.5xl sm:text-5xl lg:text-6xl text-white tracking-tight leading-[1.05] drop-shadow-xl"
-                  >
-                    {scene.title}
-                  </motion.h2>
-
-                  {/* Supporting Subtitle */}
-                  <motion.p
-                    initial={prefersReducedMotion ? false : { opacity: 0, y: 6 }}
-                    animate={isActive ? { opacity: 1, y: 0 } : { opacity: 0, y: 6 }}
-                    transition={{ duration: 0.2, delay: 0.06 }}
-                    className="mt-2.5 sm:mt-3 text-xs sm:text-base text-white/90 font-medium leading-relaxed max-w-[440px] drop-shadow-md"
-                  >
-                    {scene.subtitle}
-                  </motion.p>
-
-                  {/* CTA Button */}
-                  <motion.div
-                    initial={prefersReducedMotion ? false : { opacity: 0, scale: 0.96 }}
-                    animate={isActive ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 0.96 }}
-                    transition={{ duration: 0.2, delay: 0.09 }}
-                    className="mt-5 sm:mt-6"
-                  >
-                    <Link
-                      href={scene.href}
-                      tabIndex={isActive ? 0 : -1}
-                      className="group inline-flex items-center gap-2.5 rounded-xl bg-orange hover:bg-orange-dark px-6 py-3 sm:px-8 sm:py-3.5 text-xs sm:text-sm font-extrabold text-white shadow-xl transition-all duration-200 hover:-translate-y-0.5 hover:shadow-2xl active:translate-y-0"
-                    >
-                      {scene.cta}
-                      <ArrowRight
-                        size={15}
-                        className="transition-transform duration-200 group-hover:translate-x-1"
-                      />
-                    </Link>
-                  </motion.div>
-                </div>
-              </div>
-            </motion.div>
-          );
-        })}
-
-        {/* ── Interactive Progress & Scene Navigation Dock ── */}
-        <div
-          className="absolute bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 sm:gap-3 rounded-full border border-white/20 bg-black/55 px-4 py-2.5 backdrop-blur-xl shadow-2xl"
-          aria-label="Hero Scene Pagination"
-        >
-          {SCENES.map((scene, idx) => {
-            const active = activeScene === idx;
-            const sceneProgress = idx === 0 ? progress0 : idx === 1 ? progress1 : progress2;
-
-            return (
-              <button
-                key={scene.id}
-                onClick={() => scrollToScene(idx)}
-                className={`group relative flex items-center gap-2 px-2.5 py-1 rounded-full transition-all duration-200 ${
-                  active ? "bg-white/15" : "hover:bg-white/10"
-                }`}
-                title={`Go to ${scene.eyebrow}`}
-              >
-                {/* Scene Number */}
-                <span
-                  className={`text-[11px] font-black transition-colors duration-200 ${
-                    active ? "text-orange" : "text-white/60 group-hover:text-white"
-                  }`}
-                >
-                  {scene.num}
-                </span>
-
-                {/* Progress Bar Track & Dynamic Fill */}
-                <div className="relative w-7 sm:w-10 h-1.5 rounded-full bg-white/20 overflow-hidden">
-                  <motion.div
-                    className="absolute inset-y-0 left-0 bg-orange rounded-full"
-                    style={{
-                      width: "100%",
-                      scaleX: sceneProgress,
-                      transformOrigin: "left center",
-                    }}
-                  />
-                </div>
-
-                {/* Active Category Label on Larger Screens */}
-                {active && (
-                  <motion.span
-                    initial={{ opacity: 0, x: -4 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    className="text-[10px] font-extrabold uppercase tracking-widest text-white whitespace-nowrap hidden lg:inline-block pr-1"
-                  >
-                    {scene.eyebrow}
-                  </motion.span>
-                )}
-              </button>
-            );
-          })}
+    <section className={styles.hero} aria-label="Welcome to Bake Bazaar Mart">
+      <div className={`container-shell ${styles.layout}`}>
+        <div className={styles.copy}>
+          <p className={styles.eyebrow}><span aria-hidden="true" /> A little joy, every day</p>
+          <h1 className={styles.title}>Sweet moments.<br /><em>Beautifully made.</em></h1>
+          <p className={styles.description}>Celebrate with a cake. Find something lovely for your kitchen. Bring a little more joy home with Bake Bazaar Mart.</p>
+          <div className={styles.actions}>
+            <Link href="/category/bakery" className={`button-primary ${styles.primary}`}>Explore Bakery <ArrowRight size={18} /></Link>
+            <Link href="/custom-cake" className={styles.secondary}>Create Your Cake <ArrowRight size={17} /></Link>
+          </div>
+          <div className={styles.delivery}>
+            <span><Cake size={18} aria-hidden="true" /> Custom cakes in Karachi</span>
+            <span><Package size={18} aria-hidden="true" /> Essentials across Pakistan</span>
+          </div>
         </div>
 
-        {/* ── Animated Scroll Down Prompt Widget ── */}
-        <motion.div
-          animate={prefersReducedMotion ? false : { y: [0, 5, 0] }}
-          transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
-          className="absolute bottom-6 right-6 z-40 hidden md:flex items-center gap-2 px-3 py-1.5 rounded-full bg-black/40 border border-white/15 backdrop-blur-md pointer-events-none"
-        >
-          <span className="text-[10px] font-bold uppercase tracking-wider text-white/70">
-            Scroll to explore
-          </span>
-          <ChevronDown size={14} className="text-orange" />
-        </motion.div>
+        <div className={styles.visuals}>
+          <Link href="/custom-cake" className={styles.cakeScene} aria-label="Explore custom celebration cakes">
+            <span className={styles.halo} aria-hidden="true" />
+            <span className={styles.orbit} aria-hidden="true" />
+            <span className={styles.sparkle} aria-hidden="true"><Sparkles size={28} strokeWidth={1.3} /></span>
+            <span className={styles.sceneNote} aria-hidden="true">Something sweet<br /><em>to celebrate.</em></span>
+            <div className={styles.cakeImage}>
+              <Image src="/hero-cake-cutout.webp" alt="Cake inspiration: berry and ivory cream celebration cake with a slice" fill priority quality={80} sizes="(max-width: 639px) 92vw, (max-width: 1023px) 75vw, 46vw" className={styles.image} />
+            </div>
+            <span className={styles.cakeCaption}><span className={styles.captionLine} aria-hidden="true" /> Made for your moments <ArrowRight size={16} aria-hidden="true" /></span>
+          </Link>
+
+          <Link href="/category/kitchen" className={styles.kitchen}>
+            <div className={styles.kitchenImage}>
+              <Image src="/hero-kitchen-cutout.webp" alt="Kitchen inspiration: mixing bowl, whisk, spatulas, rolling pin and measuring cups" fill sizes="(max-width: 639px) 96px, 120px" quality={75} className={styles.image} />
+            </div>
+            <div className={styles.kitchenCopy}><span>From baking to everyday living</span><h2>Good things for your kitchen.</h2><p>Explore kitchen essentials &amp; storage</p></div>
+            <span className={styles.kitchenArrow}><ArrowRight size={20} aria-hidden="true" /></span>
+          </Link>
+        </div>
       </div>
+      <div className={styles.bottomLine} aria-hidden="true"><span /></div>
     </section>
   );
 }

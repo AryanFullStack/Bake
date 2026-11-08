@@ -62,6 +62,7 @@ const navLinks = [
   { label: "Categories", href: "/shop", isDropdown: true },
   { label: "Bakery / Cakes", href: "/shop?category=bakery" },
   { label: "Custom Cakes", href: "/custom-cake" },
+  { label: "Watches", href: "/category/watches" },
   { label: "About Us", href: "/about" },
 ];
 
@@ -99,7 +100,7 @@ function HeaderNav({
   const categoryParam = searchParams.get("category");
 
   return (
-    <nav className="ml-6 hidden items-center gap-1 lg:flex" aria-label="Primary navigation">
+    <nav className="ml-3 hidden items-center gap-0 xl:flex" aria-label="Primary navigation">
       {navLinks.map((link) => {
         if (link.isDropdown) {
           return (
@@ -156,7 +157,7 @@ function HeaderNav({
         if (link.href === "/") {
           active = pathname === "/";
         } else if (link.href === "/shop") {
-          active = pathname === "/shop" && categoryParam !== "bakery";
+          active = pathname === "/shop" && !categoryParam;
         } else if (link.href.includes("?category=")) {
           const targetCategory = new URLSearchParams(link.href.split("?")[1]).get("category");
           active = pathname === "/shop" && categoryParam === targetCategory;
@@ -168,7 +169,7 @@ function HeaderNav({
           <Link
             key={link.label}
             href={link.href}
-            className={`rounded-lg px-3.5 py-2 text-[13px] font-bold transition-colors ${
+            className={`rounded-lg px-2 py-2 text-[13px] font-bold transition-colors ${
               active ? "bg-orange-light text-orange" : "text-navy hover:bg-white hover:text-orange"
             }`}
           >
@@ -266,7 +267,7 @@ export function Header() {
           {/* Hamburger (mobile) */}
           <button
             onClick={() => setMenuOpen(true)}
-            className="grid h-10 w-10 place-items-center rounded-lg border border-line bg-white text-navy md:hidden"
+            className="grid h-10 w-10 place-items-center rounded-lg border border-line bg-white text-navy xl:hidden"
             aria-label="Open navigation"
           >
             <Menu size={19} />
@@ -275,7 +276,7 @@ export function Header() {
           {/* Logo */}
           <Link
             href="/"
-            className="group flex shrink-0 items-center gap-2.5 transition-transform hover:scale-[1.01] max-md:absolute max-md:left-1/2 max-md:-translate-x-1/2"
+            className="group flex shrink-0 items-center gap-2.5 transition-transform hover:scale-[1.01] max-sm:absolute max-sm:left-1/2 max-sm:-translate-x-1/2"
           >
             <Image
               src="/logobake-01.png"
@@ -289,9 +290,9 @@ export function Header() {
 
           {/* Desktop Nav */}
           <Suspense fallback={
-            <nav className="ml-6 hidden items-center gap-1 lg:flex" aria-label="Primary navigation">
+            <nav className="ml-3 hidden items-center gap-0 xl:flex" aria-label="Primary navigation">
               {navLinks.map((link) => (
-                <Link key={link.label} href={link.href} className="rounded-lg px-3.5 py-2 text-[13px] font-bold text-navy">
+                <Link key={link.label} href={link.href} className="rounded-lg px-2 py-2 text-[13px] font-bold text-navy">
                   {link.label}
                 </Link>
               ))}
@@ -356,7 +357,7 @@ export function Header() {
 
       {/* ── Mobile Drawer ── */}
       {menuOpen && (
-        <div className="fixed inset-0 z-[200] md:hidden" role="dialog" aria-modal="true" aria-label="Mobile navigation">
+        <div className="fixed inset-0 z-[200] xl:hidden" role="dialog" aria-modal="true" aria-label="Mobile navigation">
           <button className="absolute inset-0 bg-navy/50" onClick={() => setMenuOpen(false)} aria-label="Close navigation overlay" />
           <div className="absolute inset-y-0 left-0 flex w-[min(88vw,360px)] flex-col bg-cream shadow-2xl animate-fade-in overflow-y-auto">
             <div className="flex items-center justify-between border-b border-line px-5 py-5 sticky top-0 bg-cream z-10">

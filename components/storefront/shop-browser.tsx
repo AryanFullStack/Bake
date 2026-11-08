@@ -99,7 +99,7 @@ export function ShopBrowser({
   const activeFilterCount = [query, category !== "All" && category, saleOnly].filter(Boolean).length;
 
   return (
-    <div className="min-h-screen bg-cream overflow-x-hidden">
+    <div className="min-h-screen bg-cream overflow-x-clip">
       {/* ── Page Header ─────────────────────────────── */}
       <div className="container-shell pt-10 pb-6 md:pt-14 md:pb-8">
         <div className="flex flex-col justify-between gap-5 md:flex-row md:items-end border-b border-line/60 pb-8">
@@ -251,7 +251,7 @@ export function ShopBrowser({
       <div className="container-shell py-6 md:py-8 min-w-0">
         <div className="grid gap-8 md:grid-cols-[240px_1fr] min-w-0">
           {/* Sidebar */}
-          <aside className="hidden md:flex md:flex-col gap-4 sticky top-24 h-fit">
+          <aside className="hidden md:flex md:flex-col gap-4 sticky top-24 self-start max-h-[calc(100dvh-7rem)] overflow-y-auto overscroll-contain">
             <div className="rounded-2xl bg-white p-5 border border-line/70 shadow-xs">
               <FilterPanel categories={categories} category={category} setCategory={setCategory} saleOnly={saleOnly} setSaleOnly={setSaleOnly} products={products} />
             </div>

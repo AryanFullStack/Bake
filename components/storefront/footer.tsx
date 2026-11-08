@@ -13,7 +13,7 @@ export function Footer() {
   return (
     <footer className="mt-12 md:mt-20 bg-navy pb-28 pt-14 text-white md:pb-12 md:pt-16">
       <div className="container-shell border-b border-white/10 pb-12">
-        <div className="grid gap-10 md:grid-cols-[1.4fr_1fr_1fr_1fr] lg:gap-8">
+        <div className="grid gap-10 md:grid-cols-2 xl:grid-cols-[minmax(0,1.4fr)_repeat(3,minmax(0,1fr))] lg:gap-8">
 
           {/* Brand column */}
           <div>
@@ -21,9 +21,9 @@ export function Footer() {
               <Image src="/logobake-01.png" alt="Bake Bazaar Mart" width={200} height={55} className="h-11 w-auto object-contain" />
             </Link>
             <p className="mt-5 max-w-sm text-sm leading-7 text-white/65">
-              Your complete online family store — fresh bakery, custom cakes, home décor, kitchen essentials, watches & everyday products. Delivered across Karachi and nationwide all over Pakistan.
+              Celebrate with custom cakes in Karachi and discover kitchen essentials, storage, home favourites and more. Shop the full collection with nationwide delivery for everyday essentials.
             </p>
-            <div className="mt-6 grid gap-2.5 text-xs font-semibold text-white/70">
+            <div className="mt-6 grid gap-2.5 text-sm font-semibold text-white/70">
               <span className="flex items-center gap-2">
                 <MapPin size={14} className="text-orange shrink-0" /> Karachi, Pakistan
               </span>
@@ -47,13 +47,13 @@ export function Footer() {
             <div className="mt-6 flex items-center gap-3">
               <Link
                 href="/contact"
-                className="inline-flex items-center gap-2 rounded-lg border border-white/20 bg-white/5 px-3 py-1.5 text-xs font-bold text-white hover:border-orange hover:text-orange transition-colors"
+                className="inline-flex items-center gap-2 rounded-lg border border-white/20 bg-white/5 px-3 py-1.5 text-sm font-bold text-white hover:border-orange hover:text-orange transition-colors"
               >
                 <Mail size={13} className="text-orange" /> Contact Support
               </Link>
               <Link
                 href="/track-order"
-                className="inline-flex items-center gap-2 rounded-lg border border-white/20 bg-white/5 px-3 py-1.5 text-xs font-bold text-white hover:border-orange hover:text-orange transition-colors"
+                className="inline-flex items-center gap-2 rounded-lg border border-white/20 bg-white/5 px-3 py-1.5 text-sm font-bold text-white hover:border-orange hover:text-orange transition-colors"
               >
                 Track Order
               </Link>
@@ -109,7 +109,7 @@ export function Footer() {
             {/* Newsletter mini */}
             <div>
               <p className="eyebrow text-orange">Stay in the Loop</p>
-              <p className="mt-2 text-xs leading-5 text-white/60">
+              <p className="mt-2 text-sm leading-5 text-white/60">
                 New products, seasonal bakes & exclusive offers.
               </p>
               <form className="mt-4 flex gap-2">
@@ -117,7 +117,7 @@ export function Footer() {
                   required
                   type="email"
                   placeholder="Your email address"
-                  className="min-w-0 flex-1 rounded-lg border border-white/15 bg-white/10 px-3 py-2.5 text-xs text-white outline-none placeholder:text-white/40 focus:border-orange transition-colors"
+                  className="min-w-0 flex-1 rounded-lg border border-white/15 bg-white/10 px-3 py-2.5 text-sm text-white outline-none placeholder:text-white/40 focus:border-orange transition-colors"
                 />
                 <button
                   type="submit"
@@ -127,7 +127,7 @@ export function Footer() {
                   <ArrowRight size={16} />
                 </button>
               </form>
-              <p className="mt-2 flex items-center gap-1.5 text-[11px] text-white/40">
+              <p className="mt-2 flex items-center gap-1.5 text-xs text-white/40">
                 <ShieldCheck size={12} className="text-green" /> No spam. Unsubscribe anytime.
               </p>
             </div>
@@ -136,7 +136,7 @@ export function Footer() {
       </div>
 
       {/* Bottom bar */}
-      <div className="container-shell flex flex-col gap-4 pt-6 text-[11px] text-white/40 md:flex-row md:items-center md:justify-between">
+      <div className="container-shell flex flex-col gap-4 pt-6 text-xs text-white/40 md:flex-row md:items-center md:justify-between">
         <p>© 2026 Bake Bazaar Mart · Karachi, Pakistan</p>
 
         <div className="flex flex-wrap items-center gap-4">
